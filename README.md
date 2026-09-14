@@ -2,6 +2,16 @@
 
 Two screens: Home and Play. Players choose a nickname before their first round. Home shows the ten highest personal bests and the current player's rank.
 
+## Persistent server storage (2.2.2)
+
+The Node server now supports a remote Turso libSQL database. **This must be connected in Render before it can stop temporary-filesystem resets.** Follow [RENDER-STORAGE.md](./RENDER-STORAGE.md) to create a database, set `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and `LOOPSHIFT_REQUIRE_REMOTE_DB=true`, and verify `/api/health` reports `turso`. Tokens remain server-only. No provider account or paid resource is provisioned by the code.
+
+The official `@libsql/client/web` driver adapts to the existing leaderboard API. Scores, all player records and the migration ledger live in the remote database. Migration SQL and its ledger entry commit atomically; repeated starts do not repeat the old reset. Untracked or older imported databases are refused rather than risking deletion. A failed configured remote connection stops startup and never falls back to a fresh local board. A complete current SQLite backup can be imported separately; the code does not automatically transfer or reconstruct historical records.
+
+Local SQLite remains available at the existing path, with optional `LOOPSHIFT_DATA_DIR` for a real persistent disk. The health endpoint distinguishes `turso` from `local-sqlite`, and Render startup logs explain the storage requirement. Changing a directory variable does not provision a disk. The built Sites/D1 Worker continues using its existing managed binding; the Turso adapter is for the Node/Render server.
+
+Tests use the actual libSQL SDK with a persistent SQLite fixture to check fresh connections, migration idempotence/rollback, same-player scores, daily/weekly boards, rewards and groups. HTTP authentication failures are mocked to verify errors and the absence of a local fallback. A live Turso account connection and Render restart check must be completed after entering the environment variables.
+
 ## Online score display fix (2.2.1)
 
 Home's **Online best** now always uses the current player's server-confirmed 100-level score, matching their own **You** row on that board. An unrecognised player sees a dash and Add name. The local record is retained under the collapsed **On this device** explanation, rather than replacing an online score. It can contain offline rounds or another player's runs and is never automatically uploaded. There is no migration or reset of existing scores.
@@ -31,7 +41,7 @@ The new additive migration is `drizzle/0005_many_korvac.sql`. `npm start` applie
 
 Score queues and community-reward queues are scoped to the current server player identity. Rewards remain queued in browser storage until acknowledged, with Home → Progress & rewards → Retry saving rewards and reconnect retries. A server connection at run start is required for community contributions; a failed start does not fabricate a token later. Community and weekly retries expire after 48 hours. These bounded, client-reported stats are not authoritative replay-based anti-cheat verification.
 
-All server data still depends on durable storage. **Render Free can lose the local SQLite database on restart, redeploy or idle shutdown.** Use a paid web service with a persistent disk mounted at `/opt/render/project/src/data`, or integrate an external durable database, before relying on permanent online collections, groups or scores. This update does not change the hosting plan or provision paid storage. GitHub Pages supports device-only play and result tools; online events/groups require the backend.
+All server data depends on durable storage. **Render Free can lose a local SQLite database on restart, redeploy or idle shutdown.** Connect Turso using [the storage setup guide](./RENDER-STORAGE.md), or use a paid web service with a persistent disk mounted at `/opt/render/project/src/data`. Code updates do not change the hosting plan or provision storage. GitHub Pages supports device-only play and result tools; online events/groups require the backend.
 
 Run `npm test` for API, migration, isolation, community retry, replay/card, soundtrack and gameplay checks, including the 100-level route and all three weekly rules. `npm run build` bundles the browser assets and server. Automated DOM/canvas/audio simulations do not replace checking touch, font layout and sound on real iPhone/Android devices.
 
@@ -47,7 +57,7 @@ The home Top 10 is always visible. Rank, Player and Best score have separate spa
 
 Ranked score submissions are serialized and queued until acknowledged. A failed main-game score survives Try again, later lower scores and a reload when browser storage is available. The highest queued main score retains its original duration. Queues are scoped to the server's opaque player key and never restored for another identity. Retry is available on both Home and the result screen; reconnecting retries the queue and rate-limit responses receive a delayed retry. Daily scores stay separate, and an unsaved daily attempt is retried before starting a replacement. Expired/replaced daily attempts show a failure and do not block all future attempts. This does not restore historical scores that were already lost.
 
-Render Free uses an ephemeral filesystem: the SQLite database is lost on redeploy, restart or idle shutdown. Reliable shared records require a paid service with a disk mounted at `/opt/render/project/src/data` (with repository root as the service root), or a separately integrated persistent database. Client retry logic does not make an ephemeral server database durable. See https://render.com/docs/free#local-files-lost-on-redeploy.
+Render Free uses an ephemeral filesystem: a local SQLite database is lost on redeploy, restart or idle shutdown. Reliable shared records require the configured Turso integration or a paid service with a disk mounted at `/opt/render/project/src/data` (with repository root as the service root). Client retry logic does not make an ephemeral server database durable. See https://render.com/docs/free#local-files-lost-on-redeploy.
 
 How to play opens the full guide on Home: first-run steps, mobile/keyboard controls, the blue destination marker, safe gaps, shield circles, base scoring, Perfect shifts, combos, Fever, all ring milestones, bosses, the different game modes, sound, pause and saving. The optional 10-second tutorial launches from that guide.
 
