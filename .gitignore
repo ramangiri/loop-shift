@@ -1,0 +1,7 @@
+.sites-runtime/
+node_modules/
+*.zip
+*.tar.gz
+!www/LoopShift-Website-Full-Code.zip
+dist/
+data/
