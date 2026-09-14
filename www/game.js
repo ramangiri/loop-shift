@@ -31,6 +31,8 @@ function shieldSound(kind){
 }
 
 let ringCount=2, levelBannerTime=0, shiftDirection=1;
+const LEVEL_MORPH_SECONDS=1.1;
+let levelTransition=null,departingRows=[];
 const ringLimit=l=>2+[2,5,9,13].filter(unlock=>l>=unlock).length;
 const shieldCapacity=()=>ringCount>=5?2:1;
 const THEMES=[['#d6ff62','ORBIT'],['#72e6ff','ION'],['#c8a4ff','NEBULA'],['#ffcc78','SOLAR'],['#83f5c0','AURORA'],['#ffa8da','NOVA']];
@@ -169,10 +171,15 @@ function applyTheme(){
   window.LoopShiftMusic?.setLevel(level);
 }
 function levelUp(next){
-  const completed=level,oldRings=ringCount;const goalResult=finishLevel();level=Math.min(100,next);ringCount=ringLimit(level);
-  lane=Math.min(lane,ringCount-1);trail=[];landing=null;landingTime=0;lastGuideTarget=-1; // Radius eases to the resized ring while the ball keeps moving.
+  const completed=level,oldRings=ringCount;
+  const fromRadii=Array.from({length:oldRings},(_,n)=>laneRadius(n)),fromColor=levelColor();
+  const goalResult=finishLevel();level=Math.min(100,next);ringCount=ringLimit(level);
+  levelTransition={elapsed:0,oldRings,fromRadii,fromColor};
+  lane=Math.min(lane,ringCount-1);lastGuideTarget=-1;
+  // Keep the ball, its trail and departing walls in place at the boundary.
+  departingRows=rows.filter(row=>row.passed).map(row=>({...row,radii:fromRadii,leavingAt:gameTime}));
   rows=[];nextRowIndex=passes;if(comeback)comeback={angle:angle+.65,lane};
-  prepareRhythm(2.3);
+  prepareRhythm(2.3,true);
   levelBannerTime=1.35;
   levelSparks=0;levelPerfects=0;levelHits=0;levelShieldLost=false;objectiveAwarded=false;
 
@@ -181,7 +188,7 @@ function levelUp(next){
   document.body.style.setProperty('--completed-sector',THEMES[(completed-1)%THEMES.length][0]);
   const banner=$('level-banner-wrap');
   banner.classList.remove('show');
-  void banner.offsetWidth; // Restart the celebration on every completed level.
+  // Successive levels outlast this animation; no forced layout read is needed.
   banner.classList.add('show');
   $('level-reward').textContent=goalResult;
   $('announcement').textContent=$('level-banner').textContent+' '+$('level-detail').textContent;
@@ -189,11 +196,18 @@ function levelUp(next){
 }
 // Three walls over four beats form a learnable 'tap, tap, wait, tap' phrase. No random spacing jitter.
 const RHYTHM_GAPS=[1,2,1];
-let rhythmOrigin=0,rhythmUnit=.6552,rhythmEpoch=0;
+let rhythmOrigin=0,rhythmUnit=.6552,rhythmEpoch=0,rhythmPhaseOffset=0;
+const rhythmPhase=()=>rhythmPhaseOffset+4*(angle-rhythmOrigin+speedNow()*.29)/rhythmUnit;
 const rhythmDistance=()=>level===1?targetSpeed()*.84:Math.max(targetSpeed()*(bossLevel()?1.05:.9),targetSpeed()*.68+.26);
 const rowSpacing=(index=nextRowIndex)=>rhythmDistance()*RHYTHM_GAPS[((index-1)%3+3)%3];
-function prepareRhythm(lead){
-  rhythmUnit=rhythmDistance();rhythmOrigin=angle+speedNow()*lead;rhythmEpoch++;
+function prepareRhythm(lead,continuous=false){
+  const phase=continuous?rhythmPhase():0;
+  rhythmUnit=rhythmDistance();
+  if(continuous){
+    // Put the next wall on a future beat without restarting the soundtrack.
+    rhythmPhaseOffset=Math.ceil(phase+4*speedNow()*(lead-.29)/rhythmUnit);
+    rhythmOrigin=angle+speedNow()*.29+(rhythmPhaseOffset-phase)*rhythmUnit/4;
+  }else{rhythmPhaseOffset=0;rhythmOrigin=angle+speedNow()*lead;rhythmEpoch++;}
   let position=rhythmOrigin;
   for(let i=0;i<5;i++){if(i)position+=rowSpacing(passes+i);addRow(position,passes+i);}
 }
@@ -201,9 +215,9 @@ function syncMusic(){
   // Grid beats lead wall centres by the middle of the perfect window. The music
   // follows actual orbit speed, including easing, and freezes during countdowns.
   window.LoopShiftMusic?.sync?.({
-    phase:roundKind==='tutorial'?gameTime*4/.9:4*(angle-rhythmOrigin+speedNow()*.29)/rhythmUnit,
+    phase:roundKind==='tutorial'?gameTime*4/.9:rhythmPhase(),
     rate:roundKind==='tutorial'?4/.9:4*speedNow()/rhythmUnit,
-    accents:rows.filter(row=>!row.passed&&!row.open).map(row=>4*(row.baseAngle-rhythmOrigin)/rhythmUnit),
+    accents:rows.filter(row=>!row.passed&&!row.open).map(row=>rhythmPhaseOffset+4*(row.baseAngle-rhythmOrigin)/rhythmUnit),
     epoch:rhythmEpoch,running:mode==='playing'&&startDelay===0
   });
 }
@@ -245,12 +259,41 @@ try{
 }catch{}
 const saveProgress=()=>{try{localStorage.setItem('loop-shift-progress-v2',JSON.stringify(progress));}catch{}};
 const speedNow=()=>motionSpeed;
+const personalBest=()=>window.LoopShiftBoard?.best?.()??best;
 const multiplier=()=>combo>=5?5:combo>=3?3:combo>=2?2:1;
 const scoreFactor=()=>multiplier()*(feverTime>0?2:1);
 const ballColor=()=>progress.ball==='cyan'?'#72e6ff':progress.ball==='prism'?`hsl(${reducedMotion?285:(gameTime*65)%360} 95% 76%)`:C.lime;
 
 try { best = Number(localStorage.getItem('loop-shift-best-v2')) || 0; soundOn = localStorage.getItem('loop-shift-sound') !== 'false'; } catch {}
-const laneRadius = n => ringCount===2 ? (n ? .385 : .27) : .14+n*(.275/(ringCount-1));
+const baseLaneRadius=(n,count)=>count===2?(n ? .385 : .27):.14+n*(.275/(count-1));
+const morphProgress=()=>{const t=Math.min(1,(levelTransition?.elapsed??LEVEL_MORPH_SECONDS)/LEVEL_MORPH_SECONDS);return t*t*(3-2*t);};
+function laneRadius(n){
+  const target=baseLaneRadius(n,ringCount);
+  if(!levelTransition)return target;
+  const from=levelTransition.fromRadii[n]??levelTransition.fromRadii.at(-1)+.035*(n-levelTransition.oldRings+1);
+  return from+(target-from)*morphProgress();
+}
+function ringSize(wide,narrow){
+  const target=ringCount>3?narrow:wide;
+  const from=levelTransition?(levelTransition.oldRings>3?narrow:wide):target;
+  return from+(target-from)*morphProgress();
+}
+function levelColor(){
+  const target=THEMES[(level-1)%THEMES.length][0];
+  if(!levelTransition)return target;
+  const from=levelTransition.fromColor,t=morphProgress();
+  return '#'+[1,3,5].map(i=>Math.round(parseInt(from.slice(i,i+2),16)*(1-t)+parseInt(target.slice(i,i+2),16)*t).toString(16).padStart(2,'0')).join('');
+}
+function updateLevelTransition(dt){
+  if(levelTransition){
+    const previous=laneRadius(lane);
+    levelTransition.elapsed=Math.min(LEVEL_MORPH_SECONDS,levelTransition.elapsed+dt);
+    // Carry the player with its ring while preserving any active tap's offset.
+    radius+=laneRadius(lane)-previous;
+    if(levelTransition.elapsed>=LEVEL_MORPH_SECONDS)levelTransition=null;
+  }
+  departingRows=departingRows.filter(row=>gameTime-row.leavingAt<.4);
+}
 const random = (min,max) => min + Math.random() * (max-min);
 const point = (a,r) => ({x:size/2+Math.cos(a)*r*size,y:size/2+Math.sin(a)*r*size});
 const pad = (n) => String(n).padStart(3,'0');
@@ -264,7 +307,8 @@ function resize(){
 new ResizeObserver(resize).observe(canvas);
 
 function updateHome(){
-  $('home-best').textContent=pad(best);
+  $('home-best').textContent=pad(personalBest());
+  $('home-best-label').textContent=window.LoopShiftBoard?.best?.()!==null&&window.LoopShiftBoard?.best?.()!==undefined?'BOARD BEST':'DEVICE BEST';
   $('home-play-label').textContent=mode==='paused'?'Resume round':'Play now';
   $('home-new').hidden=mode!=='paused';
   $('home-status').hidden=mode!=='paused';
@@ -404,7 +448,7 @@ function warnPattern(row){
   tone(330,.13,'triangle',.035);
 }
 function updateHUD(){
-  $('score').textContent=pad(score);$('best').textContent=pad(roundKind==='daily'?dailyBest:best);$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='sprint'?5:100}`;
+  $('score').textContent=pad(score);$('best').textContent=pad(roundKind==='daily'?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='sprint'?5:100}`;
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
   const full=shield>=shieldCapacity();
   $('shield-icons').textContent='◉'.repeat(shield)+'○'.repeat(shieldCapacity()-shield);
@@ -415,7 +459,7 @@ function updateHUD(){
   $('shift').disabled=mode!=='playing';updateGuide();
   $('level-progress').style.width=`${Math.min(12,passes>=1200?12:passes%12)/12*100}%`;
   $('level-progress-label').textContent=`${passes>=1200?12:passes%12} / 12 obstacles`;
-  $('rival-target').textContent=window.LoopShiftBoard?.target?.(score,roundKind) || `Next personal best: ${Math.max(1,(roundKind==='daily'?dailyBest:best)+1-score)} points away`;
+  $('rival-target').textContent=window.LoopShiftBoard?.target?.(score,roundKind) || `Next personal best: ${Math.max(1,(roundKind==='daily'?dailyBest:personalBest())+1-score)} points away`;
   const goal=objective();$('level-objective').textContent=`${roundKind==='practice'?'PRACTICE · ':''}${bossLevel()?'BOSS · ':''}${goal.label} · ${Math.min(goal.count,goal.goal)}/${goal.goal} · Bonus +100`;
   $('ghost-status').textContent=roundKind==='endless'&&ghostTarget>0?(passes>=ghostTarget?'👻 Past your best distance!':`👻 Best run: Level ${Math.min(100,1+Math.floor(ghostTarget/12))} · ${ghostTarget-passes} obstacles ahead`):roundKind==='practice'?'Practice · No ranking or unlocks':'New run. Set your distance record.';
   updateExtras();updateRhythm();updateHome();
@@ -438,7 +482,7 @@ function addRow(a,index=nextRowIndex++){
   // A bonus between walls sits on the next guided ring, reachable with an early
   // shift. Its destination is fixed before it comes into view.
   if(previous&&previous.bonusLane!==null&&previous.bonusLane!==undefined)previous.bonusLane=safeLane;
-  rows.push({angle:a,baseAngle:a,index,entryLane:previousSafe,pattern,recovery,sweepDirection,patternStart:index>0&&index%12===0,
+  rows.push({angle:a,baseAngle:a,index,bornAt:gameTime,entryLane:previousSafe,pattern,recovery,sweepDirection,patternStart:index>0&&index%12===0,
     bonusLane:!recovery&&level>=4&&index%3===1?hazardLane:null,bonusCollected:false,
     phase:courseRange(0,TAU),locked:pattern==='classic',open:false,hazardLane,hazardLanes,sparkLane:safeLane,
     collected:false,hit:false,passed:false,perfectCandidate:false,attempted:false});
@@ -470,7 +514,7 @@ function start(options){
   unlockAudio();mode='playing';score=0;passes=0;level=1;ringCount=2;shiftDirection=1;sparks=0;charge=0;shield=0;invulnerable=0;levelBannerTime=0;
   $('level-banner-wrap').classList.remove('show');$('arena').classList.remove('celebrating');
   if(roundKind==='practice'){level=practiceLevel;passes=(level-1)*12;ringCount=ringLimit(level);}
-  motionSpeed=targetSpeed();applyTheme();
+  levelTransition=null;departingRows=[];motionSpeed=targetSpeed();applyTheme();
   angle=-Math.PI/2;lane=1;radius=laneRadius(lane);rows=[];trail=[];particles=[];startDelay=roundKind==='tutorial'?0:quickRetry ? .45 : 1.5;lastShift=-1;
   gameTime=0;combo=0;feverCharge=0;feverTime=0;perfects=0;roundFevers=0;bestCombo=0;nextRowIndex=0;shatters=[];
   effectTime=0;patternNoticeTime=0;$('skill-effect').classList.remove('visible');
@@ -529,7 +573,7 @@ function collect(row){
   updateHUD();
 }
 function crash(hitRow=null,completed=false){
-  const previousBest=roundKind==='daily'?dailyBest:best;
+  const previousBest=roundKind==='daily'?dailyBest:personalBest();
   const champion=completed&&roundKind==='endless';
   if(roundKind==='endless')journey.chain=Math.max(journey.chain||0,bestCombo);
   if(roundKind==='endless'){journey.distance=Math.max(journey.distance,passes);saveJourney();}
@@ -567,7 +611,7 @@ function update(dt){
   if(roundKind==='daily')dt=Math.min(dt,Math.max(0,120-gameTime));
   if(roundKind==='tutorial'){updateTutorial(dt);return;}
   motionSpeed+=(targetSpeed()-motionSpeed)*(1-Math.exp(-dt*.8));
-  gameTime+=dt;
+  gameTime+=dt;updateLevelTransition(dt);
   if(roundKind==='daily'&&gameTime>=120){gameTime=120;crash(null,true);return;}
   effectTime=Math.max(0,effectTime-dt);if(effectTime===0)$('skill-effect').classList.remove('visible');
   patternNoticeTime=Math.max(0,patternNoticeTime-dt);
@@ -616,7 +660,9 @@ function update(dt){
   }
   if(comeback){const d=comeback.angle-angle;if(Math.abs(d)<.09&&Math.abs(radius-laneRadius(comeback.lane))<.032){collect({angle:comeback.angle,sparkLane:comeback.lane});feedback('comeback');comeback=null;}else if(d<-.12)comeback=null;}
   rows=rows.filter(row=>row.angle>angle-.65);
-  while(rows.length<5){const last=rows.at(-1);addRow((last?.baseAngle??angle+1)+rowSpacing());}
+  // Do not preview the next level using this level's geometry and then replace it.
+  const levelEnd=level*12;
+  while(rows.length<5&&nextRowIndex<levelEnd){const last=rows.at(-1);addRow((last?.baseAngle??angle+1)+rowSpacing());}
   if(patternNoticeTime===0){
     $('pattern-notice').classList.remove('warning');
     const next=rows.find(row=>row.angle>angle&&!row.passed);
@@ -649,7 +695,7 @@ function drawLanding(){
   if(landingTime<=0)return;
   const fade=landingTime/.28,r=laneRadius(landingLane),p=point(angle,r);
   ctx.save();ctx.globalAlpha=fade*.8;
-  arc(r,0,TAU,THEMES[(level-1)%6][0],2.5);
+  arc(r,0,TAU,levelColor(),2.5);
   if(!reducedMotion){
     ctx.beginPath();ctx.arc(p.x,p.y,size*(.021+(1-fade)*.045),0,TAU);
     ctx.strokeStyle='#f4ffd9';ctx.lineWidth=1.8;ctx.stroke();
@@ -669,10 +715,10 @@ function draw(time,dt){
   ctx.setLineDash([2,7]);arc(.16,0,TAU,'#29392d',1);ctx.setLineDash([]);
   for(let ring=0;ring<ringCount;ring++){
     const r=laneRadius(ring);
-    ctx.save();ctx.globalAlpha=1;
-    arc(r+.006,0,TAU,'#070f0b',size*(ringCount>3?.035:.053));
-    arc(r,0,TAU,'#223b2e',size*(ringCount>3?.026:.043));arc(r-.012,0,TAU,'#415a46',1);
-    arc(r+.018,0,TAU,'#0a140e',2);arc(r,0,TAU,THEMES[(level-1)%6][0]+'88',1.5);
+    ctx.save();ctx.globalAlpha=levelTransition&&ring>=levelTransition.oldRings?morphProgress():1;
+    arc(r+.006,0,TAU,'#070f0b',size*ringSize(.053,.035));
+    arc(r,0,TAU,'#223b2e',size*ringSize(.043,.026));arc(r-.012,0,TAU,'#415a46',1);
+    arc(r+.018,0,TAU,'#0a140e',2);arc(r,0,TAU,levelColor()+'88',1.5);
     if(feverTime>0){
       ctx.save();ctx.shadowBlur=reducedMotion?0:12;
       for(let i=0;i<12;i++){
@@ -690,14 +736,18 @@ function draw(time,dt){
     }
     drawOrb(-1.2+demoTime,.385,false);
   }else{
-    for(const row of rows){
+    const nearest=rows.find(row=>!row.passed&&row.angle>angle);
+    for(const row of [...departingRows,...rows]){
+      const rowRadius=n=>row.radii?.[n]??laneRadius(n);
+      const arrival=Math.min(1,Math.max(0,(gameTime-(row.bornAt??gameTime-1))/.35));
+      const fade=row.radii?Math.max(0,1-(gameTime-row.leavingAt)/.4):arrival*arrival*(3-2*arrival);
       const ahead=row.angle-angle;
       if(ahead>TAU-.45)continue;
-      const opacity=Math.min(1,Math.max(0,(ahead+.45)/.3),Math.max(0,(TAU-.45-ahead)/.3));
+      const opacity=fade*Math.min(1,Math.max(0,(ahead+.45)/.3),Math.max(0,(TAU-.45-ahead)/.3));
       ctx.globalAlpha=opacity;
       if(!row.hit){
         for(const hazard of blockedLanes(row)){
-        const r=laneRadius(hazard);
+        const r=rowRadius(hazard);
         if(row.open){ctx.setLineDash([3,5]);arc(r,row.angle-.075,row.angle+.075,'#93b9a9',2);ctx.setLineDash([]);}
         else{
           ctx.save();ctx.shadowColor=C.coral;ctx.shadowBlur=6;
@@ -720,11 +770,10 @@ function draw(time,dt){
         }
       }
       }
-      const nearest=rows.find(r=>!r.passed&&r.angle>angle);
-      if(row===nearest&&ahead>0&&!row.open&&!row.hit){for(const n of blockedLanes(row))arc(laneRadius(n),row.angle-.085,row.angle+.085,'#ffe7d9',2);}
-      if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8;ctx.shadowColor=C.gold;ctx.shadowBlur=reducedMotion?0:12;arc(laneRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
-      if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){drawSpark(row.angle+.4,laneRadius(row.bonusLane),Math.max(.5,opacity),'#ffa8da');}
-      if(!row.collected){drawSpark(row.angle,laneRadius(row.sparkLane),opacity);}
+      if(row===nearest&&ahead>0&&!row.open&&!row.hit){for(const n of blockedLanes(row))arc(rowRadius(n),row.angle-.085,row.angle+.085,'#ffe7d9',2);}
+      if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8*opacity;ctx.shadowColor=C.gold;ctx.shadowBlur=reducedMotion?0:12;arc(rowRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
+      if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){drawSpark(row.angle+.4,rowRadius(row.bonusLane),opacity,'#ffa8da');}
+      if(!row.collected){drawSpark(row.angle,rowRadius(row.sparkLane),opacity);}
     }
     ctx.globalAlpha=1;
     if(comeback)drawSpark(comeback.angle,laneRadius(comeback.lane),1,'#83f5c0');
@@ -760,12 +809,13 @@ function drawOrb(a,r,safe){
   const p=point(a,r);ctx.save();
   if(invulnerable>0)ctx.globalAlpha=.65;
   if(safe){for(let i=0;i<shield;i++){ctx.beginPath();ctx.arc(p.x,p.y,size*(.024+i*.008),0,TAU);ctx.strokeStyle=C.lime;ctx.shadowColor=C.lime;ctx.shadowBlur=reducedMotion?0:7;ctx.lineWidth=2;ctx.stroke();}}
-  ctx.shadowColor=ballColor();ctx.shadowBlur=reducedMotion?0:24;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*(ringCount>3?.012:.018),0,TAU);ctx.fill();
+  ctx.shadowColor=ballColor();ctx.shadowBlur=reducedMotion?0:24;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
 $('sprint-play').addEventListener('click',startSprint);
-$('tutorial-play').addEventListener('click',startTutorial);
+$('tutorial-play').addEventListener('click',()=>{const guide=$('game-guide');guide.open=true;guide.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'start'});$('guide-title').focus();});
+$('tutorial-start').addEventListener('click',startTutorial);
 $('skip-tutorial').addEventListener('click',()=>{if(roundKind==='tutorial'){mode='over';window.LoopShiftMusic?.pause();goHome();}});
 $('share-daily').addEventListener('click',shareDaily);
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
@@ -810,6 +860,7 @@ $('install').addEventListener('click',async()=>{if(!installPrompt)return;await i
 window.addEventListener('appinstalled',()=>{$('install').hidden=true;});
 if('serviceWorker' in navigator && !window.LoopShiftNative?.isNative && /^https?:$/.test(location.protocol)){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});}
 for(const id of Object.keys(LOOKS))$('look-'+id).addEventListener('click',()=>selectLook(id));
+window.LoopShiftBoard?.onBest?.(()=>updateHUD());
 updateProgressUI();
 $('practice-play').addEventListener('click',startPractice);
 for(const [id,,minimum] of COSMETICS)$('theme-'+id).addEventListener('click',()=>{if(journey.highest<minimum)return;selectedTheme=id;try{localStorage.setItem('loop-shift-theme-v2',id);}catch{}updateAdventureUI();});

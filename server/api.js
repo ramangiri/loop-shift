@@ -31,7 +31,7 @@ async function board(db, id) {
     const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?)))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
     rank = row.rank;
   }
-  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, score: p.best, isYou: p.id === id })), me: me ? { name: me.name, best: me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
+  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, best: me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
 }
 export async function api(request, env) {
   const path = new URL(request.url).pathname;

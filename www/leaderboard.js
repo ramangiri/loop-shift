@@ -1,7 +1,21 @@
 (() => {
   const el = id => document.getElementById(id);
   let latestEntries=[], activeBoard='endless', activeChallenge=null, canPlayOffline=true, startingDaily=false;
-  let nickname = '', ranked = false, nextAction, busy = false, pending = null;
+  let nickname = '', ranked = false, nextAction, busy = false;
+  let playerKey='',scoreQueue=[],scoreJob=null,retryTimer=null,bestListener=null,savedBest=null;
+  const queueStorage=()=>`loop-shift-score-queue-v3:${playerKey}`;
+  function persistQueue(){if(playerKey)try{localStorage.setItem(queueStorage(),JSON.stringify(scoreQueue));}catch{}}
+  function scoreStatus(message,waiting=false){
+    el('score-save-status').hidden=false;el('score-save-status').textContent=message;
+    el('board-save-status').textContent=message;el('board-save-status').hidden=false;
+    el('retry-score').hidden=!waiting;el('retry-board-score').hidden=!waiting;
+  }
+  function restoreQueue(key){
+    if(!key||key===playerKey)return;
+    playerKey=key;savedBest=null;scoreQueue=[];
+    try{const items=JSON.parse(localStorage.getItem(queueStorage())||'[]');if(Array.isArray(items))scoreQueue=items.filter(item=>item.owner===key&&typeof item.id==='string'&&Number.isSafeInteger(item.score)&&item.score>=0&&Number.isFinite(item.duration)&&item.duration>=0).slice(0,20);}catch{}
+    if(scoreQueue.length)scoreStatus('A score is waiting to save. We’ll retry when connected.',true);
+  }
   let progressListener=null,serverProgress=null,progressPending=null,progressBusy=false;
   let lastRefresh = 0, refreshJob = null, round = 0;
   const validName = value => {
@@ -14,7 +28,7 @@
       const response = await fetch('./api/' + path, { method: data ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', headers: data ? {'Content-Type': 'application/json','x-loopshift-season':'2'} : {}, body: data ? JSON.stringify(data) : undefined, signal: controller.signal });
       if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('Connect to the game server to use the shared board.');
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'The board is unavailable. Please retry.');
+      if (!response.ok) {const error=new Error(result.error || 'The board is unavailable. Please retry.');error.status=response.status;error.retryAfter=Number(response.headers.get('retry-after'))||1;throw error;}
       return result;
     } catch (error) {
       if (error.name === 'AbortError' || error instanceof TypeError) throw new Error('Could not connect. Check your internet connection and retry.');
@@ -28,7 +42,9 @@
   function render(data) {
     const daily=!!data.challenge;
     if(daily)activeChallenge=data.challenge;
-    activeBoard=daily?'daily':'endless';
+    const visible=(daily?'daily':'endless')===activeBoard;
+    if(data.me){restoreQueue(data.me.key);if(!daily)savedBest=data.me.best;}
+    if(visible){
     el('board-endless').setAttribute('aria-pressed',String(!daily));el('board-daily').setAttribute('aria-pressed',String(daily));
     el('board-title').textContent=daily?'🏆 Daily Top 10':'🏆 Top 10';
     if(daily)el('daily-status').textContent='Resets 05:30 IST (00:00 UTC) · Online';
@@ -47,21 +63,27 @@
     el('board-table-wrap').hidden = !data.entries.length;
     el('board-status').textContent = data.entries.length ? (daily?'Daily leaderboard · '+data.challenge.day:'Shared leaderboard · Up to date') : (daily?'No daily scores yet. Set today’s first score.':'The board is open. Finish a round with points to claim the first spot.');
     el('board-you').hidden = !data.me;
+    if(data.me)el('board-you').textContent=data.me.rank?`${data.me.name} · Your rank: #${data.me.rank} · Best: ${data.me.best.toLocaleString()}`:`${data.me.name} · Finish a ranked round to set your first score.`;
+    }
     if (data.me) {
       nickname = data.me.name;ranked = true;playerLabel();
       if(data.me.progress){serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
-      el('board-you').textContent = data.me.rank ? `Your rank: #${data.me.rank} · Best: ${data.me.best.toLocaleString()}` : 'Your first score is waiting. Let’s play.';
-    } else { ranked = false; }
+      bestListener?.(savedBest);
+    } else { ranked = false;savedBest=null;bestListener?.(null); }
   }
   async function refresh(force = false) {
     if (refreshJob) return refreshJob;
+    if(scoreJob)await scoreJob;
+    if(refreshJob)return refreshJob;
     if (!force && Date.now() - lastRefresh < 10000) return;
     lastRefresh = Date.now();
     el('refresh-board').disabled = true;
     refreshJob = request(activeBoard==='daily'?'daily':'leaderboard').then(render).catch(error => {
       el('board-status').textContent = error.message + (el('board-rows').children.length ? ' Showing the last loaded scores.' : '');
     }).finally(() => { el('refresh-board').disabled = false;refreshJob = null; });
-    return refreshJob;
+    const job=refreshJob;
+    job.then(()=>{if(ranked&&scoreQueue.length)saveScore();});
+    return job;
   }
   function askName(action,allowOffline=true) {
     canPlayOffline=allowOffline;
@@ -79,6 +101,7 @@
     const action = nextAction;nextAction = null;
     el('name-dialog').close();
     if(progressPending)saveProgress();
+    if(scoreQueue.length)saveScore();
     if (action) action();
   }
   el('name-form').addEventListener('submit', async event => {
@@ -98,19 +121,46 @@
   el('name-dialog').addEventListener('cancel', event => { if (busy) event.preventDefault();else nextAction = null; });
   el('edit-name').addEventListener('click', () => askName());
   el('refresh-board').addEventListener('click', () => refresh(true));
-  async function saveScore(item) {
-    el('score-save-status').hidden = false;el('score-save-status').textContent = 'Saving your score…';el('retry-score').hidden = true;
-    try {
-      const data = await request(item.challenge?'daily/score':'scores', {score:item.score, duration:item.duration,...(item.challenge?{token:item.challenge.token}:{})});render(data);
-      if (item.round !== round) return;
-      pending = null;
-      el('score-save-status').textContent = data.me.rank ? `${item.challenge?'Daily best saved':'Best saved'} · You’re #${data.me.rank} with ${data.me.best.toLocaleString()} points.` : 'Round saved. Collect points to enter the Top 10.';
-    } catch (error) {
-      if (item.round !== round) return;
-      pending = item;el('score-save-status').textContent = 'Score not saved. ' + error.message;el('retry-score').hidden = false;
+  function queueScore(score,duration,challenge){
+    const item={id:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),owner:playerKey,score,duration,round,challenge};
+    if(!challenge){
+      const previous=scoreQueue.find(entry=>!entry.challenge);
+      if(previous&&previous.score>=score)return;
+      scoreQueue=scoreQueue.filter(entry=>entry.challenge);
     }
+    scoreQueue.push(item);persistQueue();
   }
-  el('retry-score').addEventListener('click', () => { if (pending) saveScore(pending); });
+  function saveScore(){
+    if(scoreJob)return scoreJob;
+    if(!ranked||!scoreQueue.length)return Promise.resolve();
+    clearTimeout(retryTimer);retryTimer=null;
+    const item=scoreQueue[0];let saved=false;
+    scoreStatus('Saving your score…');
+    // Serialize requests so a slow refresh or earlier save cannot replace new data.
+    scoreJob=(async()=>{
+      try{
+        if(refreshJob)await refreshJob;
+        if(item.owner!==playerKey)return;
+        const data=await request(item.challenge?'daily/score':'scores',{score:item.score,duration:item.duration,...(item.challenge?{token:item.challenge.token}:{})});
+        if(item.owner!==playerKey)return;
+        scoreQueue=scoreQueue.filter(entry=>entry.id!==item.id);persistQueue();saved=true;render(data);
+        const prefix=item.challenge?'Daily best saved':'Best saved';
+        scoreStatus(data.me.rank?`${prefix} · ${data.me.name} is #${data.me.rank} with ${data.me.best.toLocaleString()} points.`:'Round saved. Collect points to enter the Top 10.');
+      }catch(error){
+        if(item.owner!==playerKey)return;
+        if(item.challenge&&[409,410].includes(error.status)){
+          scoreQueue=scoreQueue.filter(entry=>entry.id!==item.id);persistQueue();
+          scoreStatus('Daily score not saved. '+error.message);
+        }else scoreStatus(`Score not saved yet (${item.score.toLocaleString()} points). ${error.message}`,true);
+        if(error.status===429)retryTimer=setTimeout(saveScore,Math.min(5000,Math.max(1100,error.retryAfter*1000)));
+      }finally{scoreJob=null;}
+      if(saved&&scoreQueue.length)return saveScore();
+    })();
+    return scoreJob;
+  }
+  el('retry-score').addEventListener('click',saveScore);
+  el('retry-board-score').addEventListener('click',saveScore);
+  window.addEventListener?.('online',()=>{refresh(true);});
   async function saveProgress(){
     if(progressBusy||!progressPending)return;
     if(!ranked){el('progress-sync').textContent='Unlocks are only in this session. Save a nickname to keep them.';return;}
@@ -123,6 +173,8 @@
   }
   el('retry-progress').addEventListener('click',saveProgress);
   window.LoopShiftBoard = {
+    best:()=>ranked?savedBest:null,
+    onBest(listener){bestListener=listener;if(savedBest!==null)listener(savedBest);},
     onProgress(listener){progressListener=listener;if(serverProgress)listener(serverProgress);},
     saveProgress(data){progressPending=progressPending?{highest:Math.max(data.highest,progressPending.highest),distance:Math.max(data.distance,progressPending.distance),badges:data.badges|progressPending.badges,chain:Math.max(data.chain||0,progressPending.chain||0),clean:Math.max(data.clean||0,progressPending.clean||0)}:data;saveProgress();},
     target(score,kind='endless') {
@@ -137,18 +189,20 @@
       startingDaily=true;el('daily-play').disabled=true;el('daily-status').textContent='Preparing today’s course…';
       try{
         if(refreshJob)await refreshJob;
+        if(scoreJob)await scoreJob;
+        if(scoreQueue.some(item=>item.challenge)){await saveScore();if(scoreQueue.some(item=>item.challenge))throw new Error('Save your previous daily score with Retry before starting another daily challenge.');}
         const challenge=await request('daily/start',{});
-        render(challenge.board);
+        activeBoard='daily';render(challenge.board);
         callback({...challenge,best:challenge.board.me?.best||0});
       }catch(error){el('daily-status').textContent=error.message;if(!el('game-screen').hidden){el('score-save-status').hidden=false;el('score-save-status').textContent=error.message;}}
       finally{startingDaily=false;el('daily-play').disabled=false;}
     },
     ready: () => !!nickname,
     askName, refresh,
-    beginRound() { round++;pending = null;el('score-save-status').hidden = true;el('retry-score').hidden = true; },
+    beginRound() { round++;if(!scoreQueue.length){el('score-save-status').hidden=true;el('retry-score').hidden=true;}else saveScore(); },
     submit(score, duration, challenge=null) {
-      if (!ranked) { el('score-save-status').hidden = false;el('score-save-status').textContent = 'Unranked round. Connect and save your nickname from Home to join the board.';return; }
-      pending = { score, duration, round, challenge };saveScore(pending);
+      if (!ranked) {scoreStatus('Unranked round. Connect and save your nickname from Home to join the board.');return;}
+      queueScore(score,duration,challenge);return saveScore();
     }
   };
   el('board-endless').addEventListener('click',async()=>{if(refreshJob)await refreshJob;activeBoard='endless';refresh(true);});

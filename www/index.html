@@ -41,7 +41,7 @@
             <p class="intro-copy">Shift rings. Dodge barriers.</p>
             <div class="player-summary"><div class="player-line"><span id="player-label">Ready to play?</span><button class="text-button" id="edit-name">Add name</button></div>
 
-            <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span>BEST</span><strong id="home-best">000</strong></div></div>
+            <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">DEVICE BEST</span><strong id="home-best">000</strong></div></div>
             <div class="run-options" id="challenge-picker">
               <label id="challenge-label" for="challenge-choice">CHALLENGE</label>
               <button type="button" id="challenge-choice" value="survive" aria-haspopup="listbox" aria-expanded="false" aria-controls="challenge-list" aria-labelledby="challenge-label challenge-value">
@@ -82,15 +82,16 @@
 
 
 
-        <details class="leaderboard mobile-fold" aria-labelledby="board-title">
-          <summary><h2 id="board-title">🏆 Top 10</h2></summary><div class="fold-body"><div class="board-toolbar"><button class="back-button" id="refresh-board">Refresh</button></div>
+        <section class="leaderboard" aria-labelledby="board-title">
+          <div class="board-heading"><h2 id="board-title">🏆 Top 10</h2><button class="back-button" id="refresh-board">Refresh</button></div><div class="board-body">
           <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button></div>
 
           <p id="board-status" role="status">Loading the leaderboard…</p>
-          <div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
+          <div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
           <p class="board-you" id="board-you" hidden></p>
-          <p class="board-note">Ties go to the earlier score.</p>
-        </div></details>
+          <p id="board-save-status" role="status" hidden></p><button id="retry-board-score" class="text-button" hidden>Retry saving score</button>
+          <p class="board-note">Only completed ranked rounds appear here. Ties go to the earlier score.</p>
+        </div></section>
 <details class="adventure-home mobile-fold" aria-labelledby="adventure-title">
 <summary><h2 id="adventure-title">Progress &amp; rewards</h2></summary><div class="fold-body">
 
@@ -112,23 +113,52 @@
           </div>
         </section></details></div></details>
 <details class="comfort-options"><summary>Settings</summary><div class="comfort-body"><button id="vibration-toggle" class="back-button" aria-pressed="true">Vibration on</button><button class="install-button" id="install" hidden>Install game</button><p>Tap the game area or press Space. Vibration requires a supported device.</p></div></details>
-<details class="mobile-fold help-fold"><summary>Game guide</summary><div class="fold-body">        <div class="how-to">
-
-          <div class="instructions">
-            <div><span class="key-symbol shift-symbol" aria-hidden="true">⇄</span><p><strong>Tap to switch</strong><span>Tap anywhere in the game or press Space. With three or more rings, the hollow marker shows your next ring.</span></p></div>
-            <div><span class="key-symbol barrier-symbol" aria-hidden="true"></span><p><strong>Chase the perfect</strong><span>Shift just before the coral barrier.</span></p></div>
-            <div><span class="key-symbol spark-symbol" aria-hidden="true">✦</span><p><strong>Collect six sparks</strong><span>Six sparks = one shield. Hold two from five rings.</span></p></div>
-          </div>
-        </div>
-            <p class="progression-preview">New ring at levels <strong>2 · 5 · 9 · 13</strong><br>Two shield slots from five rings.</p><p class="guide-copy">Clear 12 obstacles per level. Every tenth level is a boss. Pink sparks give +40 points.</p>        <details class="rhythm-guide">
-          <summary>Perfect shifts, Fever &amp; new patterns</summary>
-          <p>Switch away from a barrier just as its gold outline appears. Clear it safely to earn <strong>PERFECT! +25</strong>. Each barrier pays once.</p>
-          <p>Listen for the rhythm: tap, tap, wait, tap. A short tone marks each closed barrier’s perfect window. Moving barriers settle before you reach them. Try again repeats your course; Home → Play now starts a new one.</p>
-          <p>Chain 2, 3 or 5 perfect dodges for <strong>×2, ×3 or ×5</strong> scoring. An ordinary dodge or a hit resets the chain.</p>
-          <p>Six perfect dodges in a row start <strong>5 seconds of Fever</strong>: invincibility and double points on top of your multiplier. Your chain restarts when Fever ends.</p>
-          <p>Each level clears after 12 obstacles without stopping the ball. The small completion banner fades above the rings. At levels 2, 5, 9 and 13 a new ring unlocks, up to six. Higher levels move faster. Level 1 is a short two-ring warm-up. Each tap or Space switches rings; from Level 2, a hollow marker shows the next target. With three or more rings, the route chooses inward or outward for you. Time your move; tapping again before a wall clears can move you back into danger. Follow the golden sparks through each wall’s safe gap. Six sparks earn one shield; you can hold two from five rings.</p>
-          <p>From level 2, barriers drift. From level 3, pulse gates open and close. Bosses rotate between alternating gaps, sweeping gaps and pulse timing. Watch the warning above the arena. Each obstacle settles before you reach it; a dotted gap is safe.</p>
-        </details></div></details>
+<details class="mobile-fold help-fold" id="game-guide" aria-labelledby="guide-title">
+<summary id="guide-title">How to play</summary><div class="fold-body game-guide">
+  <p class="guide-intro">Keep your ball moving around the rings. Shift into the golden gap before each coral barrier reaches you.</p>
+  <h3>Your first round</h3>
+  <ol>
+    <li><strong>Choose a name.</strong> Save a nickname to join the shared Top 10. “Play without ranking” lets you practise without submitting scores.</li>
+    <li><strong>Choose a challenge and press Play now.</strong> The ball starts moving by itself after a short countdown.</li>
+    <li><strong>Watch the nearest barrier.</strong> Its pale outline marks the immediate danger. The golden spark and glow mark the safe gap.</li>
+    <li><strong>Tap once to shift.</strong> On a phone, tap the game area. On a computer, click it or press Space. You do not need to steer or hold the screen.</li>
+    <li><strong>Let the barrier pass, then read the next gap.</strong> Tapping repeatedly can send you back into danger.</li>
+    <li><strong>After a hit ends the round, try again.</strong> Your result shows the score and whether it saved. Retry repeats the same course; Home → Play now gives you a new course.</li>
+  </ol>
+  <h3>Which ring will I move to?</h3>
+  <p>Level 1 has two rings: each tap switches to the other ring. From Level 2, a hollow blue marker shows the destination. Each tap moves just <strong>one neighbouring ring</strong>; the game chooses inward or outward toward the nearest wall’s safe gap.</p>
+  <p>If you are already in the safe gap, wait. A second tap before that wall passes can move you back to the blocked ring. An open, dotted gate is safe to pass through.</p>
+  <h3>Sparks and shields</h3>
+  <ul>
+    <li><strong>Golden sparks:</strong> collect them by passing through their ring. Six sparks fill one shield.</li>
+    <li><strong>One circle around the ball:</strong> one shield. Two circles mean two shields. The ball keeps its chosen colour.</li>
+    <li><strong>Shield capacity:</strong> one with two to four rings; two from five rings at Level 9.</li>
+    <li><strong>A barrier hit:</strong> uses one shield and gives brief protection. With no shield or Fever protection, a hit ends the round.</li>
+    <li><strong>Pink sparks:</strong> optional bonuses between walls. Follow the next gap early if it is safe; survival comes first.</li>
+  </ul>
+  <h3>Perfect shifts, combos and Fever</h3>
+  <p>Move away from a closed barrier when its gold timing outline appears. Clear it safely to earn <strong>PERFECT! +25</strong> base points. The precise window is 0.20–0.38 seconds before its centre reaches you. Switching back cancels the attempt. A later narrow escape can earn <strong>CLOSE! +5</strong> instead.</p>
+  <p>Chain 2, 3 and 5 perfect dodges for <strong>×2, ×3 and ×5</strong> scoring. An ordinary dodge or a hit breaks the chain outside Fever. Six consecutive perfect dodges start <strong>five seconds of Fever</strong>: invincibility, glowing rings and double points on top of your combo. Fever protects your shields; the chain resets when Fever ends.</p>
+  <div class="guide-table-wrap"><table class="guide-table"><caption>Base scoring</caption><thead><tr><th scope="col">Action</th><th scope="col">Points</th></tr></thead><tbody>
+    <tr><td>Pass a barrier</td><td>+1</td></tr><tr><td>Golden spark</td><td>+10</td></tr><tr><td>Perfect shift bonus</td><td>+25</td></tr><tr><td>Near-miss bonus</td><td>+5</td></tr><tr><td>Pink spark</td><td>+40</td></tr><tr><td>Complete the level’s goal</td><td>+100</td></tr>
+  </tbody></table></div>
+  <p>Combo and Fever multiply barrier, spark and shift points. The level-goal bonus stays at 100 points. Open <strong>Run progress</strong> during play to see your current goal.</p>
+  <h3>Levels and patterns</h3>
+  <p>Clear <strong>12 barriers</strong> to complete a level. New rings arrive at Levels <strong>2, 5, 9 and 13</strong>, up to six rings. Speed increases gradually. Level messages appear above the rings while you keep playing, with a safe gap before the next barriers.</p>
+  <p>Patterns change between steady barriers, drifting barriers and gates that open and close. Read the warning above the arena: moving barriers and gates settle before you reach them. Every tenth level is a boss with alternating, sweeping or pulse gaps. Finish all <strong>100 levels</strong> to earn the champion trophy.</p>
+  <h3>Choose your game</h3>
+  <ul>
+    <li><strong>Play now:</strong> the 100-level run. Your highest completed score counts toward the main Top 10 when ranked.</li>
+    <li><strong>Challenge choices:</strong> survive five levels, collect 20 sparks or make five perfect shifts. These are goals within the run; completing one does not stop play.</li>
+    <li><strong>5-level sprint:</strong> a short run that finishes after five levels. It is unranked.</li>
+    <li><strong>Daily challenge:</strong> two minutes on the same course for everyone that day, with its own Top 10. It needs a saved online nickname and resets at 05:30 IST (00:00 UTC).</li>
+    <li><strong>Practice:</strong> choose an unlocked level under Progress &amp; rewards. Practice and the tutorial do not submit scores or unlock rewards.</li>
+  </ul>
+  <h3>Pause, sound and saved scores</h3>
+  <p>Use Pause, or press P or Escape on a computer. Leaving the game pauses it automatically. Music and sound effects have separate switches; enable them after pressing Play if your browser asks. Optional vibration is in Settings.</p>
+  <p>The home <strong>Board best</strong> is the score confirmed by the server for your current player. Offline play uses a <strong>Device best</strong>. Wait for “Best saved” after a ranked round. If a score is waiting to save, use Retry on the result screen or home board. A lower score never replaces a higher one. A nickname is a display name, not a login; use the same browser and site to keep your player identity.</p>
+  <button id="tutorial-start" class="secondary-button">Practise for 10 seconds</button>
+</div></details>
       </section>
 
       <section class="game-screen" id="game-screen" aria-label="Play Loop Shift" hidden>

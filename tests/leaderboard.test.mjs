@@ -95,7 +95,10 @@ test('name dialog, safe text rendering, score saving and offline retry use the r
     assert.equal(nodes.get('board-rows').children[0].children[1].textContent,'Orbit Giri · You');
     fail=true;ui.beginRound();ui.submit(120,3);await new Promise(r=>setTimeout(r,30));assert.equal(nodes.get('retry-score').hidden,false);
     assert.match(nodes.get('score-save-status').textContent,/not saved/);
-    fail=false;let challenge;
+    fail=false;DB.sqlite.exec('UPDATE players SET last_submit_at=0');
+    await nodes.get('retry-board-score').events.click();
+    assert.equal(ui.best(),120,'Failed best is retained and retried from Home');
+    let challenge;
     await ui.beginDaily(data=>{challenge=data;});assert.equal(challenge.duration,120);assert.ok(challenge.token);
     DB.sqlite.exec('UPDATE daily_runs SET started_at=started_at-10000');
     ui.beginRound();ui.submit(90,3,challenge);await new Promise(r=>setTimeout(r,30));
@@ -128,4 +131,86 @@ test('fresh-start migration removes old boards once and retains subsequent score
   DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('new','New',200,2)");DB.close();DB=openDatabase(file,migrations);
   assert.equal(DB.sqlite.prepare('SELECT best FROM players').get().best,200);
  }finally{DB.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+function browserBoard(call,store=new Map(),state={}){
+ const nodes=new Map(),listeners={},timers=new Set();
+ const node=(id='')=>({id,children:[],value:'',textContent:'',hidden:false,disabled:false,open:false,events:{},attrs:{},classList:{add(){}},
+   setAttribute(k,v){this.attrs[k]=v;},addEventListener(t,f){this.events[t]=f;},append(...items){this.children.push(...items);},replaceChildren(){this.children=[];},showModal(){this.open=true;},close(){this.open=false;},focus(){}});
+ for(const [,id] of readFileSync(new URL('../www/index.html',import.meta.url),'utf8').matchAll(/id="([^"]+)"/g))nodes.set(id,node(id));
+ const sandbox={console,AbortController,TypeError,
+   setTimeout(fn,ms){const timer=setTimeout(()=>{timers.delete(timer);fn();},ms);timers.add(timer);return timer;},clearTimeout(t){clearTimeout(t);timers.delete(t);},
+   localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},document:{getElementById:id=>nodes.get(id),createElement:()=>node()},window:{addEventListener:(name,fn)=>{listeners[name]=fn;}},
+   fetch:async(url,opts)=>{
+     if(state.offline)throw new TypeError('offline');
+     const path=url.replace('./api/','');
+     if(state.beforeRequest)await state.beforeRequest(path,opts);
+     const {response,data}=await call(path,opts.body?JSON.parse(opts.body):null,state.user||'test-player');
+     if(state.afterRequest)await state.afterRequest(path,data);
+     return new Response(JSON.stringify(data),{status:response.status,headers:response.headers});
+   }};
+ vm.runInNewContext(readFileSync(new URL('../www/leaderboard.js',import.meta.url),'utf8'),sandbox);
+ return {ui:sandbox.window.LoopShiftBoard,nodes,listeners,store,close(){for(const t of timers)clearTimeout(t);}};
+}
+
+test('failed best survives immediate retry, a lower round and page reload for the same player',async()=>{
+ const {DB,call}=fixture();let a,b;
+ try{
+  await call('player',{name:'Orbit Giri'});
+  const state={offline:false};a=browserBoard(call,new Map(),state);await a.ui.refresh();
+  state.offline=true;a.ui.beginRound();await a.ui.submit(500,10);
+  a.ui.beginRound();await a.ui.submit(40,2);
+  assert.equal(a.nodes.get('retry-board-score').hidden,false);
+  const queue=JSON.parse([...a.store.entries()].find(([key])=>key.startsWith('loop-shift-score-queue-v3:'))[1]);
+  assert.equal(queue.length,1);assert.equal(queue[0].score,500);assert.equal(queue[0].duration,10);
+  a.close();state.offline=false;b=browserBoard(call,a.store,state);await b.ui.refresh();
+  await new Promise(r=>setTimeout(r,30));
+  assert.equal((await call('leaderboard')).data.me.best,500);
+  assert.equal(b.ui.best(),500);assert.match(b.nodes.get('board-save-status').textContent,/Best saved/);
+  assert.equal(b.nodes.get('board-rows').children[0].children[1].textContent,'Orbit Giri · You');
+  assert.equal(JSON.parse([...b.store.entries()].find(([key])=>key.startsWith('loop-shift-score-queue-v3:'))[1]).length,0);
+ }finally{a?.close();b?.close();DB.close();}
+});
+
+test('queued scores stay with their player identity, never another nickname or cookie',async()=>{
+ const {DB,call}=fixture();let a,b;
+ try{
+  await call('player',{name:'First'},'first');await call('player',{name:'Second'},'second');
+  const state={user:'first'};a=browserBoard(call,new Map(),state);await a.ui.refresh();
+  state.offline=true;await a.ui.submit(900,15);a.close();
+  b=browserBoard(call,a.store,{user:'second'});await b.ui.refresh();await new Promise(r=>setTimeout(r,20));
+  assert.equal(b.ui.best(),0);assert.equal((await call('leaderboard',null,'second')).data.me.best,0);
+  assert.match(b.nodes.get('board-you').textContent,/Second/);
+ }finally{a?.close();b?.close();DB.close();}
+});
+
+test('slow saves and refreshes cannot replace a newer higher score; lower scores keep the best',async()=>{
+ const {DB,call}=fixture();let client,release;
+ try{
+  await call('player',{name:'Fast Retry'});
+  let held=true;const gate=new Promise(r=>{release=r;});
+  client=browserBoard(call,new Map(),{beforeRequest:async path=>{
+    if(path==='scores'){if(held){held=false;await gate;}DB.sqlite.exec('UPDATE players SET last_submit_at=0');}
+  }});
+  await client.ui.refresh();client.ui.beginRound();const first=client.ui.submit(100,3);
+  client.ui.beginRound();const higher=client.ui.submit(700,12);const refresh=client.ui.refresh(true);
+  release();await Promise.all([first,higher,refresh]);
+  assert.equal(client.ui.best(),700);assert.equal(client.nodes.get('board-rows').children[0].children[2].textContent,'700');
+  client.ui.beginRound();await client.ui.submit(50,3);assert.equal(client.ui.best(),700);
+ }finally{release?.();client?.close();DB.close();}
+});
+
+test('rate-limited score retries automatically and daily scores remain separate',async()=>{
+ const {DB,call}=fixture();let client;
+ try{
+  await call('player',{name:'Daily Orbit'});client=browserBoard(call);await client.ui.refresh();
+  await client.ui.submit(80,3);client.ui.beginRound();await client.ui.submit(180,4);
+  assert.match(client.nodes.get('board-save-status').textContent,/not saved yet/);
+  await new Promise(r=>setTimeout(r,1250));assert.equal(client.ui.best(),180);
+  let daily;await client.ui.beginDaily(value=>{daily=value;});DB.sqlite.exec('UPDATE daily_runs SET started_at=started_at-10000');
+  client.ui.beginRound();await client.ui.submit(50,3,daily);
+  assert.equal(client.ui.best(),180,'Daily result cannot overwrite main personal best');
+  assert.equal(client.nodes.get('board-title').textContent,'🏆 Daily Top 10');
+  assert.equal(client.nodes.get('board-rows').children[0].children[2].textContent,'50');
+ }finally{client?.close();DB.close();}
 });

@@ -416,3 +416,62 @@ assert.ok(Math.abs(rhythm.run('audioTransport.phase'))<1e-8,'The beat cue coinci
 rhythm.run('rows=[];addRow(angle+speedNow()*.84,12);rows[0].phase=1;updateRow(rows[0]);');
 assert.equal(rhythm.run('rows[0].angle'),rhythm.run('rows[0].baseAngle'));assert.equal(rhythm.run('rows[0].locked'),true);
 console.log('PASS: repeatable courses across six rings, short introduction, rhythm grid, synchronized cues and landing feedback.');
+
+// Every level boundary must preserve the player's position and the music phase.
+// All geometry uses the same transition, including collisions and a tap in flight.
+for(const reduced of [false,true]){
+  const flow=game(false,null,reduced);flow.click('home-play');flow.run('startDelay=0');
+  flow.run(`
+    for(let next=2;next<=100;next++){
+      lane=Math.min(1,ringCount-1);radius=laneRadius(lane);passes=(next-1)*12;
+      trail=[{a:angle-.01,r:radius},{a:angle,r:radius}];
+      globalThis.beforeFlow={angle,radius,speed:motionSpeed,color:levelColor(),phase:rhythmPhase(),epoch:rhythmEpoch,rings:Array.from({length:ringCount},(_,n)=>laneRadius(n)),trail:JSON.stringify(trail)};
+      levelUp(next);
+      if(angle!==beforeFlow.angle||radius!==beforeFlow.radius||motionSpeed!==beforeFlow.speed)throw Error('Player jumped at level '+next);
+      if(levelColor()!==beforeFlow.color||JSON.stringify(trail)!==beforeFlow.trail)throw Error('Visuals snapped at level '+next);
+      if(beforeFlow.rings.some((r,n)=>Math.abs(r-laneRadius(n))>1e-12))throw Error('Ring jumped at level '+next);
+      if(Math.abs(rhythmPhase()-beforeFlow.phase)>1e-8||rhythmEpoch!==beforeFlow.epoch)throw Error('Music restarted at level '+next);
+      if(startDelay!==0||mode!=='playing')throw Error('Transition stopped play');
+      if((rows[0].baseAngle-angle)/speedNow()<2.3-1e-8)throw Error('Missing safe gap');
+      for(let step=0;step<144;step++){
+        const oldR=radius,oldAngle=angle;update(1/120);
+        if(angle<=oldAngle||Math.abs(radius-oldR)>.002)throw Error('Abrupt motion at level '+next);
+        if(Math.abs(radius-laneRadius(lane))>1e-10)throw Error('Ball left its moving ring');
+      }
+      if(levelTransition!==null||Math.abs(radius-baseLaneRadius(lane,ringCount))>1e-10)throw Error('Incomplete morph');
+      if(levelColor()!==THEMES[(next-1)%THEMES.length][0])throw Error('Wrong destination colour');
+    }
+  `);
+}
+const midShift=game();midShift.click('home-play');midShift.run(`startDelay=0;shift();update(.02);passes=12;
+  globalThis.oldOffset=radius-laneRadius(lane);globalThis.oldLanding=landing;levelUp(2);
+  globalThis.newOffset=radius-laneRadius(lane);
+`);
+assert.ok(Math.abs(midShift.run('newOffset-oldOffset'))<1e-12,'Transition keeps an in-flight shift');
+assert.equal(midShift.run('landing'),midShift.run('oldLanding'));
+midShift.run('setPaused(true);globalThis.frozenFlow=JSON.stringify([levelTransition,radius,angle,departingRows]);update(.5);');
+assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Pause freezes ring morph');
+midShift.run('setPaused(false);update(.1);');
+assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Resume countdown freezes ring morph');
+midShift.run('startDelay=0;update(.2);');assert.ok(midShift.run('levelTransition.elapsed')>0,'Morph resumes after countdown');
+
+const previews=game();previews.click('home-play');
+previews.run(`startDelay=0;for(let i=0;i<9000&&level<5&&mode==='playing';i++){
+  if(rows.some(row=>row.index>=level*12))throw Error('Next-level wall previewed with old geometry');
+  const next=rows.find(row=>!row.passed);if(next&&lane!==next.sparkLane&&(next.angle-angle)/speedNow()<=.3)shift();
+  update(1/120);
+}`);
+assert.equal(previews.run('level'),5);
+console.log('PASS: 99 smooth level boundaries, stable trails, continuous audio phase, safe ring morphs, pause/resume and no premature next-level walls.');
+
+const guideHelp=game();guideHelp.click('tutorial-play');
+assert.equal(guideHelp.nodes.get('game-guide').open,true,'How to play opens full instructions');
+assert.equal(guideHelp.run('screen'),'home','Reading instructions does not start a run');
+assert.equal(guideHelp.focus(),'guide-title');guideHelp.click('tutorial-start');
+assert.equal(guideHelp.run('roundKind'),'tutorial');
+const boardBest=game();boardBest.run('window.LoopShiftBoard={best:()=>72};updateHUD();');
+assert.equal(boardBest.nodes.get('home-best').textContent,'072','Home matches server-confirmed score');
+assert.equal(boardBest.nodes.get('home-best-label').textContent,'BOARD BEST');
+assert.equal(boardBest.nodes.get('best').textContent,'072');
+boardBest.run('window.LoopShiftBoard.best=()=>null;updateHUD();');
+assert.equal(boardBest.nodes.get('home-best').textContent,'143');assert.equal(boardBest.nodes.get('home-best-label').textContent,'DEVICE BEST');

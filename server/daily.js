@@ -10,7 +10,7 @@ export async function dailyBoard(db,id,day=dailyInfo().day){
   const profile=id?await db.prepare('SELECT name,highest_level,furthest_pass,achievements,best_chain,best_clean FROM players WHERE id=?').bind(id).first():null;
   const mine=id?await db.prepare('SELECT best,achieved_at FROM daily_scores WHERE day=? AND player_id=?').bind(day,id).first():null;
   const rank=mine?.best>0?(await db.prepare('SELECT COUNT(*)+1 AS rank FROM daily_scores WHERE day=? AND (best>? OR (best=? AND (achieved_at<? OR (achieved_at=? AND player_id<?))))').bind(day,mine.best,mine.best,mine.achieved_at,mine.achieved_at,id).first()).rank:null;
-  return {challenge:dailyInfo(Date.parse(day+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,score:p.best,isYou:p.player_id===id})),me:profile?{name:profile.name,best:mine?.best||0,rank,progress:{highest:profile.highest_level,distance:profile.furthest_pass,badges:profile.achievements,chain:profile.best_chain,clean:profile.best_clean}}:null};
+  return {challenge:dailyInfo(Date.parse(day+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,score:p.best,isYou:p.player_id===id})),me:profile?{key:id,name:profile.name,best:mine?.best||0,rank,progress:{highest:profile.highest_level,distance:profile.furthest_pass,badges:profile.achievements,chain:profile.best_chain,clean:profile.best_clean}}:null};
 }
 export async function dailyAction(path,db,id,data,now){
   if(path==='/api/daily/start'){
