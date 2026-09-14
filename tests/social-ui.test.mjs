@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {uiHarness,settle} from './ui-harness.mjs';
+import {uiHarness,settle,waitFor} from './ui-harness.mjs';
 import {openDatabase} from '../scripts/sqlite-adapter.mjs';
 import {api} from '../server/api.js';
 const migrations=new URL('../drizzle/',import.meta.url).pathname;
@@ -42,9 +42,9 @@ test('an interrupted reward queue cannot be submitted for another player',async(
 test('private group UI creates, displays codes, joins and renders member names as text',async()=>{
   const f=await fixture();
   try{
-    const h=f.load();await settle();h.nodes.get('new-group-name').value='Orbit crew';h.nodes.get('group-create-form').events.submit({preventDefault(){}});await settle();
+    const h=f.load();await h.scope.window.LoopShiftSocial.refresh();h.nodes.get('new-group-name').value='Orbit crew';h.nodes.get('group-create-form').events.submit({preventDefault(){}});await waitFor(()=>h.nodes.get('group-name').textContent==='Orbit crew');
     assert.equal(h.nodes.get('group-name').textContent,'Orbit crew');const code=h.nodes.get('group-invite').textContent;assert.match(code,/^[A-F0-9]{12}$/);
-    f.user('bob');h.scope.window.LoopShiftSocial.identity(f.bob);await settle();h.nodes.get('join-group-code').value=code;h.nodes.get('group-join-form').events.submit({preventDefault(){}});await settle();
+    f.user('bob');h.scope.window.LoopShiftSocial.identity(f.bob);await h.scope.window.LoopShiftSocial.refresh();h.nodes.get('join-group-code').value=code;h.nodes.get('group-join-form').events.submit({preventDefault(){}});await waitFor(()=>h.nodes.get('friend-rows').children.length===2);
     assert.equal(h.nodes.get('friend-rows').children.length,2);assert.ok(h.nodes.get('friend-rows').children.some(row=>row.children[1].textContent==='Bob · You'));
     await h.click('group-copy');assert.equal(h.nodes.get('group-copy-text').hidden,false);assert.match(h.nodes.get('group-copy-text').value,/Invite code:/);
     h.scope.window.LoopShiftSocial.identity(null);assert.equal(h.nodes.get('group-view').hidden,true);assert.equal(h.nodes.get('group-copy-text').hidden,true);

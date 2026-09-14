@@ -321,8 +321,17 @@ function resize(){
 new ResizeObserver(resize).observe(canvas);
 
 function updateHome(){
-  $('home-best').textContent=pad(personalBest());
-  $('home-best-label').textContent=window.LoopShiftBoard?.best?.()!==null&&window.LoopShiftBoard?.best?.()!==undefined?'BOARD BEST':'DEVICE BEST';
+  const onlineBest=window.LoopShiftBoard?.best?.(),record=window.LoopShiftBoard?.record?.();
+  const hasOnlineBest=Number.isSafeInteger(onlineBest);
+  $('home-best').textContent=hasOnlineBest?pad(onlineBest):'—';
+  $('home-best-label').textContent='ONLINE BEST';
+  $('home-best-note').textContent=record?.pending>0?`100 levels · ${record.pending.toLocaleString()} points waiting to save.`:
+    hasOnlineBest?`100 levels · ${record?.connection==='offline'?'Last synced · Offline':'Saved online'}`:
+    record?.connection==='connecting'?'Connecting to your saved score…':
+    record?.connection==='offline'?'Offline · Online scores unavailable.':'Add a name to save ranked scores.';
+  if(!record?.pending)$('retry-home-score').hidden=true;
+  $('device-best').textContent=best.toLocaleString();
+  $('device-record').hidden=best<=0||(hasOnlineBest&&best===onlineBest);
   $('home-play-label').textContent=mode==='paused'?'Resume round':'Play now';
   $('home-new').hidden=mode!=='paused';
   $('home-status').hidden=mode!=='paused';
@@ -464,6 +473,7 @@ function warnPattern(row){
 }
 function updateHUD(){
   $('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='sprint'?5:100}`;
+  $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
   const full=shield>=shieldCapacity();
   $('shield-icons').textContent='◉'.repeat(shield)+'○'.repeat(shieldCapacity()-shield);
@@ -621,7 +631,7 @@ function crash(hitRow=null,completed=false){
   $('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
   $('play').focus({preventScroll:true});
-  $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected. Personal best ${best}.`;
+  $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected.`;
   if(isRankedMode())window.LoopShiftBoard?.submit(score,gameTime,timedRun()?dailyRun:null);
 }
 function update(dt){

@@ -183,12 +183,16 @@ body[data-hand="left"] .movement-controls{direction:rtl}body[data-hand="left"] .
 @media(prefers-reduced-motion:reduce){#challenge-list{animation:none}}
 
 /* A game menu: primary actions first, longer guidance available on demand. */
-.player-summary{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:360px;margin:20px 0}
+.player-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 16px;max-width:360px;margin:20px 0}
 .player-summary .player-line{display:grid;gap:0;margin:0;min-width:0}
 .player-summary .player-line .text-button{width:auto;text-align:left;margin:0;justify-self:start}
 .player-summary .home-best{display:grid;grid-template-columns:18px auto;gap:3px 7px;margin:0;flex-shrink:0}
 .player-summary .home-best svg{width:18px}
 .player-summary .home-best strong{grid-column:1/-1;text-align:right;margin:0}
+.home-record-status,.device-record{grid-column:1/-1;min-width:0;text-align:left;font-size:13px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+.home-record-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.home-record-status p{margin:0;flex:1 1 190px}
+.home-intro .home-record-status .text-button{width:auto;min-height:44px;margin:0;padding:6px;color:var(--lime)}
+.device-record summary{min-height:44px;align-content:center;cursor:pointer}.device-record strong{color:var(--ink);font-variant-numeric:tabular-nums}.device-record p{margin:4px 0 0}
 .quick-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:min(100%,280px);gap:10px;margin:12px 0 0}
 .secondary-button{min-height:50px;padding:10px 8px;border:1px solid #506444;border-radius:12px;background:#1a2a20;color:var(--ink);font-weight:700;font-size:14px;line-height:1.4}
 .secondary-button:hover{background:#2c4029;border-color:var(--lime)}

@@ -33,7 +33,7 @@ async function board(db, id) {
     const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?)))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
     rank = row.rank;
   }
-  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, title:me.selected_title, best: me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
+  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, title:me.selected_title, best: me.best, mainBest:me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
 }
 export async function api(request, env) {
   const path = new URL(request.url).pathname;
@@ -78,6 +78,8 @@ export async function api(request, env) {
       return json(await board(db, who.id), 200, who.cookie ? { 'Set-Cookie': who.cookie } : {});
     }
     if (!who.id) return json({ error: 'Enter your nickname to join the board.' }, 401);
+    // A queued round belongs to the identity that played it, even if the cookie changed in another tab.
+    if (['/api/scores','/api/daily/score','/api/weekly/score'].includes(path) && data.playerKey !== undefined && data.playerKey !== who.id) return json({ error:'Your player changed. Refresh the board before saving.' }, 401);
     const player = await db.prepare('SELECT id FROM players WHERE id = ?').bind(who.id).first();
     if (!player) return json({ error: 'Enter your nickname to join the board.' }, 401);
     if(path==='/api/progress'){

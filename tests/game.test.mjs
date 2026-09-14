@@ -58,7 +58,8 @@ function game(native = false, saved = null, reduced = false) {
 
 const t = game();
 assert.equal(t.run('screen'), 'home');
-assert.equal(t.nodes.get('home-best').textContent, '143');
+assert.equal(t.nodes.get('home-best').textContent, '—');
+assert.equal(t.nodes.get('device-best').textContent, '143');
 t.click('home-play'); assert.equal(t.run('screen'), 'game'); assert.equal(t.focus(), 'shift');
 const angle = t.run('angle'); t.run('update(.1)'); assert.equal(t.run('angle'), angle, 'Countdown must freeze motion');
 t.run('for(let i=0;i<120;i++){totalTime+=1/60;update(1/60)}');
@@ -471,10 +472,12 @@ assert.equal(guideHelp.focus(),'guide-title');guideHelp.click('tutorial-start');
 assert.equal(guideHelp.run('roundKind'),'tutorial');
 const boardBest=game();boardBest.run('window.LoopShiftBoard={best:()=>72};updateHUD();');
 assert.equal(boardBest.nodes.get('home-best').textContent,'072','Home matches server-confirmed score');
-assert.equal(boardBest.nodes.get('home-best-label').textContent,'BOARD BEST');
+assert.equal(boardBest.nodes.get('home-best-label').textContent,'ONLINE BEST');
 assert.equal(boardBest.nodes.get('best').textContent,'072');
 boardBest.run('window.LoopShiftBoard.best=()=>null;updateHUD();');
-assert.equal(boardBest.nodes.get('home-best').textContent,'143');assert.equal(boardBest.nodes.get('home-best-label').textContent,'DEVICE BEST');
+assert.equal(boardBest.nodes.get('home-best').textContent,'—');assert.equal(boardBest.nodes.get('home-best-label').textContent,'ONLINE BEST');
+assert.equal(boardBest.nodes.get('device-best').textContent,'143');
+assert.equal(boardBest.nodes.get('best-label').textContent,'DEVICE BEST');
 
 // Weekly rules change their advertised mechanic only, and retain a fair route.
 for(const rule of ['no-fever','double-sparks','one-shield']){

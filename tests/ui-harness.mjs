@@ -19,3 +19,10 @@ export function uiHarness(extra={}){
     frame(time){clock=time;const callbacks=[...raf.values()];raf.clear();for(const fn of callbacks)fn(time);}};
 }
 export async function settle(){for(let i=0;i<8;i++)await new Promise(r=>setImmediate(r));}
+export async function waitFor(predicate,message='UI did not finish updating'){
+  const deadline=Date.now()+2000;
+  while(!predicate()){
+    if(Date.now()>=deadline)throw new Error(message);
+    await new Promise(r=>setTimeout(r,5));
+  }
+}

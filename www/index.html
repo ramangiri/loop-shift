@@ -44,7 +44,9 @@
             <p class="intro-copy">Shift rings. Dodge barriers.</p>
             <div class="player-summary"><div class="player-line"><span id="player-label">Ready to play?</span><button class="text-button" id="edit-name">Add name</button></div>
 
-            <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">DEVICE BEST</span><strong id="home-best">000</strong></div></div>
+            <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">ONLINE BEST</span><strong id="home-best">—</strong></div>
+            <div class="home-record-status"><p id="home-best-note" role="status">Connecting to your saved score…</p><button class="text-button" id="retry-home-score" hidden>Retry save</button></div>
+            <details class="device-record" id="device-record" hidden><summary>On this device: <strong id="device-best">0</strong></summary><p>This record can include offline rounds or another player. Only scores saved to your profile appear on the shared board.</p></details></div>
             <div class="run-options" id="challenge-picker">
               <label id="challenge-label" for="challenge-choice">CHALLENGE</label>
               <button type="button" id="challenge-choice" value="survive" aria-haspopup="listbox" aria-expanded="false" aria-controls="challenge-list" aria-labelledby="challenge-label challenge-value">
@@ -103,8 +105,9 @@
           <p id="board-status" role="status">Loading the leaderboard…</p>
           <div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
           <p class="board-you" id="board-you" hidden></p>
+          <button class="text-button" id="board-add-name" hidden>Add name</button>
           <p id="board-save-status" role="status" hidden></p><button id="retry-board-score" class="text-button" hidden>Retry saving score</button>
-          <p class="board-note">Only completed ranked rounds appear here. Ties go to the earlier score.</p>
+          <p class="board-note">Your row is marked “You”. Each mode has its own best. Only saved ranked rounds count; ties go to the earlier score.</p>
         </div></section>
 <details id="friends-panel" class="mobile-fold friends-panel"><summary>Friends &amp; private boards</summary><div class="fold-body">
   <p id="groups-status" role="status">Create a group or join with an invite code.</p>
@@ -188,7 +191,7 @@
   <p>After a loss, “Why did I lose?” plays the last three seconds at half speed in a separate viewer. Coral and white mark the collision; mint marks the safe ring. You can stop or retry immediately. “Share your result” creates a score card you can share or save as an image.</p>
   <h3>Pause, sound and saved scores</h3>
   <p>Use Pause, or press P or Escape on a computer. Leaving the game pauses it automatically. Music and sound effects have separate switches; enable them after pressing Play if your browser asks. Optional vibration is in Settings.</p>
-  <p>The home <strong>Board best</strong> is the score confirmed by the server for your current player. Offline play uses a <strong>Device best</strong>. Wait for “Best saved” after a ranked round. If a score is waiting to save, use Retry on the result screen or home board. A lower score never replaces a higher one. A nickname is a display name, not a login; use the same browser and site to keep your player identity.</p>
+  <p><strong>Online best</strong> on Home is your saved 100-level score. It matches your own “You” row on that board, even if another player is ranked first. Daily and Weekly have separate records. A dash means no online record has been loaded for your player yet. <strong>On this device</strong> keeps the local record, which can include offline rounds or other players; it is not automatically uploaded. Wait for “Best saved” after a ranked round. If a score is waiting to save, use Retry save on Home or the result screen. Lower scores never replace higher ones. A nickname is a display name, not a login; use the same browser and site to keep your player identity.</p>
   <button id="tutorial-start" class="secondary-button">Practise for 10 seconds</button>
 </div></details>
       </section>
@@ -201,7 +204,7 @@
 
       <section class="console" aria-label="Loop Shift game">
         <div class="scoreboard">
-          <div class="stat"><span>BEST</span><strong id="best">000</strong></div>
+          <div class="stat"><span id="best-label">BEST</span><strong id="best">000</strong></div>
           <div class="stat main-score"><span>SCORE</span><strong id="score">000</strong></div>
           <div class="stat right-stat"><span>LEVEL</span><strong id="level">01 / 100</strong></div>
         </div>

@@ -2,6 +2,16 @@
 
 Two screens: Home and Play. Players choose a nickname before their first round. Home shows the ten highest personal bests and the current player's rank.
 
+## Online score display fix (2.2.1)
+
+Home's **Online best** now always uses the current player's server-confirmed 100-level score, matching their own **You** row on that board. An unrecognised player sees a dash and Add name. The local record is retained under the collapsed **On this device** explanation, rather than replacing an online score. It can contain offline rounds or another player's runs and is never automatically uploaded. There is no migration or reset of existing scores.
+
+Pending main-game points appear beside the Home record with Retry save when needed. A connection failure retains the last confirmed value and labels it Last synced; a successful retry updates Home and the leaderboard together. Daily and Weekly responses also carry the current main best, so switching tabs or players cannot leave Home showing an old player's record. Their own challenge scores remain separate.
+
+A missing server identity clears the stale nickname and requires choosing a player or explicitly opting into unranked play. Pending queues remain scoped to their original player. Score requests include that player key as an ownership check against the authenticated cookie; changing cookies cannot transfer a queued round to another profile, even one with the same nickname. Nicknames do not recover lost identities. The old bare device-best number has no ranked-round duration/ownership record and cannot be certified or backfilled.
+
+This fixes display and session handling, not ephemeral hosting storage. The durable-storage requirement below still applies. Integration tests reproduce local 612 versus online 32, save/retry a genuine completed round, check lower-score protection, cookie changes, reloads and mode separation using the actual frontend and API.
+
 ## Collections, weekly twists and friends (2.2)
 
 - **Boss collection:** ten distinct trophies, one for each boss at Levels 10 through 100. Finish the main run to save its earned trophies. Existing saved barrier progress awards previously cleared boss trophies during migration; scores and earlier unlocks are preserved. Device-only runs keep a separate local collection.
@@ -33,7 +43,7 @@ A static host such as GitHub Pages runs the game with the existing **Play withou
 
 ## Leaderboard saving and game guide
 
-The home Top 10 is always visible. Rank, Player and Best score have separate spacing on phones and desktops; each row displays the saved nickname. Board best is the server-confirmed best for the current browser's player identity. Device best labels offline/local records separately, so a local score is not presented as a successfully uploaded score.
+The home Top 10 is always visible. Rank, Player and Best score have separate spacing on phones and desktops; each row displays the saved nickname. Online best is the server-confirmed 100-level best for the current browser's player identity. On this device keeps offline/local records separate. The first-place player's score is not necessarily your personal best; your own row is marked You.
 
 Ranked score submissions are serialized and queued until acknowledged. A failed main-game score survives Try again, later lower scores and a reload when browser storage is available. The highest queued main score retains its original duration. Queues are scoped to the server's opaque player key and never restored for another identity. Retry is available on both Home and the result screen; reconnecting retries the queue and rate-limit responses receive a delayed retry. Daily scores stay separate, and an unsaved daily attempt is retried before starting a replacement. Expired/replaced daily attempts show a failure and do not block all future attempts. This does not restore historical scores that were already lost.
 
