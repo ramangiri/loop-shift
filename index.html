@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101916">
+  <meta name="description" content="Time perfect shifts, build combos and unleash Fever. Unlock new balls and trails in Loop Shift, a one-tap arcade game.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Loop Shift">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <title>Loop Shift — One-tap arcade</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101916'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23d6ff62' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='11' fill='none' stroke='%23d6ff62' stroke-width='3'/%3E%3Ccircle cx='53' cy='32' r='6' fill='%23ff8a75'/%3E%3C/svg%3E">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./game.js"></script>
+</head>
+<body data-screen="home">
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" id="brand-home" href="#home" aria-label="Loop Shift home"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16"/><circle cx="20" cy="20" r="8"/><circle class="logo-dot" cx="36" cy="20" r="4"/></svg><span>LOOP SHIFT<span class="brand-sub">POCKET ARCADE</span></span></a>
+      <div class="tools">
+        <button class="install-button" id="install" hidden>Install game <span aria-hidden="true">↗</span></button>
+        <button class="icon-button" id="sound" aria-label="Turn sound on" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path id="sound-lines" d="m16 9 6 6m0-6-6 6"/></svg></button>
+        <button class="icon-button" id="pause" aria-label="Pause game" disabled hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path id="pause-icon" d="M8 5v14M16 5v14"/></svg></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="home-screen" id="home-screen" aria-labelledby="home-title">
+        <div class="home-hero">
+          <div class="home-intro">
+            <div class="eyebrow"><span class="tiny-cross" aria-hidden="true">✳</span> ONE TAP. ENDLESS ORBITS.</div>
+            <h1 id="home-title">LOOP<br><span>SHIFT</span><span class="title-period">.</span></h1>
+            <p class="intro-copy">Two orbits. One perfectly timed tap.</p>
+            <div class="mode-picker" aria-label="Game mode selector">
+              <button class="mode-option active" type="button" data-mode="arcade">Arcade</button>
+              <button class="mode-option" type="button" data-mode="challenge">Challenge</button>
+              <button class="mode-option" type="button" data-mode="rush">Rush</button>
+              <button class="mode-option" type="button" data-mode="score">Score</button>
+            </div>
+            <div class="mode-goal" id="mode-goal">Objective: chain 3 perfects for Fever.</div>
+            <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span>PERSONAL BEST</span><strong id="home-best">000</strong></div>
+            <div class="mini-stats" aria-live="polite">
+              <div><span>BEST CHAIN</span><strong id="home-best-chain">0</strong></div>
+              <div><span>LAST RUN</span><strong id="home-last-run">000</strong></div>
+            </div>
+            <button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
+            <button class="text-button" id="home-new" hidden>Start a new round</button>
+            <p class="home-status" id="home-status">Find your rhythm. Beat your best.</p>
+          </div>
+          <div class="home-orbit" aria-hidden="true">
+            <svg class="orbit-diagram" viewBox="0 0 440 440">
+              <circle class="orbit-guide" cx="220" cy="220" r="205"/>
+              <circle class="orbit-track" cx="220" cy="220" r="171"/>
+              <circle class="orbit-track" cx="220" cy="220" r="117"/>
+              <circle class="orbit-line" cx="220" cy="220" r="171"/>
+              <circle class="orbit-line" cx="220" cy="220" r="117"/>
+              <path class="demo-barrier" d="M378 155a171 171 0 0 1 11 43M104 210a117 117 0 0 1 8-32M307 312a117 117 0 0 1-33 17"/>
+              <path class="demo-spark" d="m337 206 9 14-9 14-9-14ZM99 330l9 14-9 14-9-14ZM220 94l9 14-9 14-9-14Z"/>
+              <path class="demo-switch" d="M220 49v54m-7-8 7 8 7-8"/>
+              <g class="demo-runner"><circle class="demo-glow" cx="220" cy="49" r="19"/><circle class="demo-orb" cx="220" cy="49" r="10"/></g>
+              <text class="demo-title" x="220" y="215" text-anchor="middle">GET IN</text>
+              <text class="demo-title" x="220" y="247" text-anchor="middle">THE LOOP.</text>
+            </svg>
+            <span class="orbit-caption">SWITCH RINGS. STAY IN PLAY.</span>
+          </div>
+        </div>
+        <div class="how-to">
+          <h2>One tap. More ways to find your flow.</h2>
+          <div class="instructions">
+            <div><span class="key-symbol shift-symbol" aria-hidden="true">⇄</span><p><strong>Tap to switch</strong><span>Your ball moves on its own. Avoid coral.</span></p></div>
+            <div><span class="key-symbol barrier-symbol" aria-hidden="true"></span><p><strong>Chase the perfect</strong><span>Shift just before the coral barrier.</span></p></div>
+            <div><span class="key-symbol spark-symbol" aria-hidden="true">✦</span><p><strong>Collect six sparks</strong><span>Earn a shield for one free hit.</span></p></div>
+          </div>
+        </div>
+        <details class="rhythm-guide">
+          <summary>Perfect shifts, Fever &amp; new patterns</summary>
+          <p>Switch away from a barrier just as its gold outline appears. Clear it safely to earn <strong>PERFECT! +25</strong>. Each barrier pays once.</p>
+          <p>Chain 2, 3 or 5 perfect dodges for <strong>×2, ×3 or ×5</strong> scoring. An ordinary dodge or a hit resets the chain.</p>
+          <p>Six perfect dodges in a row start <strong>5 seconds of Fever</strong>: invincibility and double points on top of your multiplier. Your chain restarts when Fever ends.</p>
+          <p>From level 2, barriers drift. From level 3, pulse gates open and close. Watch the warning above the arena. Each obstacle settles before you reach it; a dotted gap is safe.</p>
+        </details>
+        <section class="progression" aria-labelledby="missions-title">
+          <div class="section-heading"><h2 id="missions-title">Little missions. New looks.</h2><span>Progress carries across rounds</span></div>
+          <div class="missions"><article class="mission" id="mission-sparks20"><span class="mission-symbol" aria-hidden="true">✦</span><div><h3>Collect 20 sparks</h3><p>Unlock Cyan ball</p><progress id="progress-sparks20" value="0" max="20" aria-label="Collect 20 sparks"></progress><span id="count-sparks20">0 / 20</span></div></article>
+<article class="mission" id="mission-perfect5"><span class="mission-symbol" aria-hidden="true">ϟ</span><div><h3>Make 5 perfect shifts</h3><p>Unlock Comet trail</p><progress id="progress-perfect5" value="0" max="5" aria-label="Make 5 perfect shifts"></progress><span id="count-perfect5">0 / 5</span></div></article>
+<article class="mission" id="mission-fever3"><span class="mission-symbol" aria-hidden="true">∞</span><div><h3>Activate Fever 3 times</h3><p>Unlock Prism ball</p><progress id="progress-fever3" value="0" max="3" aria-label="Activate Fever 3 times"></progress><span id="count-fever3">0 / 3</span></div></article>
+<article class="mission" id="mission-sparks60"><span class="mission-symbol" aria-hidden="true">✧</span><div><h3>Collect 60 sparks</h3><p>Unlock Stardust trail</p><progress id="progress-sparks60" value="0" max="60" aria-label="Collect 60 sparks"></progress><span id="count-sparks60">0 / 60</span></div></article></div>
+          <div class="wardrobe">
+            <div class="section-heading"><h2>Your look</h2><span id="look-summary">Lime ball · Glow trail</span></div>
+            <div class="look-groups">
+              <fieldset><legend>Ball colour</legend><div class="look-options"><button id="look-lime" class="look-option" aria-pressed="false"><span class="look-swatch swatch-lime" aria-hidden="true"></span><strong>Lime</strong><span id="state-lime">Locked</span></button><button id="look-cyan" class="look-option" aria-pressed="false"><span class="look-swatch swatch-cyan" aria-hidden="true"></span><strong>Cyan</strong><span id="state-cyan">Locked</span></button><button id="look-prism" class="look-option" aria-pressed="false"><span class="look-swatch swatch-prism" aria-hidden="true"></span><strong>Prism</strong><span id="state-prism">Locked</span></button></div></fieldset>
+              <fieldset><legend>Trail</legend><div class="look-options"><button id="look-glow" class="look-option" aria-pressed="false"><span class="look-swatch swatch-glow" aria-hidden="true"></span><strong>Glow</strong><span id="state-glow">Locked</span></button><button id="look-comet" class="look-option" aria-pressed="false"><span class="look-swatch swatch-comet" aria-hidden="true"></span><strong>Comet</strong><span id="state-comet">Locked</span></button><button id="look-stardust" class="look-option" aria-pressed="false"><span class="look-swatch swatch-stardust" aria-hidden="true"></span><strong>Stardust</strong><span id="state-stardust">Locked</span></button></div></fieldset>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="game-screen" id="game-screen" aria-label="Play Loop Shift" hidden>
+        <nav class="game-nav" aria-label="Game navigation"><button class="back-button" id="back-home"><span aria-hidden="true">←</span> Home</button><span id="mission-line">Collect 20 sparks · 0/20</span></nav>
+      <section class="console" aria-label="Loop Shift game">
+        <div class="scoreboard">
+          <div class="stat"><span>PERSONAL BEST</span><strong id="best">000</strong></div>
+          <div class="stat main-score"><span>SCORE</span><strong id="score">000</strong></div>
+          <div class="stat right-stat"><span>LEVEL</span><strong id="level">01</strong></div>
+        </div>
+        <p class="mode-goal game-goal" id="mode-goal-game">Objective: chain 3 perfects for Fever.</p>
+        <div class="rhythm-row"><div class="combo-stat"><strong id="combo">×1</strong><span id="combo-caption">SCORE MULTIPLIER</span></div><div class="fever-status"><div><span id="fever-label">FEVER</span><span id="fever-count">0 / 6</span></div><div class="fever-meter" id="fever-meter" role="meter" aria-label="Fever" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fever-fill"></i></div></div></div>
+        <p class="pattern-notice" id="pattern-notice" role="status">CLASSIC · Find your rhythm</p>
+        <div class="arena" id="arena">
+          <canvas id="game" aria-label="Two circular orbits. Tap the shift button to move your ball away from coral barriers and toward yellow sparks."></canvas>
+          <div class="orbit-center" id="orbit-center" aria-hidden="true"><span id="center-top">FIND YOUR</span><strong id="center-label">FLOW</strong><span id="center-bottom">KEEP IT GOING</span></div>
+          <div class="skill-effect" id="skill-effect" role="status"></div>
+          <div class="overlay" id="overlay" role="region" aria-labelledby="overlay-title">
+            <div class="overlay-card">
+              <span class="overlay-kicker" id="overlay-kicker">READY WHEN YOU ARE</span>
+              <h2 id="overlay-title">Get in the loop.</h2>
+              <p id="overlay-copy">You move automatically.<br>Tap to switch rings and stay alive.</p>
+              <div id="result" class="result" hidden><div><span>YOUR SCORE</span><strong id="result-score">0</strong></div><div><span>SPARKS</span><strong id="result-sparks">0</strong></div></div>
+              <button class="primary-button" id="play">Let's play <span aria-hidden="true">↗</span></button>
+              <button class="text-button" id="restart" hidden>Start a new round</button>
+              <button class="text-button overlay-home" id="result-home">Back to home</button>
+            </div>
+          </div>
+          <div class="toast" id="toast" aria-live="polite"></div>
+        </div>
+        <div class="charge-row"><span id="charge-label">SHIELD CHARGE</span><div class="charge" id="charge" role="meter" aria-label="Shield charge" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><i></i><i></i><i></i><i></i><i></i><i></i></div><span id="charge-count">0 / 6</span></div>
+        <button id="shift" class="shift-button" disabled><span class="shift-label">TAP TO SHIFT</span><span class="shift-arrows" aria-hidden="true">⇄</span></button>
+        <p class="mobile-hint"><span class="legend-orb"></span> YOU <span class="legend-barrier"></span> AVOID <span class="legend-spark">✦</span> COLLECT</p>
+      </section>
+      <div class="desktop-hint"><kbd>SPACE</kbd><span>to shift</span><kbd>P</kbd><span>to pause</span></div>
+      </section>
+    </main>
+    <footer><span>FIND YOUR FLOW.</span><span>ONE TAP / ENDLESS ORBITS</span></footer>
+    <p id="announcement" class="sr-only" aria-live="polite"></p>
+  </div>
+</body>
+</html>
