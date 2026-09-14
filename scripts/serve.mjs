@@ -9,10 +9,15 @@ const dataDirectory = fileURLToPath(new URL('../data/', import.meta.url));
 await mkdir(dataDirectory, {recursive:true});
 const DB = openDatabase(join(dataDirectory, 'leaderboard.sqlite'), fileURLToPath(new URL('../drizzle/', import.meta.url)));
 const port = Number(process.env.PORT || 8080), host = process.env.LOOPSHIFT_HOST || '127.0.0.1';
+// Use the public origin behind an HTTPS proxy; never trust caller-supplied forwarding headers.
+const publicOriginValue = process.env.LOOPSHIFT_PUBLIC_ORIGIN || process.env.RENDER_EXTERNAL_URL;
+const publicOrigin = publicOriginValue ? new URL(publicOriginValue) : null;
+if (publicOrigin && !['http:', 'https:'].includes(publicOrigin.protocol)) throw new Error('Public origin must use HTTP or HTTPS');
 const types = {'.woff':'font/woff','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.png':'image/png','.zip':'application/zip'};
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    if (publicOrigin) { url.protocol = publicOrigin.protocol; url.host = publicOrigin.host; url.port = publicOrigin.port; }
     if (url.pathname.startsWith('/api/')) {
       const headers = new Headers();
       for (const [key,value] of Object.entries(req.headers)) if (!key.startsWith('oai-authenticated-user-') && value !== undefined) headers.set(key, Array.isArray(value) ? value.join(',') : value);
