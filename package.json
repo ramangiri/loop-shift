@@ -1,6 +1,6 @@
 {
   "name": "loop-shift-website",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,5 +16,8 @@
   "devDependencies": {
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2"
+  },
+  "dependencies": {
+    "@libsql/client": "0.18.0"
   }
 }

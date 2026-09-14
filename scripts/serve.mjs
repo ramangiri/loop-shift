@@ -1,13 +1,14 @@
 import { createServer } from 'node:http';
-import { readFile, stat, mkdir } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, resolve, extname, sep } from 'node:path';
-import { openDatabase } from './sqlite-adapter.mjs';
+import { openStorage, storageHealth } from './storage.mjs';
 import { api } from '../server/api.js';
 const root = fileURLToPath(new URL('../www/', import.meta.url));
-const dataDirectory = fileURLToPath(new URL('../data/', import.meta.url));
-await mkdir(dataDirectory, {recursive:true});
-const DB = openDatabase(join(dataDirectory, 'leaderboard.sqlite'), fileURLToPath(new URL('../drizzle/', import.meta.url)));
+let storage;
+try { storage = await openStorage(); }
+catch (error) { console.error('Storage setup failed: ' + error.message);process.exit(1); }
+const { DB } = storage;
 const port = Number(process.env.PORT || 8080), host = process.env.LOOPSHIFT_HOST || '127.0.0.1';
 // Use the public origin behind an HTTPS proxy; never trust caller-supplied forwarding headers.
 const publicOriginValue = process.env.LOOPSHIFT_PUBLIC_ORIGIN || process.env.RENDER_EXTERNAL_URL;
@@ -18,6 +19,10 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (publicOrigin) { url.protocol = publicOrigin.protocol; url.host = publicOrigin.host; url.port = publicOrigin.port; }
+    if (url.pathname === '/api/health' && ['GET','HEAD'].includes(req.method)) {
+      const response = await storageHealth(storage);
+      res.writeHead(response.status, Object.fromEntries(response.headers));res.end(req.method === 'HEAD' ? undefined : await response.text());return;
+    }
     if (url.pathname.startsWith('/api/')) {
       const headers = new Headers();
       for (const [key,value] of Object.entries(req.headers)) if (!key.startsWith('oai-authenticated-user-') && value !== undefined) headers.set(key, Array.isArray(value) ? value.join(',') : value);
@@ -37,4 +42,4 @@ const server = createServer(async (req, res) => {
   } catch {res.writeHead(404);res.end('File not found.');}
 });
 server.on('error', error => {console.error(error.message);process.exit(1);});
-server.listen(port, host, () => console.log(`Loop Shift: http://${host}:${port}\nShared scores are saved in data/leaderboard.sqlite.\nPress Ctrl+C to stop.`));
+server.listen(port, host, () => console.log(`Loop Shift: http://${host}:${server.address().port}\n${storage.description}\nPress Ctrl+C to stop.`));
