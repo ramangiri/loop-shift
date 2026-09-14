@@ -15,10 +15,13 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./mobile.css">
+  <link rel="stylesheet" href="./events.css">
   <script defer src="./native-bridge.js"></script>
   <script defer src="./leaderboard.js"></script>
   <script defer src="./music.js"></script>
   <script defer src="./challenge-picker.js"></script>
+  <script defer src="./social.js"></script>
+  <script defer src="./result-tools.js"></script>
   <script defer src="./game.js"></script>
 </head>
 <body data-screen="home">
@@ -82,9 +85,20 @@
 
 
 
+<section id="weekly" class="event-card" aria-labelledby="weekly-title">
+  <div><span class="event-eyebrow" id="weekly-title">WEEKLY TWIST</span><h2 id="weekly-name">A fresh rule every week</h2><p id="weekly-status" role="status">Connecting…</p></div>
+  <button id="weekly-play" class="secondary-button">Play weekly</button>
+  <details class="event-rule"><summary>This week’s rule</summary><p id="weekly-rule">One shared course with its own Top 10.</p></details>
+</section>
+<section class="community-card" aria-labelledby="community-title">
+  <div class="board-heading"><h2 id="community-title">Together in the loop</h2><button id="community-refresh" class="text-button" aria-label="Refresh community progress">Refresh</button></div>
+  <p id="community-count">Weekly goal: 100,000 sparks</p><progress id="community-meter" max="100000" value="0" aria-label="Weekly community sparks"></progress>
+  <p id="community-note" role="status">Finish a ranked run to contribute. Reaching the goal unlocks a theme for everyone.</p>
+  <button id="community-reward" class="text-button" disabled>Convergence theme · Locked</button>
+</section>
         <section class="leaderboard" aria-labelledby="board-title">
           <div class="board-heading"><h2 id="board-title">🏆 Top 10</h2><button class="back-button" id="refresh-board">Refresh</button></div><div class="board-body">
-          <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button></div>
+          <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button><button id="board-weekly" aria-pressed="false">Weekly</button></div>
 
           <p id="board-status" role="status">Loading the leaderboard…</p>
           <div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
@@ -92,9 +106,20 @@
           <p id="board-save-status" role="status" hidden></p><button id="retry-board-score" class="text-button" hidden>Retry saving score</button>
           <p class="board-note">Only completed ranked rounds appear here. Ties go to the earlier score.</p>
         </div></section>
+<details id="friends-panel" class="mobile-fold friends-panel"><summary>Friends &amp; private boards</summary><div class="fold-body">
+  <p id="groups-status" role="status">Create a group or join with an invite code.</p>
+  <form id="group-create-form" class="group-form"><label for="new-group-name">New group name</label><input id="new-group-name" maxlength="24" required placeholder="e.g. Orbit crew"><button class="secondary-button" type="submit">Create group</button></form>
+  <form id="group-join-form" class="group-form"><label for="join-group-code">Friend’s invite code</label><input id="join-group-code" maxlength="12" minlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" required placeholder="12-character code"><button class="secondary-button" type="submit">Join group</button></form>
+  <div id="group-choices" class="group-choices" aria-label="Your groups"></div><button id="groups-refresh" class="text-button">Refresh groups</button>
+  <section id="group-view" hidden aria-labelledby="group-name"><h3 id="group-name"></h3><p id="group-members"></p><p>Invite code: <strong id="group-invite"></strong></p><button id="group-copy" class="text-button">Copy invite</button><textarea id="group-copy-text" readonly hidden aria-label="Invite text to copy"></textarea>
+  <div class="board-table-wrap"><table class="board-table"><caption class="sr-only">Friend group scores</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="friend-rows"></tbody></table></div>
+  <button id="group-leave" class="text-button">Leave this group</button><div id="group-leave-confirm" hidden><p>Leave this group? You can rejoin with its invite code while other members remain.</p><button id="group-leave-yes" class="text-button">Leave group</button><button id="group-leave-cancel" class="text-button">Stay</button></div></section>
+</div></details>
 <details class="adventure-home mobile-fold" aria-labelledby="adventure-title">
 <summary><h2 id="adventure-title">Progress &amp; rewards</h2></summary><div class="fold-body">
 
+<details class="collection-panel"><summary>Boss collection &amp; titles</summary><p id="boss-next"></p><ul id="boss-collection" class="boss-collection"></ul><h3>Your player title</h3><div id="title-options" class="title-options"></div><p id="collection-owner"></p></details>
+<p id="social-status" role="status"></p><button id="retry-social" class="text-button" hidden>Retry saving rewards</button>
 <details><summary>Trophies &amp; records</summary><p id="personal-records"></p><ul id="achievement-list" class="achievement-list"></ul><p id="progress-sync" role="status">Sign in with a nickname to save unlocks.</p><button id="retry-progress" class="text-button" hidden>Retry saving unlocks</button></details>
 <details><summary>Themes</summary><p>Unlock a new theme at levels 10, 25 and 50.</p><div class="theme-options"><button id="theme-forest">Forest</button><button id="theme-ion">Ion night · Level 10</button><button id="theme-nebula">Nebula · Level 25</button><button id="theme-solar">Solar eclipse · Level 50</button></div></details>
 <details><summary>Practise a level</summary><label for="practice-level">Level to practise</label><input id="practice-level" type="number" min="1" max="1" step="1" value="1"><button id="practice-play" class="primary-button">Start practice</button><p id="practice-unlocked">Level 1 unlocked</p></details>
@@ -154,6 +179,13 @@
     <li><strong>Daily challenge:</strong> two minutes on the same course for everyone that day, with its own Top 10. It needs a saved online nickname and resets at 05:30 IST (00:00 UTC).</li>
     <li><strong>Practice:</strong> choose an unlocked level under Progress &amp; rewards. Practice and the tutorial do not submit scores or unlock rewards.</li>
   </ul>
+  <h3>Weekly twists and community sparks</h3>
+  <p>The weekly challenge is two minutes on a fixed course. Rules rotate each Monday at 00:00 UTC: <strong>No Fever</strong> keeps combos but disables Fever; <strong>Double Spark Points</strong> doubles gold spark points without doubling shield charge; <strong>One Shield Maximum</strong> limits every level to one shield slot. Weekly scores have their own board.</p>
+  <p>Finish an online ranked run to add its gold sparks to the weekly community goal. Each run contributes once. Collect 100,000 together to unlock the <strong>Convergence theme</strong> for everyone. Practice and sprint runs do not contribute.</p>
+  <h3>Your collection and friends</h3>
+  <p>Clear bosses at Levels 10–100 in the main run to earn ten unique trophies. Finish the run to save the new trophies. Earn <strong>Perfect Pilot</strong> with a chain of five perfect shifts, <strong>Shield Survivor</strong> with five consecutive levels without losing a shield, and <strong>Six-Ring Master</strong> by clearing Level 13. Select an earned title under Progress &amp; rewards.</p>
+  <p>Create up to five private groups or join with a friend’s 12-character code. Up to 30 members share a board of their best main-run scores. Only members can view that group; anyone you give the code can join. Your nickname and selected title remain visible on public ranked boards.</p>
+  <p>After a loss, “Why did I lose?” plays the last three seconds at half speed in a separate viewer. Coral and white mark the collision; mint marks the safe ring. You can stop or retry immediately. “Share your result” creates a score card you can share or save as an image.</p>
   <h3>Pause, sound and saved scores</h3>
   <p>Use Pause, or press P or Escape on a computer. Leaving the game pauses it automatically. Music and sound effects have separate switches; enable them after pressing Play if your browser asks. Optional vibration is in Settings.</p>
   <p>The home <strong>Board best</strong> is the score confirmed by the server for your current player. Offline play uses a <strong>Device best</strong>. Wait for “Best saved” after a ranked round. If a score is waiting to save, use Retry on the result screen or home board. A lower score never replaces a higher one. A nickname is a display name, not a login; use the same browser and site to keep your player identity.</p>
@@ -195,6 +227,10 @@
               <button class="primary-button" id="play">Let's play <span aria-hidden="true">↗</span></button>
               <button class="text-button" id="restart" hidden>Restart this course</button>
               <button id="share-daily" class="text-button" hidden>Challenge a friend ↗</button><p id="share-status" role="status"></p><textarea id="share-fallback" aria-label="Daily challenge text to copy" readonly hidden></textarea>
+<div id="result-extras" hidden>
+  <details id="replay-panel" class="result-panel" hidden><summary>Why did I lose?</summary><p id="replay-caption">Last 3 seconds · Half speed</p><canvas id="replay-canvas" width="640" height="640" aria-label="Replay of the last collision; mint shows the safe ring"></canvas><button id="replay-play" class="text-button">Play replay</button><button id="replay-stop" class="text-button">Stop replay</button></details>
+  <details id="card-panel" class="result-panel"><summary>Share your result</summary><button id="card-create" class="text-button">Create result card</button><img id="card-preview" hidden alt="Loop Shift result card"><div class="card-actions"><button id="card-share" class="text-button" hidden>Share card</button><a id="card-download" class="text-button" download="LoopShift-result.png" hidden>Save image</a></div><p id="card-status" role="status"></p><a id="card-game-link">Invite friends to play</a></details>
+</div>
 <button class="text-button overlay-home" id="result-home">Back to home</button>
             </div>
           </div>

@@ -13,10 +13,21 @@ let roundKind='endless',dailyRun=null,dailyBest=0,pathLane=1,gameSeed=1,frameCar
 const seededRandom=()=>{gameSeed=(Math.imul(gameSeed,1664525)+1013904223)>>>0;return gameSeed/4294967296;};
 // Course randomness never shares the visual-effects stream. A retry reuses this seed.
 let retryCourse=null;
+let socialAttempt=null,runBosses=0,runCleanBest=0;
+const timedRun=()=>roundKind==='daily'||roundKind==='weekly';
+const weeklyRule=()=>roundKind==='weekly'?dailyRun?.rule?.id:'';
+function captureReplay(force=false){
+  if(!window.LoopShiftResults||(!force&&window.LoopShiftResults.wantsFrame&&!window.LoopShiftResults.wantsFrame(gameTime)))return;
+  window.LoopShiftResults.capture({time:gameTime,angle,radius,color:ballColor(),shield,radii:Array.from({length:ringCount},(_,n)=>laneRadius(n)),rows:rows.map(row=>({angle:row.angle,hazards:[...blockedLanes(row)],safe:row.sparkLane,open:row.open,collected:row.collected}))},force);
+}
+function startWeekly(){
+  unlockAudio();window.LoopShiftMusic?.unlock();if(dailyStartPending)return;dailyStartPending=true;const id=++dailyRequestId;
+  Promise.resolve(window.LoopShiftBoard?.beginWeekly(challenge=>{if(id===dailyRequestId)start(challenge);})).finally(()=>{dailyStartPending=false;});
+}
 const courseRandom=()=>seededRandom();
 function prepareCourse(fresh=false){
   const key=roundKind==='practice'?`practice:${practiceLevel}`:roundKind;
-  if(roundKind==='daily'){gameSeed=dailyRun.seed>>>0;return;}
+  if(timedRun()){gameSeed=dailyRun.seed>>>0;return;}
   if(fresh||!retryCourse||retryCourse.key!==key)retryCourse={key,seed:Math.floor(Math.random()*4294967296)>>>0};
   gameSeed=retryCourse.seed;
 }
@@ -34,7 +45,7 @@ let ringCount=2, levelBannerTime=0, shiftDirection=1;
 const LEVEL_MORPH_SECONDS=1.1;
 let levelTransition=null,departingRows=[];
 const ringLimit=l=>2+[2,5,9,13].filter(unlock=>l>=unlock).length;
-const shieldCapacity=()=>ringCount>=5?2:1;
+const shieldCapacity=()=>weeklyRule()==='one-shield'?1:ringCount>=5?2:1;
 const THEMES=[['#d6ff62','ORBIT'],['#72e6ff','ION'],['#c8a4ff','NEBULA'],['#ffcc78','SOLAR'],['#83f5c0','AURORA'],['#ffa8da','NOVA']];
 let journey={highest:1,distance:0,badges:0,chain:0,clean:0},practiceLevel=1,ghostTarget=0;
 let levelSparks=0,levelPerfects=0,levelHits=0,roundHits=0,objectiveAwarded=false;
@@ -49,7 +60,7 @@ let previousRecords={chain:0,clean:0,distance:0},runFocus='survive',focusDone=fa
 let vibrationOn=true,shareText='',lastGuideTarget=-1;
 let landing=null,landingTime=0,landingLane=1;
 try{vibrationOn=localStorage.getItem('loop-shift-vibration')!=='false';}catch{}
-const isRankedMode=()=>roundKind==='endless'||roundKind==='daily';
+const isRankedMode=()=>roundKind==='endless'||timedRun();
 const targetSpeed=()=>Math.min(.78+(level-1)*.065,1.9);
 function startSprint(){dailyRequestId++;roundKind='sprint';dailyRun=null;start({fresh:true});}
 function startTutorial(){dailyRequestId++;roundKind='tutorial';dailyRun=null;start({fresh:true});}
@@ -83,11 +94,11 @@ function updateExtras(){
   $('finish-line').textContent=`${roundKind==='sprint'?'SPRINT':'FINAL LEVEL'} · ${remaining} obstacles to the finish`;
   const reward=COSMETICS.find(x=>x[2]>journey.highest);
   $('next-reward').textContent=reward?`${Math.max(1,reward[2]-level)} level${reward[2]-level===1?'':'s'} until ${reward[1]} theme`:'All milestone themes unlocked';
-  if(roundKind!=='endless')$('next-reward').textContent=roundKind==='daily'?'Daily course · Same challenge for everyone':roundKind==='tutorial'?'Training · No scores saved':'Unranked · No scores or unlocks saved';
-  const goal=runFocus==='sparks'?20:runFocus==='perfects'?5:roundKind==='daily'?120:60;
-  const current=runFocus==='sparks'?sparks:runFocus==='perfects'?perfects:roundKind==='daily'?gameTime:passes;
+  if(roundKind!=='endless')$('next-reward').textContent=roundKind==='weekly'?`Weekly twist · ${dailyRun.rule.name}`:roundKind==='daily'?'Daily course · Same challenge for everyone':roundKind==='tutorial'?'Training · No scores saved':'Unranked · No scores or unlocks saved';
+  const goal=runFocus==='sparks'?20:runFocus==='perfects'?5:timedRun()?120:60;
+  const current=runFocus==='sparks'?sparks:runFocus==='perfects'?perfects:timedRun()?gameTime:passes;
   focusDone=current>=goal;
-  const levelGoal=runFocus==='survive'&&roundKind!=='daily';
+  const levelGoal=runFocus==='survive'&&!timedRun();
   const displayCurrent=levelGoal?Math.floor(current/12):Math.floor(current);
   const displayGoal=levelGoal?5:goal;
   $('run-goal').textContent=`${runFocus==='sparks'?'Sparks':runFocus==='perfects'?'Perfects':'Survive'} · ${Math.min(displayGoal,displayCurrent)}/${displayGoal}${runFocus==='survive'?(levelGoal?' levels':' sec'):''}${focusDone?' ✓':''}`;
@@ -122,13 +133,16 @@ function updateAdventureUI(){
   $('achievement-list').innerHTML=BADGES.map(([name,rule,bit])=>`<li class="${journey.badges&bit?'earned':''}"><strong>${journey.badges&bit?'🏆':'◇'} ${name}</strong><span>${rule}</span><small>${journey.badges&bit?'Earned':'Locked'}</small></li>`).join('');
   for(const [id,name,minimum] of COSMETICS){const b=$('theme-'+id);b.disabled=journey.highest<minimum;b.setAttribute('aria-pressed',String(selectedTheme===id));b.textContent=`${name}${journey.highest<minimum?' · Level '+minimum:selectedTheme===id?' · Selected':''}`;}
   const theme=COSMETICS.find(x=>x[0]===selectedTheme&&journey.highest>=x[2]);
-  if(!theme)selectedTheme='forest';document.body.dataset.theme=selectedTheme;
+  let communityTheme=false;try{communityTheme=localStorage.getItem('loop-shift-community-theme')==='true';}catch{}
+  if(!theme&&!(selectedTheme==='convergence'&&(communityTheme||window.LoopShiftSocial?.unlockedTheme())))selectedTheme='forest';document.body.dataset.theme=selectedTheme;
 }
 function saveJourney(){if(roundKind!=='endless')return;window.LoopShiftBoard?.saveProgress({...journey});updateAdventureUI();}
 function awardBadge(bit){if(roundKind!=='endless'||journey.badges&bit)return;journey.badges|=bit;}
 function finishLevel(){
+  cleanStreak=levelShieldLost?0:cleanStreak+1;runCleanBest=Math.max(runCleanBest,cleanStreak);
   if(roundKind==='endless'){
-    cleanStreak=levelShieldLost?0:cleanStreak+1;journey.clean=Math.max(journey.clean||0,cleanStreak);
+    if(bossLevel())runBosses|=1<<(Math.floor(level/10)-1);
+    journey.clean=Math.max(journey.clean||0,cleanStreak);
     if(levelHits===0)awardBadge(1);if(level===13)awardBadge(4);if(bossLevel())awardBadge(8);if(level===100)awardBadge(16);
     journey.highest=Math.max(journey.highest,Math.min(100,level+1));journey.distance=Math.max(journey.distance,passes);
   }
@@ -317,7 +331,7 @@ function updateHome(){
 function showScreen(next, moveFocus=true){
   if(next==='home' && mode==='playing')setPaused(true,false);
   screen=next;
-  if(next==='home')window.LoopShiftBoard?.refresh();
+  if(next==='home'){window.LoopShiftResults?.stop();window.LoopShiftBoard?.refresh();window.LoopShiftSocial?.refresh();}
   $('home-screen').hidden=next!=='home';$('game-screen').hidden=next!=='game';
   document.body.dataset.screen=next;$('pause').hidden=next!=='game';
   document.title=next==='home'?'Loop Shift — One-tap arcade':'Play — Loop Shift';
@@ -363,6 +377,7 @@ function unlockAudio(){
 }
 function tone(hz,duration=.08,type='sine',volume=.07){
   if(!soundOn || !audioContext)return;
+  window.LoopShiftMusic?.duck?.(duration);
   try { const o=audioContext.createOscillator(),g=audioContext.createGain();o.type=type;o.frequency.setValueAtTime(hz,audioContext.currentTime);g.gain.setValueAtTime(volume,audioContext.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+duration); }catch{}
 }
 function vibrate(ms){
@@ -408,15 +423,15 @@ function showEffect(text,kind='perfect'){
 }
 function updateRhythm(){
   const fever=feverTime>0;
-  window.LoopShiftMusic?.setFever(fever);
-  $('daily-timer').hidden=roundKind!=='daily';
-  if(roundKind==='daily')$('daily-timer').textContent=`DAILY · ${Math.ceil(Math.max(0,120-gameTime))}s left`;
+  window.LoopShiftMusic?.setFever(fever);window.LoopShiftMusic?.setCombo?.(combo);
+  $('daily-timer').hidden=!timedRun();
+  if(timedRun())$('daily-timer').textContent=`${roundKind==='weekly'?'WEEKLY':'DAILY'} · ${Math.ceil(Math.max(0,120-gameTime))}s left`;
 
   document.body.classList.toggle('fever-active',fever);
   $('combo').textContent=`×${scoreFactor()}`;
   $('combo-caption').textContent=fever?'FEVER SCORE':combo?`${combo} PERFECT CHAIN`:'SCORE MULTIPLIER';
-  $('fever-label').textContent=fever?`FEVER · ${feverTime.toFixed(1)}s`:'FEVER';
-  $('fever-count').textContent=fever?'INVINCIBLE':`${feverCharge} / 6`;
+  $('fever-label').textContent=weeklyRule()==='no-fever'?'NO FEVER':fever?`FEVER · ${feverTime.toFixed(1)}s`:'FEVER';
+  $('fever-count').textContent=weeklyRule()==='no-fever'?'WEEKLY RULE':fever?'INVINCIBLE':`${feverCharge} / 6`;
   $('fever-fill').style.width=`${(fever?feverTime/5:feverCharge/6)*100}%`;
   $('fever-meter').setAttribute('aria-valuenow',String(fever?Math.round(feverTime/5*100):Math.round(feverCharge/6*100)));
   $('fever-meter').setAttribute('aria-valuetext',fever?`${feverTime.toFixed(1)} seconds of invincibility`:`${feverCharge} of 6 perfect dodges`);
@@ -430,11 +445,11 @@ function resetCombo(){combo=0;feverCharge=0;}
 function awardPerfect(row){
   if(row.perfectAwarded)return;
   row.perfectAwarded=true;perfects++;levelPerfects++;if(perfects>=10&&!(journey.badges&2)){awardBadge(2);saveJourney();}advanceMission('perfects');
-  if(feverTime<=0){combo++;bestCombo=Math.max(bestCombo,combo);feverCharge=Math.min(6,feverCharge+1);}
+  if(feverTime<=0){combo++;bestCombo=Math.max(bestCombo,combo);feverCharge=weeklyRule()==='no-fever'?0:Math.min(6,feverCharge+1);}
   const bonus=25*scoreFactor();score+=bonus;
   showEffect(`PERFECT! +${bonus}`);burst(row.angle,laneRadius(lane),ballColor(),18);
   tone(760+Math.min(combo,6)*90,.16,'sine',.08);vibrate(12);
-  if(feverCharge>=6 && feverTime<=0){
+  if(weeklyRule()!=='no-fever' && feverCharge>=6 && feverTime<=0){
     feverTime=5;roundFevers++;advanceMission('fevers');showEffect('FEVER!','fever');
     $('announcement').textContent='Fever! Five seconds of invincibility and double points.';
     tone(1320,.35,'sine',.09);
@@ -448,7 +463,7 @@ function warnPattern(row){
   tone(330,.13,'triangle',.035);
 }
 function updateHUD(){
-  $('score').textContent=pad(score);$('best').textContent=pad(roundKind==='daily'?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='sprint'?5:100}`;
+  $('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='sprint'?5:100}`;
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
   const full=shield>=shieldCapacity();
   $('shield-icons').textContent='◉'.repeat(shield)+'○'.repeat(shieldCapacity()-shield);
@@ -459,7 +474,7 @@ function updateHUD(){
   $('shift').disabled=mode!=='playing';updateGuide();
   $('level-progress').style.width=`${Math.min(12,passes>=1200?12:passes%12)/12*100}%`;
   $('level-progress-label').textContent=`${passes>=1200?12:passes%12} / 12 obstacles`;
-  $('rival-target').textContent=window.LoopShiftBoard?.target?.(score,roundKind) || `Next personal best: ${Math.max(1,(roundKind==='daily'?dailyBest:personalBest())+1-score)} points away`;
+  $('rival-target').textContent=window.LoopShiftBoard?.target?.(score,roundKind) || `Next personal best: ${Math.max(1,(timedRun()?dailyBest:personalBest())+1-score)} points away`;
   const goal=objective();$('level-objective').textContent=`${roundKind==='practice'?'PRACTICE · ':''}${bossLevel()?'BOSS · ':''}${goal.label} · ${Math.min(goal.count,goal.goal)}/${goal.goal} · Bonus +100`;
   $('ghost-status').textContent=roundKind==='endless'&&ghostTarget>0?(passes>=ghostTarget?'👻 Past your best distance!':`👻 Best run: Level ${Math.min(100,1+Math.floor(ghostTarget/12))} · ${ghostTarget-passes} obstacles ahead`):roundKind==='practice'?'Practice · No ranking or unlocks':'New run. Set your distance record.';
   updateExtras();updateRhythm();updateHome();
@@ -499,13 +514,15 @@ function updateRow(row){
 function start(options){
   const quickRetry=mode==='over';
   unlockAudio();window.LoopShiftMusic?.unlock();
-  if(options?.token){roundKind='daily';dailyRun=options;dailyBest=options.best||0;}
+  if(options?.token){roundKind=options.kind==='weekly'?'weekly':'daily';dailyRun=options;dailyBest=options.best||0;}
   else if(roundKind==='daily'){startDaily();return;}
+  else if(roundKind==='weekly'){startWeekly();return;}
 
   if(isRankedMode()&&window.LoopShiftBoard && !window.LoopShiftBoard.ready()){window.LoopShiftBoard.askName(()=>start(options));return;}
-  window.LoopShiftBoard?.beginRound();
+  window.LoopShiftResults?.reset();window.LoopShiftBoard?.beginRound();
+  socialAttempt=window.LoopShiftSocial?.begin(roundKind);runBosses=0;runCleanBest=0;
   previousRecords={...journey};cleanStreak=0;levelShieldLost=false;hitReview=null;comeback=null;tutorialStage=0;tutorialShift=false;
-  runFocus=roundKind==='daily'?'survive':(['survive','sparks','perfects'].includes($('challenge-choice').value)?$('challenge-choice').value:'survive');
+  runFocus=timedRun()?'survive':(['survive','sparks','perfects'].includes($('challenge-choice').value)?$('challenge-choice').value:'survive');
   $('safe-pin').hidden=true;$('hit-feedback').textContent='';$('share-daily').hidden=true;$('share-fallback').hidden=true;$('share-status').textContent='';
   $('tutorial-instruction').hidden=roundKind!=='tutorial';$('skip-tutorial').hidden=roundKind!=='tutorial';
   ghostTarget=journey.distance;levelSparks=0;levelPerfects=0;levelHits=0;roundHits=0;objectiveAwarded=false;
@@ -544,7 +561,7 @@ function shift(){
 }
 function setPaused(paused, moveFocus=true){
   if(paused && mode==='playing'){
-    $('result-coaching').hidden=true;$('result-gap').hidden=true;
+    $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;
     window.LoopShiftMusic?.pause();mode='paused';$('overlay').hidden=false;$('overlay-kicker').textContent='TAKE A BREATHER';$('overlay-title').textContent='Round paused.';
     $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;$('result').hidden=true;
@@ -568,16 +585,19 @@ function burst(a,r,color,n=14){
   for(let i=0;i<n;i++){const d=random(0,TAU),v=random(18,90);particles.push({x:p.x/size,y:p.y/size,vx:Math.cos(d)*v/440,vy:Math.sin(d)*v/440,life:1,color});}
 }
 function collect(row){
-  row.collected=true;sparks++;levelSparks++;score+=10*scoreFactor();advanceMission('sparks');burst(row.angle,laneRadius(row.sparkLane),C.gold,10);tone(620+(sparks%6)*75,.13,'sine',.07);
+  row.collected=true;sparks++;levelSparks++;score+=10*(weeklyRule()==='double-sparks'?2:1)*scoreFactor();advanceMission('sparks');burst(row.angle,laneRadius(row.sparkLane),C.gold,10);tone(620+(sparks%6)*75,.13,'sine',.07);
   if(shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;toast(`Shield ready · ${shield} / ${shieldCapacity()}`);shieldSound(shield===2?'gain2':'gain1');}}
   updateHUD();
 }
 function crash(hitRow=null,completed=false){
-  const previousBest=roundKind==='daily'?dailyBest:personalBest();
+  captureReplay(true);
+  window.LoopShiftResults?.finish({name:window.LoopShiftBoard?.player?.()?.name||'Orbit player',title:window.LoopShiftSocial?.title()||'',score,level,chain:bestCombo,ranked:isRankedMode()&&!!window.LoopShiftBoard?.player?.(),mode:roundKind==='weekly'?`Weekly · ${dailyRun.rule.name}`:roundKind==='daily'?'Daily challenge':roundKind==='endless'?'100-level run':roundKind,url:`${location.origin||''}${location.pathname||'/'}${roundKind==='daily'?'#daily':roundKind==='weekly'?'#weekly':'#home'}`},hitRow?{angle:hitRow.angle,lane:hitReview?.lane??lane,safe:hitRow.sparkLane}:null);
+  window.LoopShiftSocial?.finish(socialAttempt,{kind:roundKind,sparks,chain:bestCombo,clean:runCleanBest,cleared:Math.floor(passes/12),bosses:runBosses,duration:gameTime});
+  const previousBest=timedRun()?dailyBest:personalBest();
   const champion=completed&&roundKind==='endless';
   if(roundKind==='endless')journey.chain=Math.max(journey.chain||0,bestCombo);
   if(roundKind==='endless'){journey.distance=Math.max(journey.distance,passes);saveJourney();}
-  const message=roundKind==='tutorial'?'Training finished. Tap Try again to practise or return Home.':roundKind==='sprint'?'A short challenge, a fresh start. Five levels is the finish line.':roundKind==='practice'?'Practice finished. Your ranked scores and unlocks are unchanged. Try this level again.':champion?'All 100 levels conquered! You mastered six rings. Play again to chase a higher score.':completed?'You completed the two-minute course. Try again to improve your daily best.':
+  const message=roundKind==='tutorial'?'Training finished. Tap Try again to practise or return Home.':roundKind==='sprint'?'A short challenge, a fresh start. Five levels is the finish line.':roundKind==='practice'?'Practice finished. Your ranked scores and unlocks are unchanged. Try this level again.':champion?'All 100 levels conquered! You mastered six rings. Play again to chase a higher score.':completed?`You completed the two-minute course. Try again to improve your ${roundKind==='weekly'?'weekly':'daily'} best.`:
     hitRow ? (lane===hitRow.sparkLane ? 'Your move had not reached the safe ring yet. Switch a little earlier.' :
       gameTime-lastShift<.3&&lastShift>=0 ? 'That move led into a blocked ring. Follow the glowing golden gap.' :
       `The safe gap was on ring ${hitRow.sparkLane+1} (counting from the centre). Follow its golden glow.`) : 'Watch for the golden gap and move one ring at a time.';
@@ -590,10 +610,10 @@ function crash(hitRow=null,completed=false){
   mode='over';burst(angle,radius,completed?({forest:C.gold,ion:'#72e6ff',nebula:'#c8a4ff',solar:'#ffcc78'}[selectedTheme]||C.gold):C.coral,completed&&bossLevel()?40:28);
   if(completed){tone(660,.2);setTimeout(()=>tone(880,.2),140);setTimeout(()=>tone(1320,.35),280);}else{tone(130,.28,'triangle',.1);vibrate(65);}
   const isBest=score>previousBest;
-  if(roundKind==='daily')dailyBest=Math.max(dailyBest,score);
+  if(timedRun())dailyBest=Math.max(dailyBest,score);
   else if(roundKind==='endless') {best=Math.max(best,score);try{localStorage.setItem('loop-shift-best-v2',String(best));}catch{}}
   $('overlay-kicker').textContent=!isRankedMode()?'UNRANKED':roundKind==='practice'?'UNRANKED PRACTICE':champion?'100 / 100 LEVELS COMPLETE':isBest?'A NEW PERSONAL BEST':'ROUND COMPLETE';
-  $('overlay-title').textContent=roundKind==='tutorial'?'Ready for the orbit!':roundKind==='sprint'?(completed?'Sprint complete!':'One more sprint?'):roundKind==='practice'?(completed?'Practice complete!':'Try this level again'):champion?'🏆 Loop Champion!':completed?'Daily complete!':isBest?'A new best!':'One more loop?';
+  $('overlay-title').textContent=roundKind==='tutorial'?'Ready for the orbit!':roundKind==='sprint'?(completed?'Sprint complete!':'One more sprint?'):roundKind==='practice'?(completed?'Practice complete!':'Try this level again'):champion?'🏆 Loop Champion!':completed?(roundKind==='weekly'?'Weekly complete!':'Daily complete!'):isBest?'A new best!':'One more loop?';
   updateExtras();$('overlay-copy').textContent=resultFact();
   $('share-daily').hidden=roundKind!=='daily';
   $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result').hidden=false;
@@ -602,17 +622,17 @@ function crash(hitRow=null,completed=false){
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
   $('play').focus({preventScroll:true});
   $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected. Personal best ${best}.`;
-  if(isRankedMode())window.LoopShiftBoard?.submit(score,gameTime,roundKind==='daily'?dailyRun:null);
+  if(isRankedMode())window.LoopShiftBoard?.submit(score,gameTime,timedRun()?dailyRun:null);
 }
 function update(dt){
   if(screen!=='game' || mode!=='playing')return;
   levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime)$('level-banner-wrap').classList.remove('show');
   if(startDelay>0){startDelay=Math.max(0,startDelay-dt);updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
-  if(roundKind==='daily')dt=Math.min(dt,Math.max(0,120-gameTime));
+  if(timedRun())dt=Math.min(dt,Math.max(0,120-gameTime));
   if(roundKind==='tutorial'){updateTutorial(dt);return;}
   motionSpeed+=(targetSpeed()-motionSpeed)*(1-Math.exp(-dt*.8));
   gameTime+=dt;updateLevelTransition(dt);
-  if(roundKind==='daily'&&gameTime>=120){gameTime=120;crash(null,true);return;}
+  if(timedRun()&&gameTime>=120){gameTime=120;crash(null,true);return;}
   effectTime=Math.max(0,effectTime-dt);if(effectTime===0)$('skill-effect').classList.remove('visible');
   patternNoticeTime=Math.max(0,patternNoticeTime-dt);
   if(feverTime>0){
@@ -652,9 +672,9 @@ function update(dt){
       score+=scoreFactor();
       if(roundKind==='sprint'&&passes>=60){crash(null,true);return;}
       if(roundKind==='practice'&&passes%12===0){finishLevel();crash(null,true);return;}
-      if(roundKind!=='daily'&&passes>=1200){finishLevel();crash(null,true);return;}
+      if(!timedRun()&&passes>=1200){finishLevel();crash(null,true);return;}
       const nextLevel=Math.min(100,1+Math.floor(passes/12));
-      if(nextLevel>level){levelUp(nextLevel);updateHUD();return;}
+      if(nextLevel>level){captureReplay();levelUp(nextLevel);updateHUD();return;}
       updateHUD();
     }
   }
@@ -668,7 +688,7 @@ function update(dt){
     const next=rows.find(row=>row.angle>angle&&!row.passed);
     $('pattern-notice').textContent=next?.recovery?'BREATHE · Easy gaps and golden sparks':bossLevel()?`BOSS ${level} · ${BOSS_TYPES[bossType()][0]}`:PATTERN_COPY[next?.pattern??'classic'];
   }
-  updateExtras();updateRhythm();updateGuide();
+  updateExtras();updateRhythm();updateGuide();captureReplay();
 }
 function shatterShield(){
   if(reducedMotion)return;
@@ -782,7 +802,7 @@ function draw(time,dt){
     for(let i=0;i<trail.length;i++){
       const p=point(trail[i].a,trail[i].r),fraction=(i+1)/trail.length;
       ctx.globalAlpha=fraction*(progress.trail==='comet'?.6:.4);
-      ctx.fillStyle=feverTime>0?`hsl(${i*13} 95% 73%)`:selectedTheme==='ion'?'#72e6ff':selectedTheme==='nebula'?'#c8a4ff':selectedTheme==='solar'?'#ffcc78':ballColor();
+      ctx.fillStyle=feverTime>0?`hsl(${i*13} 95% 73%)`:selectedTheme==='ion'?'#72e6ff':selectedTheme==='nebula'?'#c8a4ff':selectedTheme==='solar'?'#ffcc78':selectedTheme==='convergence'?(i%2?'#83f5c0':'#ed9fff'):ballColor();
       ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=progress.trail==='comet'?10:4;
       if(progress.trail==='stardust'&&i%2===0){
         ctx.save();ctx.translate(p.x,p.y);ctx.rotate(i);ctx.fillRect(-2*fraction,-2*fraction,4*fraction,4*fraction);ctx.restore();
@@ -822,6 +842,8 @@ $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
 $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
 $('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';});
 $('daily-play').addEventListener('click',startDaily);
+$('weekly-play').addEventListener('click',startWeekly);
+$('community-reward').addEventListener('click',()=>{if(!window.LoopShiftSocial?.unlockedTheme())return;selectedTheme='convergence';try{localStorage.setItem('loop-shift-theme-v2',selectedTheme);}catch{}updateAdventureUI();$('community-reward').textContent='Convergence theme · Selected';});
 $('home-play').addEventListener('click',homePlay);
 $('home-new').addEventListener('click',startEndless);
 $('back-home').addEventListener('click',goHome);
@@ -866,6 +888,6 @@ $('practice-play').addEventListener('click',startPractice);
 for(const [id,,minimum] of COSMETICS)$('theme-'+id).addEventListener('click',()=>{if(journey.highest<minimum)return;selectedTheme=id;try{localStorage.setItem('loop-shift-theme-v2',id);}catch{}updateAdventureUI();});
 window.LoopShiftBoard?.onProgress(data=>{journey={highest:Math.max(journey.highest,data.highest),distance:Math.max(journey.distance,data.distance),badges:journey.badges|data.badges,chain:Math.max(journey.chain||0,data.chain||0),clean:Math.max(journey.clean||0,data.clean||0)};try{selectedTheme=localStorage.getItem('loop-shift-theme-v2')||selectedTheme;}catch{}updateAdventureUI();});
 updateAdventureUI();
-history.replaceState(null,'',location.hash==='#play'?'#play':location.hash==='#daily'?'#daily':'#home');
+history.replaceState(null,'',location.hash==='#play'?'#play':location.hash==='#daily'?'#daily':location.hash==='#weekly'?'#weekly':'#home');
 showScreen(location.hash==='#play'?'game':'home',false);
 applyTheme();updateSound();updateHUD();resize();requestAnimationFrame(frame);

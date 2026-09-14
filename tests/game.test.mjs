@@ -475,3 +475,27 @@ assert.equal(boardBest.nodes.get('home-best-label').textContent,'BOARD BEST');
 assert.equal(boardBest.nodes.get('best').textContent,'072');
 boardBest.run('window.LoopShiftBoard.best=()=>null;updateHUD();');
 assert.equal(boardBest.nodes.get('home-best').textContent,'143');assert.equal(boardBest.nodes.get('home-best-label').textContent,'DEVICE BEST');
+
+// Weekly rules change their advertised mechanic only, and retain a fair route.
+for(const rule of ['no-fever','double-sparks','one-shield']){
+  const w=game();w.run(`start({token:'weekly-test',kind:'weekly',week:'2026-09-14',seed:42,rule:{id:'${rule}',name:'Weekly test'},duration:120});startDelay=0;`);
+  if(rule==='no-fever'){
+    for(let i=0;i<7;i++)w.run(timing());
+    assert.equal(w.run('feverTime'),0);assert.equal(w.run('feverCharge'),0);assert.equal(w.run('multiplier()'),5);
+    assert.equal(w.nodes.get('fever-label').textContent,'NO FEVER');
+  }
+  if(rule==='double-sparks'){
+    w.run('collect({angle,sparkLane:lane})');assert.equal(w.run('score'),20);assert.equal(w.run('sparks'),1);assert.equal(w.run('charge'),1);
+  }
+  if(rule==='one-shield'){
+    w.run('ringCount=6;for(let i=0;i<12;i++)collect({angle,sparkLane:lane})');assert.equal(w.run('shieldCapacity()'),1);assert.equal(w.run('shield'),1);
+  }
+  const run=game();run.run(`start({token:'weekly-route',kind:'weekly',week:'2026-09-14',seed:12345,rule:{id:'${rule}',name:'Weekly test'}});startDelay=0;
+    for(let i=0;i<15000&&mode==='playing';i++){shield=0;feverTime=0;invulnerable=0;const next=rows.find(row=>!row.passed);if(next&&lane!==next.sparkLane&&(next.angle-angle)/speedNow()<=.30)shift();update(1/120);}`);
+  assert.equal(run.run('gameTime'),120);assert.equal(run.run('roundHits'),0);assert.equal(run.run('mode'),'over');assert.equal(run.run('best'),143,'Weekly points cannot replace main device best');
+}
+assert.equal(fair.run('runBosses'),1023,'The real full route earns all ten boss trophies');
+assert.equal(fair.run('runCleanBest'),100,'The full clean run records its clean-level streak');
+const recording=game();recording.run(`globalThis.recorded=0;window.LoopShiftResults={reset(){},capture(){recorded++;},finish(data,hit){globalThis.resultData=data;globalThis.resultHit=hit;}}`);recording.click('home-play');recording.run('startDelay=0;update(.1);crash({angle,hazardLane:lane,sparkLane:1-lane})');
+assert.ok(recording.run('recorded')>0);assert.equal(recording.run('resultData.score'),recording.run('score'));assert.equal(recording.run('resultHit.safe'),recording.run('1-lane'));
+console.log('PASS: three fair weekly courses, isolated weekly scores, boss collection, clean titles and replay capture.');

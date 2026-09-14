@@ -1,5 +1,7 @@
 import { database } from './db.js';
 import { dailyBoard, dailyAction } from './daily.js';
+import { weeklyBoard, weeklyAction } from './weekly.js';
+import { socialState, socialAction, friendGroups, groupAction } from './social.js';
 
 const COOKIE = 'loopshift_player';
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), {
@@ -24,20 +26,22 @@ async function identity(request, create = false) {
   return { id: Array.from(new Uint8Array(bytes), n => n.toString(16).padStart(2, '0')).join(''), cookie };
 }
 async function board(db, id) {
-  const { results } = await db.prepare('SELECT id, name, best FROM players WHERE best > 0 ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
-  const me = id ? await db.prepare('SELECT name, best, achieved_at, highest_level, furthest_pass, achievements, best_chain, best_clean FROM players WHERE id = ?').bind(id).first() : null;
+  const { results } = await db.prepare('SELECT id, name, selected_title, best FROM players WHERE best > 0 ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
+  const me = id ? await db.prepare('SELECT name, selected_title, best, achieved_at, highest_level, furthest_pass, achievements, best_chain, best_clean FROM players WHERE id = ?').bind(id).first() : null;
   let rank = null;
   if (me?.best > 0) {
     const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?)))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
     rank = row.rank;
   }
-  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, best: me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
+  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, title:me.selected_title, best: me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
 }
 export async function api(request, env) {
   const path = new URL(request.url).pathname;
-  if (!['/api/leaderboard', '/api/player', '/api/scores','/api/daily','/api/daily/start','/api/daily/score','/api/progress'].includes(path)) return json({ error: 'Not found.' }, 404);
+  const reads=['/api/leaderboard','/api/daily','/api/weekly','/api/social','/api/groups'];
+  const writes=['/api/player','/api/scores','/api/daily/start','/api/daily/score','/api/progress','/api/weekly/start','/api/weekly/score','/api/social/start','/api/social/finish','/api/social/title','/api/groups/create','/api/groups/join','/api/groups/leave'];
+  if (![...reads,...writes].includes(path)) return json({ error: 'Not found.' }, 404);
   const method = request.method;
-  if ((['/api/leaderboard','/api/daily'].includes(path) && method !== 'GET') || (!['/api/leaderboard','/api/daily'].includes(path) && method !== 'POST')) return json({ error: 'Method not allowed.' }, 405);
+  if ((reads.includes(path) && method !== 'GET') || (writes.includes(path) && method !== 'POST')) return json({ error: 'Method not allowed.' }, 405);
   if (method === 'POST') {
     if(request.headers.get('x-loopshift-season')!=='2')return json({error:'A fresh challenge has started. Reload the game before playing or saving.'},409);
     const origin = request.headers.get('origin');
@@ -46,7 +50,11 @@ export async function api(request, env) {
   }
   try {
     const db = database(env);
-    if (method === 'GET') {const id=(await identity(request)).id;return json(path==='/api/daily'?await dailyBoard(db,id):await board(db,id));}
+    if (method === 'GET') {
+      const id=(await identity(request)).id;
+      if(path==='/api/groups')return await friendGroups(db,id);
+      return json(path==='/api/social'?await socialState(db,id):path==='/api/weekly'?await weeklyBoard(db,id):path==='/api/daily'?await dailyBoard(db,id):await board(db,id));
+    }
     // Read at most 2 KB, including chunked requests.
     const reader = request.body?.getReader();
     if (!reader) return json({ error: 'Missing request.' }, 400);
@@ -78,6 +86,9 @@ export async function api(request, env) {
       const saved=await db.prepare('UPDATE players SET highest_level=MAX(highest_level,?),furthest_pass=MAX(furthest_pass,?),achievements=achievements | ?,best_chain=MAX(best_chain,?),best_clean=MAX(best_clean,?) WHERE id=? RETURNING highest_level,furthest_pass,achievements,best_chain,best_clean').bind(highest,distance,badges,chain,clean,who.id).first();
       return json({highest:saved.highest_level,distance:saved.furthest_pass,badges:saved.achievements,chain:saved.best_chain,clean:saved.best_clean});
     }
+    if(path.startsWith('/api/social/'))return await socialAction(path,db,who.id,data,now);
+    if(path.startsWith('/api/groups/'))return await groupAction(path,db,who.id,data,now);
+    if(path.startsWith('/api/weekly/'))return await weeklyAction(path,db,who.id,data,now);
     if(path.startsWith('/api/daily/'))return await dailyAction(path,db,who.id,data,now);
     if (!Number.isSafeInteger(data.score) || data.score < 0 || data.score > 10000000 || !Number.isFinite(data.duration) || data.duration < 0 || data.duration > 86400 || data.score > data.duration * 600 + 100) return json({ error: 'This score could not be accepted.' }, 400);
     // Atomic personal-best update: lower scores, repeats and concurrent tabs cannot overwrite a higher score.

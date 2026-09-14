@@ -1,12 +1,13 @@
 // Original mellow arcade beat, synthesized locally. No external recordings.
 (() => {
   let context,master,timer,enabled=true,active=false,level=1,fever=false,step=0,next=0,blocked=false;
-  let transport=null,nextStep=null;
+  let transport=null,nextStep=null,combo=0,bassMix=0,melodyMix=0,duckUntil=0;
   const voices=new Set();
   try{enabled=localStorage.getItem('loop-shift-music')!=='false';}catch{}
   const button=document.getElementById('music-toggle');
   function label(){button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',enabled?(blocked?'Enable background music':'Mute background music'):'Enable background music');button.setAttribute('title',enabled?(blocked?'Tap to enable music':'Music on'):'Music off');}
   function note(hz,time,length,volume,type='sine',endHz=null){
+    volume *= time < duckUntil ? .38 : 1;
     const oscillator=context.createOscillator(),gain=context.createGain();
     oscillator.type=type;oscillator.frequency.setValueAtTime(hz,time);
     if(endHz)oscillator.frequency.exponentialRampToValueAtTime(endHz,time+length);
@@ -16,15 +17,19 @@
   }
   function playStep(position,time,beat,accent=false){
     const bar=((position%16)+16)%16,chord=[55,65.406,49,58.27][((Math.floor(position/32)%4)+4)%4];
-    // A bright, short cue marks each upcoming closed wall's perfect window.
+    // Layers ease in on the existing beat; performance never restarts the transport.
+    const bassTarget=combo>=5?1:combo>=3?.75:combo>=2?.45:0;
+    bassMix+=(bassTarget-bassMix)*.28;melodyMix+=((fever?1:0)-melodyMix)*.25;
     if(accent)note(chord*8,time,.11,.10,'triangle');
-    else if([0,3,6,10,12].includes(bar)){const melody=[4,5,6,5,8][[0,3,6,10,12].indexOf(bar)];note(chord*melody,time,beat*2.8,.055,'triangle');}
-    if(bar%4===0)note(110,time,.16,fever?.09:.065,'sine',42);
-    if([0,6,8,14].includes(bar))note(chord*(bar===14?1.5:1),time,beat*2.5,.075,'triangle');
-    if(bar===4||bar===12){note(185,time,.065,.027,'triangle');note(320,time+.009,.035,.012);}
-    if(bar%2===1&&level>=3)note(660,time,.025,fever?.012:.006,'triangle');
-    if(bar===0){note(chord*2,time,beat*7,.012);note(chord*3,time,beat*6,.009);}
-    if(fever&&bar%4===2)note(82,time,.09,.025,'sine',45);
+    if(bar%4===0)note(110,time,.14,.042,'sine',42);
+    if([0,6,8,14].includes(bar)&&bassMix>.02)note(chord*(bar===14?1.5:1),time,beat*2.1,.055*bassMix,'triangle');
+    if(bar===4||bar===12)note(185,time,.055,.016,'triangle');
+    if(bar%2===1&&level>=3)note(660,time,.025,.004,'triangle');
+    if(bar===0){note(chord*2,time,beat*6,.008);note(chord*3,time,beat*5,.006);}
+    if(melodyMix>.02&&[0,3,6,10,12].includes(bar)){
+      const melody=[4,5,6,5,8][[0,3,6,10,12].indexOf(bar)];note(chord*melody,time,beat*2.3,.046*melodyMix,'sine');
+    }
+
   }
   function schedule(){
     if(!context||context.state!=='running'||!enabled||!active)return;
@@ -57,7 +62,7 @@
     transport={...value,accents:(value.accents||[]).filter(Number.isFinite),at:context?.currentTime||0};
     schedule();
   }
-  function stop(){clearInterval(timer);timer=null;nextStep=null;cancelVoices();if(master)master.gain.setValueAtTime(0,context.currentTime);}
+  function stop(){bassMix=0;melodyMix=0;clearInterval(timer);timer=null;nextStep=null;cancelVoices();if(master)master.gain.setValueAtTime(0,context.currentTime);}
   function begin(){
     if(!enabled||!active)return;
     try{
@@ -84,6 +89,6 @@
   document.addEventListener('keydown',retry);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){active=false;stop();}});
   window.addEventListener('blur',()=>{active=false;stop();});
-  window.LoopShiftMusic={sync,unlock(){if(!enabled)return;try{context ||= new (window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{});}catch{}},play(){active=true;begin();},pause(){active=false;stop();},setLevel(value){level=value;},setFever(value){fever=!!value;}};
+  window.LoopShiftMusic={sync,unlock(){if(!enabled)return;try{context ||= new (window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{});}catch{}},play(){active=true;begin();},pause(){active=false;stop();},setLevel(value){level=value;},setFever(value){fever=!!value;},setCombo(value){combo=Math.max(0,Number(value)||0);},duck(seconds=.16){if(context)duckUntil=Math.max(duckUntil,context.currentTime+Math.min(.5,seconds));}};
   label();
 })();

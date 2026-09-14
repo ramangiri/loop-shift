@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import vm from 'node:vm';
@@ -123,9 +123,10 @@ test('progress persists monotonically and old-season submissions are rejected',a
 
 test('fresh-start migration removes old boards once and retains subsequent scores',()=>{
  const dir=mkdtempSync(join(tmpdir(),'loop-reset-')),file=join(dir,'reset.sqlite');
- let DB=openDatabase(file,migrations);
+ const oldMigrations=join(dir,'old');mkdirSync(oldMigrations);for(const name of readdirSync(migrations).filter(n=>n.endsWith('.sql')&&n<'0003'))copyFileSync(join(migrations,name),join(oldMigrations,name));
+ let DB=openDatabase(file,oldMigrations);
  try{
-  DB.sqlite.exec("DELETE FROM _loopshift_migrations WHERE name>='0003_fresh_start.sql';INSERT INTO players(id,name,best,achieved_at) VALUES('old','Old',500,1);INSERT INTO daily_scores(day,player_id,best,achieved_at) VALUES('2026-09-14','old',50,1);INSERT INTO daily_runs(player_id,token,day,started_at) VALUES('old','token','2026-09-14',1)");
+  DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('old','Old',500,1);INSERT INTO daily_scores(day,player_id,best,achieved_at) VALUES('2026-09-14','old',50,1);INSERT INTO daily_runs(player_id,token,day,started_at) VALUES('old','token','2026-09-14',1)");
   DB.close();DB=openDatabase(file,migrations);
   for(const table of ['players','daily_scores','daily_runs'])assert.equal(DB.sqlite.prepare('SELECT COUNT(*) count FROM '+table).get().count,0);
   DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('new','New',200,2)");DB.close();DB=openDatabase(file,migrations);

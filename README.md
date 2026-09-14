@@ -2,6 +2,29 @@
 
 Two screens: Home and Play. Players choose a nickname before their first round. Home shows the ten highest personal bests and the current player's rank.
 
+## Collections, weekly twists and friends (2.2)
+
+- **Boss collection:** ten distinct trophies, one for each boss at Levels 10 through 100. Finish the main run to save its earned trophies. Existing saved barrier progress awards previously cleared boss trophies during migration; scores and earlier unlocks are preserved. Device-only runs keep a separate local collection.
+- **Player titles:** Perfect Pilot (a chain of five perfects), Shield Survivor (five consecutive levels without losing a shield), and Six-Ring Master (clear Level 13). Select an earned title under Progress & rewards → Boss collection & titles. Public, daily, weekly and friend boards show the selected title with the nickname. Online title selection is checked against the server's unlock mask.
+- **Weekly twist:** a 120-second seeded course and its own Top 10. Weeks start Monday at 00:00 UTC (05:30 IST). Rules rotate: No Fever, Double Spark Points, One Shield Maximum. No Fever preserves scoring combos but never activates Fever; Double Spark Points doubles only gold-spark points, not shield charge, collection counts or community contributions; One Shield Maximum caps capacity at one on every level. Started attempts save to their original week, even across reset. Multiple attempt tokens can await retry and expire after 48 hours. Weekly scores never replace main or daily scores.
+- **Friend groups:** create or join up to five groups, with at most 30 members each. Each group has a random 12-character invite code and a private board of its members' existing main-game best scores. Only members can retrieve that group, its code or its board. Group actions are limited to ten per player per minute. Invite codes grant membership, so share them only with intended friends. Nicknames still appear on public ranked boards; a nickname is not an account login or a way to recover a browser identity. Members can leave; an empty group is removed.
+- **Community goal:** collect 100,000 gold sparks together each UTC week. Online main, daily and weekly runs contribute once when finished. Starting a run creates an owner-bound server token; an immutable finish prevents retry double-counting. Practice, tutorial and sprint do not contribute. Reaching the goal permanently unlocks the Convergence theme for everyone, including players who first open the game later. Community progress appears on Home, away from the arena.
+- **Loss replay:** optional visual playback of the last three seconds at half speed, in a separate result viewer. It highlights the impact and the safe ring, while Try again remains enabled. At most 92 snapshots are retained, sampled at 30 Hz; it records neither screen video nor audio. Playing/closing replay never runs physics, submits scores or changes the original result. Closing it, leaving the page or retrying cancels playback.
+- **Result cards:** create a PNG containing nickname, selected title, score, mode, level reached and best perfect chain. The Share button uses the device share sheet when supported; Save image and a copied game link are fallbacks. Images are generated locally in the browser and are not uploaded by the game. Sharing requires a deliberate button press.
+- **Adaptive soundtrack:** starts with a light beat, eases bass in with perfect chains and adds melody during Fever. Layers use the existing orbit rhythm rather than restarting at level changes. Effect sounds briefly lower new background notes. Pause, mute and gesture-based audio recovery remain supported.
+
+Home keeps rule descriptions, collections and group management folded. Result-only replay/card controls remain outside the live game. All new buttons support keyboard activation and use touch targets of at least 44 pixels.
+
+### Storage and deployment
+
+The new additive migration is `drizzle/0005_many_korvac.sql`. `npm start` applies unapplied migrations before serving requests. It adds trophy/title fields plus weekly attempts/scores, friend membership and community run tables; it does not reset a current installation. The older one-time fresh-start migration remains recorded in existing databases and must not be rerun manually.
+
+Score queues and community-reward queues are scoped to the current server player identity. Rewards remain queued in browser storage until acknowledged, with Home → Progress & rewards → Retry saving rewards and reconnect retries. A server connection at run start is required for community contributions; a failed start does not fabricate a token later. Community and weekly retries expire after 48 hours. These bounded, client-reported stats are not authoritative replay-based anti-cheat verification.
+
+All server data still depends on durable storage. **Render Free can lose the local SQLite database on restart, redeploy or idle shutdown.** Use a paid web service with a persistent disk mounted at `/opt/render/project/src/data`, or integrate an external durable database, before relying on permanent online collections, groups or scores. This update does not change the hosting plan or provision paid storage. GitHub Pages supports device-only play and result tools; online events/groups require the backend.
+
+Run `npm test` for API, migration, isolation, community retry, replay/card, soundtrack and gameplay checks, including the 100-level route and all three weekly rules. `npm run build` bundles the browser assets and server. Automated DOM/canvas/audio simulations do not replace checking touch, font layout and sound on real iPhone/Android devices.
+
 ## This GitHub repository
 
 The browser files at the repository root mirror `www/` so the existing root-based static website receives the latest game. Edit `www/` for the full project, and copy its browser assets to the root when updating the static website. The full server, database migrations, source download and automated checks are included.
@@ -28,7 +51,7 @@ The next safe gap now has a steady gold glow. The normal ball keeps its selected
 
 Game over briefly marks the impact location. Feedback is based on whether the ball was still moving toward the safe ring, had just moved into a blocked ring, or stayed away from the gap. Results show survival time, perfect shifts and the points needed to beat the relevant best. Try again repeats the same mode and course; Home's Play now starts a fresh Endless course when no round is paused. Tap and Space both use the same guided adjacent shift.
 
-The soundtrack is replaced by an original mellow bass-and-percussion beat. It follows the game’s obstacle rhythm and gains stronger percussion during Fever. Short cues mark closed barriers’ perfect windows. Music and effects retain separate controls. No external recordings are included.
+The soundtrack is replaced by an original mellow bass-and-percussion beat. It follows the game’s obstacle rhythm, adds bass with perfect chains and melody during Fever. Short cues mark closed barriers’ perfect windows. Music and effects retain separate controls. No external recordings are included.
 
 ## Six-ring challenge update
 
@@ -164,7 +187,7 @@ The transparent play-area button supports keyboard focus and assistive activatio
 ## Rhythm and replay update
 
 - Walls occupy beats 1, 2 and 4 of a repeating four-beat phrase: tap, tap, wait, tap. The empty beat creates breathing room. Random spacing jitter is removed; moving barriers ease back to their grid position and moving/pulse gates lock 0.85 seconds before the centre reaches the player.
-- The soundtrack receives the game’s orbit phase and speed. Bright cues lead closed wall centres by 0.29 seconds, inside the perfect-shift window. Countdown, pause, retry, level changes, audio interruptions and mute preserve that relationship; Fever changes percussion without altering the timing grid. Audio is optional and does not control collision or scoring rules.
+- The soundtrack receives the game’s orbit phase and speed. Bright cues lead closed wall centres by 0.29 seconds, inside the perfect-shift window. Countdown, pause, retry, level changes, audio interruptions and mute preserve that relationship; Fever adds a melody layer without altering the timing grid. Audio is optional and does not control collision or scoring rules.
 - A successful switch briefly brightens the landing ring, emits a small ripple and plays one crisp arrival tone. The effect waits for the ball to reach the ring, freezes with pause/countdown, and fades after 0.28 seconds. Reduced motion retains the ring highlight and removes the expanding ripple.
 - Try again and the pause menu’s Restart this course reset the same run seed. Particle effects and input choices cannot change subsequent wall generation. Home’s Play now, Start a new course, Sprint and Practice choose fresh runs. Daily retries request a fresh attempt token and reuse that day’s server seed; after midnight a newly requested attempt uses the new daily course. Non-daily retry seeds last for the current page session.
 - Ring unlocks are now Level 2 (three), 5 (four), 9 (five, two shield slots), and 13 (six). Level 1 is a short two-ring introduction without a second hollow ball. The existing six-ring trophy still unlocks on completing Level 13.

@@ -40,13 +40,13 @@
     el('edit-name').textContent = nickname ? 'Edit name' : 'Add name';
   }
   function render(data) {
-    const daily=!!data.challenge;
+    const weekly=data.challenge?.kind==='weekly',daily=!!data.challenge&&!weekly,kind=weekly?'weekly':daily?'daily':'endless';
     if(daily)activeChallenge=data.challenge;
-    const visible=(daily?'daily':'endless')===activeBoard;
-    if(data.me){restoreQueue(data.me.key);if(!daily)savedBest=data.me.best;}
+    const visible=kind===activeBoard;
+    if(data.me){restoreQueue(data.me.key);if(!daily&&!weekly)savedBest=data.me.best;}
     if(visible){
-    el('board-endless').setAttribute('aria-pressed',String(!daily));el('board-daily').setAttribute('aria-pressed',String(daily));
-    el('board-title').textContent=daily?'🏆 Daily Top 10':'🏆 Top 10';
+    el('board-endless').setAttribute('aria-pressed',String(kind==='endless'));el('board-daily').setAttribute('aria-pressed',String(daily));el('board-weekly').setAttribute('aria-pressed',String(weekly));
+    el('board-title').textContent=weekly?'🏆 Weekly Top 10':daily?'🏆 Daily Top 10':'🏆 Top 10';
     if(daily)el('daily-status').textContent='Resets 05:30 IST (00:00 UTC) · Online';
     latestEntries=data.entries;
     el('board-rows').replaceChildren();
@@ -57,19 +57,20 @@
       rank.textContent = entry.rank===1?'🏆':entry.rank===2?'🥈':entry.rank===3?'🥉':String(entry.rank).padStart(2, '0');
       rank.setAttribute('aria-label',`Rank ${entry.rank}`);
       name.textContent = entry.name + (entry.isYou ? ' · You' : '');
+      if(entry.title){const title=document.createElement('small');title.className='player-title';title.textContent=({'perfect-pilot':'Perfect Pilot','shield-survivor':'Shield Survivor','six-ring-master':'Six-Ring Master'})[entry.title]||'';name.append(title);}
       score.textContent = entry.score.toLocaleString();
       tr.append(rank, name, score);el('board-rows').append(tr);
     }
     el('board-table-wrap').hidden = !data.entries.length;
-    el('board-status').textContent = data.entries.length ? (daily?'Daily leaderboard · '+data.challenge.day:'Shared leaderboard · Up to date') : (daily?'No daily scores yet. Set today’s first score.':'The board is open. Finish a round with points to claim the first spot.');
+    el('board-status').textContent = data.entries.length ? (weekly?data.challenge.rule.name+' · Week of '+data.challenge.week:daily?'Daily leaderboard · '+data.challenge.day:'Shared leaderboard · Up to date') : (weekly?'No weekly scores yet. Set the first score.':daily?'No daily scores yet. Set today’s first score.':'The board is open. Finish a round with points to claim the first spot.');
     el('board-you').hidden = !data.me;
     if(data.me)el('board-you').textContent=data.me.rank?`${data.me.name} · Your rank: #${data.me.rank} · Best: ${data.me.best.toLocaleString()}`:`${data.me.name} · Finish a ranked round to set your first score.`;
     }
     if (data.me) {
-      nickname = data.me.name;ranked = true;playerLabel();
+      nickname = data.me.name;ranked = true;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
       if(data.me.progress){serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
       bestListener?.(savedBest);
-    } else { ranked = false;savedBest=null;bestListener?.(null); }
+    } else { ranked = false;savedBest=null;window.LoopShiftSocial?.identity(null);bestListener?.(null); }
   }
   async function refresh(force = false) {
     if (refreshJob) return refreshJob;
@@ -78,7 +79,7 @@
     if (!force && Date.now() - lastRefresh < 10000) return;
     lastRefresh = Date.now();
     el('refresh-board').disabled = true;
-    refreshJob = request(activeBoard==='daily'?'daily':'leaderboard').then(render).catch(error => {
+    refreshJob = request(activeBoard==='weekly'?'weekly':activeBoard==='daily'?'daily':'leaderboard').then(render).catch(error => {
       el('board-status').textContent = error.message + (el('board-rows').children.length ? ' Showing the last loaded scores.' : '');
     }).finally(() => { el('refresh-board').disabled = false;refreshJob = null; });
     const job=refreshJob;
@@ -141,16 +142,16 @@
       try{
         if(refreshJob)await refreshJob;
         if(item.owner!==playerKey)return;
-        const data=await request(item.challenge?'daily/score':'scores',{score:item.score,duration:item.duration,...(item.challenge?{token:item.challenge.token}:{})});
+        const data=await request(item.challenge?(item.challenge.kind==='weekly'?'weekly/score':'daily/score'):'scores',{score:item.score,duration:item.duration,...(item.challenge?{token:item.challenge.token}:{})});
         if(item.owner!==playerKey)return;
         scoreQueue=scoreQueue.filter(entry=>entry.id!==item.id);persistQueue();saved=true;render(data);
-        const prefix=item.challenge?'Daily best saved':'Best saved';
+        const prefix=item.challenge?(item.challenge.kind==='weekly'?'Weekly best saved':'Daily best saved'):'Best saved';
         scoreStatus(data.me.rank?`${prefix} · ${data.me.name} is #${data.me.rank} with ${data.me.best.toLocaleString()} points.`:'Round saved. Collect points to enter the Top 10.');
       }catch(error){
         if(item.owner!==playerKey)return;
         if(item.challenge&&[409,410].includes(error.status)){
           scoreQueue=scoreQueue.filter(entry=>entry.id!==item.id);persistQueue();
-          scoreStatus('Daily score not saved. '+error.message);
+          scoreStatus((item.challenge.kind==='weekly'?'Weekly':'Daily')+' score not saved. '+error.message);
         }else scoreStatus(`Score not saved yet (${item.score.toLocaleString()} points). ${error.message}`,true);
         if(error.status===429)retryTimer=setTimeout(saveScore,Math.min(5000,Math.max(1100,error.retryAfter*1000)));
       }finally{scoreJob=null;}
@@ -173,6 +174,7 @@
   }
   el('retry-progress').addEventListener('click',saveProgress);
   window.LoopShiftBoard = {
+    request,player:()=>ranked?{key:playerKey,name:nickname}:null,
     best:()=>ranked?savedBest:null,
     onBest(listener){bestListener=listener;if(savedBest!==null)listener(savedBest);},
     onProgress(listener){progressListener=listener;if(serverProgress)listener(serverProgress);},
@@ -197,6 +199,17 @@
       }catch(error){el('daily-status').textContent=error.message;if(!el('game-screen').hidden){el('score-save-status').hidden=false;el('score-save-status').textContent=error.message;}}
       finally{startingDaily=false;el('daily-play').disabled=false;}
     },
+    async beginWeekly(callback){
+      if(startingDaily)return;
+      if(!ranked){askName(()=>window.LoopShiftBoard.beginWeekly(callback),false);return;}
+      startingDaily=true;el('weekly-play').disabled=true;el('weekly-status').textContent='Preparing this week’s course…';
+      try{
+        if(refreshJob)await refreshJob;if(scoreJob)await scoreJob;
+        const challenge=await request('weekly/start',{});activeBoard='weekly';render(challenge.board);
+        callback({...challenge,best:challenge.board.me?.best||0});
+      }catch(error){el('weekly-status').textContent=error.message;if(!el('game-screen').hidden){el('score-save-status').hidden=false;el('score-save-status').textContent=error.message;}}
+      finally{startingDaily=false;el('weekly-play').disabled=false;}
+    },
     ready: () => !!nickname,
     askName, refresh,
     beginRound() { round++;if(!scoreQueue.length){el('score-save-status').hidden=true;el('retry-score').hidden=true;}else saveScore(); },
@@ -207,5 +220,6 @@
   };
   el('board-endless').addEventListener('click',async()=>{if(refreshJob)await refreshJob;activeBoard='endless';refresh(true);});
   el('board-daily').addEventListener('click',async()=>{if(refreshJob)await refreshJob;activeBoard='daily';refresh(true);});
+  el('board-weekly').addEventListener('click',async()=>{if(refreshJob)await refreshJob;activeBoard='weekly';refresh(true);});
   refresh(true);
 })();

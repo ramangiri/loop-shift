@@ -1,0 +1,30 @@
+/* Secondary activities stay below Play and never overlay the live arena. */
+.event-card,.community-card{border:1px solid #4d6655;border-radius:18px;padding:22px;margin:16px 0;background:linear-gradient(125deg,#243327,#12251e);min-width:0}
+.event-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 20px;align-items:center}
+.event-eyebrow{font:800 12px LoopArcade,Arial,sans-serif;letter-spacing:.04em;color:#d6ff62}
+.event-card h2,.community-card h2{font:800 clamp(17px,3vw,24px)/1.4 LoopArcade,Arial,sans-serif;margin:6px 0}
+.event-card p,.community-card p{color:#b8cbbd;font-size:14px;line-height:1.5;margin:8px 0;overflow-wrap:anywhere}
+.event-card .secondary-button{min-height:48px}.event-rule{grid-column:1/-1}.event-rule summary{cursor:pointer;min-height:44px;padding:10px 0;font-size:14px;color:#d9efce}
+.community-card progress{width:100%;height:10px;accent-color:#d6ff62;display:block;margin:12px 0}.community-card .board-heading{gap:12px}
+.community-card .text-button{min-height:44px;font-size:13px}.community-card #community-count{font-variant-numeric:tabular-nums;font-weight:700;color:#d6ff62}
+.friends-panel{margin:20px 0;border:1px solid #405b4a;border-radius:16px}.friends-panel>summary{font:800 16px/1.5 LoopArcade,Arial,sans-serif;padding:18px;cursor:pointer}.friends-panel .fold-body{padding:0 18px 18px}
+.group-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:20px 0}.group-form label{grid-column:1/-1;font-size:14px}
+.group-form input{min-width:0;width:100%;min-height:48px;font:16px Arial,sans-serif;border:1px solid #647a57;background:#0d1a13;border-radius:10px;padding:10px 12px;color:#eff8e8;box-sizing:border-box}
+.group-form button{min-height:48px}.group-choices{display:flex;flex-wrap:wrap;gap:8px}.group-choices button{min-height:44px;padding:10px 14px;background:#20382b;color:#d9efce;border:1px solid #566e49;border-radius:10px;font:inherit;max-width:100%;overflow-wrap:anywhere}
+.group-choices button[aria-pressed=true]{border-color:#d6ff62;color:#d6ff62}#group-name{overflow-wrap:anywhere}#group-invite{letter-spacing:.06em;font:700 17px monospace;user-select:all}
+#group-copy-text{width:100%;min-height:100px;font:16px/1.5 Arial;background:#102017;color:#eaf9df}#group-leave-confirm{border-left:3px solid #ffbc92;padding:8px 12px}
+.boss-collection{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:0;list-style:none}
+.boss-trophy{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center;padding:16px 8px;border:1px solid #405244;border-radius:14px;background:#142219;min-width:0}
+.boss-trophy strong{font:800 13px/1.4 LoopArcade,Arial,sans-serif;overflow-wrap:anywhere}.boss-trophy small{font:12px/1.4 Arial;color:#a5b6a8}.trophy-symbol{display:grid;place-items:center;width:54px;height:54px;border:1px dashed #52674e;border-radius:50%;font-size:30px;color:#839a82}
+.boss-trophy.earned{border-color:var(--trophy-color)}.earned .trophy-symbol{color:var(--trophy-color);border-style:solid;border-color:var(--trophy-color);background:#22382b}
+.title-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.title-choice{display:flex;flex-direction:column;text-align:left;gap:6px;min-height:64px;padding:14px;border-radius:12px;border:1px solid #52674e;background:#172a1e;color:#eaf5de}
+.title-choice strong{font:800 14px/1.4 LoopArcade,Arial,sans-serif}.title-choice small{font:13px/1.5 Arial,sans-serif;color:#b4c7b6}.title-choice[aria-pressed=true]{border-color:#d6ff62;background:#293e25}.title-choice:disabled{opacity:.65;cursor:default}
+.player-title{display:block;font:800 10px/1.6 LoopArcade,Arial,sans-serif;color:#c0e79b;margin-top:4px;overflow-wrap:anywhere}
+.collection-panel p,#collection-owner,#social-status{font-size:14px;line-height:1.5;color:#b9cbb9}#social-status:empty{display:none}.board-tabs{flex-wrap:wrap}
+.result-panel{border:1px solid #49624c;border-radius:12px;text-align:left;margin:12px 0;padding:0 12px;background:#13241ddd;touch-action:pan-y}
+.result-panel>summary{cursor:pointer;min-height:48px;display:list-item;align-content:center;font:800 13px/1.5 LoopArcade,Arial,sans-serif;color:#d6ff62;padding:12px 0}
+.result-panel p{font-size:13px!important;line-height:1.5!important}.result-panel canvas#replay-canvas{position:static!important;inset:auto;width:100%;height:auto;aspect-ratio:1;border-radius:10px;touch-action:pan-y}
+.result-panel img{max-width:100%;height:auto;border-radius:10px}.card-actions{display:flex;gap:14px;flex-wrap:wrap}.card-actions a{display:inline-flex;align-items:center;text-decoration:underline}.result-panel a{color:#d6ff62;overflow-wrap:anywhere;display:inline-block;padding:12px 0}
+body[data-theme=convergence]{--surface:#172d29;background:#081a18}body[data-theme=convergence] .console{box-shadow:0 12px 60px #83f5c01f;border-color:#7bccb0}body[data-theme=convergence] .topbar{border-color:#826993}
+@media(max-width:700px){.event-card,.community-card{padding:16px;border-radius:14px}.event-card{gap:8px 12px}.event-card .secondary-button{max-width:120px;font-size:13px;padding:10px 12px}.boss-collection{grid-template-columns:repeat(2,minmax(0,1fr))}.title-options{grid-template-columns:1fr}.friends-panel>summary{font-size:14px;padding:16px}.community-card .board-heading{align-items:flex-start}.community-card h2{font-size:16px}.group-form button{font-size:12px;padding:10px}.board-tabs button{font-size:12px}.result-panel .text-button{font-size:13px}.community-card .board-heading .text-button{flex-shrink:0}.group-form{grid-template-columns:minmax(0,1fr)}.group-form label{grid-column:auto}}
+@media(max-width:360px){.event-card{grid-template-columns:minmax(0,1fr)}.event-card .secondary-button{max-width:none;width:100%}.community-card .board-heading{display:block}.boss-trophy strong{font-size:12px}}
