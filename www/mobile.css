@@ -180,3 +180,35 @@
   #game-screen .shift-hint{margin:4px 0 6px;font-size:12px}
   #game-screen .run-progress{margin-top:6px}
 }
+
+/* Share a single status line instead of stacking empty areas around the arena. */
+@media(max-width:700px){
+  #game-screen{padding-top:0;padding-bottom:4px}
+  #game-screen .console{padding:0}
+  #game-screen .arena-status{display:grid;grid-template-rows:40px 26px;margin:0;padding:0}
+  #game-screen .arena-status .arena-notices,
+  #game-screen .arena-status .run-targets{grid-area:1 / 1;height:40px;min-height:40px;width:100%}
+  #game-screen .arena-status .arena-notices .pattern-notice,
+  #game-screen .arena-status .arena-notices .level-banner-wrap{height:40px;min-height:0;padding:0}
+  #game-screen .arena-status #level-detail{display:none}
+  #game-screen .arena-status .run-targets p{height:40px;line-height:16px}
+  #game-screen .arena-status .run-targets{visibility:hidden}
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#route-cue:not(:empty)) .run-targets,
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#rival-chip:not([hidden])) .run-targets,
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#milestone-countdown:not([hidden])) .run-targets{visibility:visible}
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#route-cue:not(:empty)) .pattern-notice,
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#rival-chip:not([hidden])) .pattern-notice,
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(#milestone-countdown:not([hidden])) .pattern-notice{visibility:hidden}
+  #game-screen .arena-status .game-feedback{grid-area:2 / 1;height:26px;min-height:26px}
+  #game-screen .arena-status .game-feedback .skill-effect{height:26px;line-height:26px}
+  #game-screen .arena{margin:0 auto}
+  #game-screen .hit-feedback:empty{display:none}
+  #game-screen .charge-row{padding:0;margin:0}
+  #game-screen .shift-hint{margin:2px 0}
+  #game-screen .run-progress{margin:4px 0 0;padding:0}
+  #game-screen .desktop-hint{display:none}
+}
+@media(max-width:700px){
+  #game-screen .arena-status:has(.pattern-notice.warning) .run-targets{visibility:hidden}
+  #game-screen .arena-status:not(:has(.level-banner-wrap.show)):has(.pattern-notice.warning) .pattern-notice{visibility:visible}
+}
