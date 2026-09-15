@@ -29,8 +29,6 @@
     <header class="topbar">
       <a class="brand" id="brand-home" href="#home" aria-label="Loop Shift home"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16"/><circle cx="20" cy="20" r="8"/><circle class="logo-dot" cx="36" cy="20" r="4"/></svg><span>LOOP SHIFT<span class="brand-sub">POCKET ARCADE</span></span></a>
       <div class="tools">
-        <button class="music-button" id="music-toggle" aria-pressed="true">♫ Music on</button>
-        <button class="icon-button" id="sound" aria-label="Turn sound on" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path id="sound-lines" d="m16 9 6 6m0-6-6 6"/></svg></button>
         <button class="icon-button" id="pause" aria-label="Pause game" disabled hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path id="pause-icon" d="M8 5v14M16 5v14"/></svg></button>
       </div>
     </header>
@@ -47,21 +45,10 @@
             <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">ONLINE BEST</span><strong id="home-best">—</strong></div>
             <div class="home-record-status"><p id="home-best-note" role="status">Connecting to your saved score…</p><button class="text-button" id="retry-home-score" hidden>Retry save</button></div>
             <details class="device-record" id="device-record" hidden><summary>On this device: <strong id="device-best">0</strong></summary><p>This record can include offline rounds or another player. Only scores saved to your profile appear on the shared board.</p></details></div>
-            <div class="run-options" id="challenge-picker">
-              <label id="challenge-label" for="challenge-choice">CHALLENGE</label>
-              <button type="button" id="challenge-choice" value="survive" aria-haspopup="listbox" aria-expanded="false" aria-controls="challenge-list" aria-labelledby="challenge-label challenge-value">
-                <span id="challenge-value">SURVIVE 5 LEVELS</span><span class="challenge-chevron" aria-hidden="true"></span>
-              </button>
-              <div id="challenge-list" role="listbox" aria-labelledby="challenge-label" hidden>
-                <button type="button" role="option" tabindex="-1" data-value="survive" aria-selected="true">SURVIVE 5 LEVELS</button>
-                <button type="button" role="option" tabindex="-1" data-value="sparks" aria-selected="false">COLLECT 20 SPARKS</button>
-                <button type="button" role="option" tabindex="-1" data-value="perfects" aria-selected="false">CHASE 5 PERFECT SHIFTS</button>
-              </div>
-            </div>
-<button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
+<fieldset class="goal-cards" id="challenge-picker"><legend>Pick a goal</legend><input id="challenge-choice" type="hidden" value="survive"><div class="goal-grid"><button type="button" data-value="survive" aria-pressed="true">Survive<span>5 levels</span></button><button type="button" data-value="sparks" aria-pressed="false">Sparks<span>Collect 20</span></button><button type="button" data-value="perfects" aria-pressed="false">Perfects<span>Make 5</span></button></div></fieldset><button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
             <button class="text-button" id="home-new" hidden>Start a new course</button>
             <p class="home-status" id="home-status" hidden></p>
-        <div class="quick-modes"><button id="tutorial-play" class="secondary-button">How to play</button></div>
+        <div class="quick-modes"><button id="settings-open" class="secondary-button">Settings</button><button id="tutorial-play" class="secondary-button">How to play</button></div>
           </div>
           <div class="home-orbit" aria-hidden="true">
             <svg class="orbit-diagram" viewBox="0 0 440 440">
@@ -83,7 +70,7 @@
 
 
 
-<section id="daily" class="daily-card" aria-labelledby="daily-title"><div><h2 id="daily-title">Daily challenge</h2><p>2 minutes. One shared course.</p><p id="daily-status" role="status">Resets 05:30 IST · Online</p></div><button class="primary-button" id="daily-play">Play daily</button></section>
+<details class="home-index"><summary>Daily &amp; weekly challenges</summary><section id="daily" class="daily-card" aria-labelledby="daily-title"><div><h2 id="daily-title">Daily challenge</h2><p>2 minutes. One shared course.</p><p id="daily-status" role="status">Resets 05:30 IST · Online</p></div><button class="primary-button" id="daily-play">Play daily</button></section>
 
 
 
@@ -92,13 +79,13 @@
   <button id="weekly-play" class="secondary-button">Play weekly</button>
   <details class="event-rule"><summary>This week’s rule</summary><p id="weekly-rule">One shared course with its own Top 10.</p></details>
 </section>
-<section class="community-card" aria-labelledby="community-title">
+</details><details class="home-index"><summary>Community goal</summary><section class="community-card" aria-labelledby="community-title">
   <div class="board-heading"><h2 id="community-title">Together in the loop</h2><button id="community-refresh" class="text-button" aria-label="Refresh community progress">Refresh</button></div>
   <p id="community-count">Weekly goal: 100,000 sparks</p><progress id="community-meter" max="100000" value="0" aria-label="Weekly community sparks"></progress>
   <p id="community-note" role="status">Finish a ranked run to contribute. Reaching the goal unlocks a theme for everyone.</p>
   <button id="community-reward" class="text-button" disabled>Convergence theme · Locked</button>
 </section>
-        <section class="leaderboard" aria-labelledby="board-title">
+</details>        <section class="leaderboard" aria-labelledby="board-title">
           <div class="board-heading"><h2 id="board-title">🏆 Top 10</h2><button class="back-button" id="refresh-board">Refresh</button></div><div class="board-body">
           <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button><button id="board-weekly" aria-pressed="false">Weekly</button></div>
 
@@ -141,8 +128,6 @@
             </div>
           </div>
         </section></details></div></details>
-<div class="motion-options"><button id="theme-toggle" type="button" class="back-button" aria-pressed="false">Theme: Dark</button><button id="motion-toggle" type="button" class="back-button" aria-pressed="false">Reduced motion: OFF</button><button id="comfort-play" type="button" class="back-button">Slower practice · unranked</button></div>
-<details class="comfort-options"><summary>Settings</summary><div class="comfort-body"><button id="vibration-toggle" class="back-button" aria-pressed="true">Vibration on</button><button class="install-button" id="install" hidden>Install game</button><p>Tap the game area or press Space. Vibration requires a supported device.</p></div></details>
 <details class="mobile-fold help-fold" id="game-guide" aria-labelledby="guide-title">
 <summary id="guide-title">How to play</summary><div class="fold-body game-guide">
   <p class="guide-intro">Keep your ball moving around the rings. Shift into the golden gap before each coral barrier reaches you.</p>
@@ -194,7 +179,7 @@
   <h3>Pause, sound and saved scores</h3>
   <p>Use Pause, or press P or Escape on a computer. Leaving the game pauses it automatically. Music and sound effects have separate switches; enable them after pressing Play if your browser asks. Optional vibration is in Settings.</p>
   <p><strong>Online best</strong> on Home is your saved 100-level score. It matches your own “You” row on that board, even if another player is ranked first. Daily and Weekly have separate records. A dash means no online record has been loaded for your player yet. <strong>On this device</strong> keeps the local record, which can include offline rounds or other players; it is not automatically uploaded. Wait for “Best saved” after a ranked round. If a score is waiting to save, use Retry save on Home or the result screen. Lower scores never replace higher ones. A nickname is a display name, not a login; use the same browser and site to keep your player identity.</p>
-  <button id="tutorial-start" class="secondary-button">Practise for 10 seconds</button>
+  <button id="tutorial-start" class="secondary-button">Start guided practice</button>
 </div></details>
       </section>
 
@@ -291,5 +276,11 @@
       </form>
     </dialog>
   </div>
+<dialog id="settings-dialog" class="menu-dialog" aria-labelledby="settings-title"><div class="menu-heading"><h2 id="settings-title">Settings</h2><button id="settings-close" type="button">Done</button></div><h3>01 · Appearance</h3><div class="motion-options"><button id="theme-toggle" type="button" class="back-button" aria-pressed="false">Theme: Dark</button><button id="motion-toggle" type="button" class="back-button" aria-pressed="false">Reduced motion: OFF</button><button id="comfort-play" type="button" class="back-button">Slower practice · unranked</button></div>
+<h3>02 · Sound &amp; touch</h3><div class="settings-grid">        <button class="music-button" id="music-toggle" aria-pressed="true">♫ Music on</button>
+        <button class="icon-button" id="sound" aria-label="Turn sound on" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path id="sound-lines" d="m16 9 6 6m0-6-6 6"/></svg><span id="sound-label">Sound effects off</span></button>
+</div><p>Music and sound effects can be switched independently.</p><details class="comfort-options"><summary>Vibration &amp; installation</summary><div class="comfort-body"><button id="vibration-toggle" class="back-button" aria-pressed="true">Vibration on</button><button class="install-button" id="install" hidden>Install game</button><p>Tap the game area or press Space. Vibration requires a supported device.</p></div></details>
+<h3>03 · Game guide</h3><p>Use How to play for guided practice. The full rules remain available on Home.</p></dialog>
+<dialog id="training-dialog" class="menu-dialog" aria-labelledby="training-title"><p id="training-step"></p><h2 id="training-title"></h2><svg class="training-picture" viewBox="0 0 240 150" role="img" aria-label="One lime player ball and a blue arc marking the next ring"><circle cx="120" cy="80" r="62" fill="none" stroke="#73867a" stroke-width="2"/><circle cx="120" cy="80" r="40" fill="none" stroke="#73867a" stroke-width="2"/><circle cx="164" cy="36" r="8" fill="#d6ff62"/><path d="M145 49 A40 40 0 0 1 158 67" fill="none" stroke="#72e6ff" stroke-width="5" stroke-linecap="round"/></svg><p id="training-copy"></p><button id="training-go" class="primary-button">Try it</button><button id="training-skip" class="text-button">Exit tutorial</button></dialog>
 </body>
 </html>

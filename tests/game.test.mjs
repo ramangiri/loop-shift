@@ -281,11 +281,22 @@ sprint.run(`for(let i=0;i<20000&&mode==='playing';i++){
 assert.equal(sprint.run('passes'),60);assert.equal(sprint.run('level'),5);assert.equal(sprint.run('mode'),'over');assert.equal(sprint.run('sends'),0);assert.equal(sprint.run('journey.highest'),1);assert.equal(sprint.run('progress.sparks'),0);
 assert.equal(sprint.nodes.get('overlay-title').textContent,'Sprint complete!');sprint.click('play');assert.equal(sprint.run('startDelay'),.45);
 
-// Training is ten seconds of actual input, spark collection and shield demonstration.
-const training=game();training.run('globalThis.sends=0;window.LoopShiftBoard={refresh(){},beginRound(){},submit(){sends++},saveProgress(){sends++}};startTutorial();shift();');
-training.run('for(let i=0;i<301;i++)update(1/60)');assert.equal(training.run('tutorialShift'),true);assert.equal(training.run('sparks'),1);assert.equal(training.run('shield'),1);
-training.run('for(let i=0;i<310;i++)update(1/60)');assert.equal(training.run('gameTime'),10);assert.equal(training.run('mode'),'over');assert.equal(training.run('tutorialStage'),3);assert.equal(training.run('shield'),0);assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
-training.click('play');training.click('skip-tutorial');assert.equal(training.run('screen'),'home');assert.notEqual(training.run('mode'),'playing');
+// Guided practice freezes for explanations, waits for actions and never saves ranked scores.
+const training=game();training.run('globalThis.sends=0;window.LoopShiftBoard={refresh(){},beginRound(){},submit(){sends++},saveProgress(){sends++}};startTutorial();');
+const trainingFrozen=training.run('angle');training.run('update(10);shift();');assert.equal(training.run('angle'),trainingFrozen);assert.equal(training.run('tutorialShift'),false);
+training.click('training-go');training.run('update(20)');assert.equal(training.run('tutorialStage'),0,'No automatic lesson timeout');
+training.run('shift();update(.01)');assert.equal(training.run('tutorialStage'),1);
+training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2);assert.equal(training.run('sparks'),1);
+training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt retries');
+training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
+training.click('training-go');training.run('for(let i=0;i<150;i++)update(1/60)');assert.equal(training.run('shield'),0);assert.equal(training.run('tutorialStage'),4);
+training.click('training-go');training.run('for(let i=0;i<120;i++)update(1/60);shift();for(let i=0;i<50;i++)update(1/60)');assert.equal(training.run('tutorialStage'),5);assert.equal(training.run('score'),25);
+training.click('training-go');training.run('shift();update(.01)');assert.equal(training.run('ringCount'),3);assert.equal(training.run('tutorialStage'),6);
+for(const stage of [6,7]){training.click('training-go');training.run('shift();for(let i=0;i<210;i++)update(1/60)');assert.equal(training.run('tutorialStage'),stage+1);}
+training.click('training-go');training.run('for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),9);
+training.click('training-go');assert.equal(training.run('mode'),'over');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
+training.click('play');assert.equal(training.nodes.get('training-dialog').open,true);training.click('training-skip');assert.equal(training.run('screen'),'home');assert.notEqual(training.run('mode'),'playing');
+
 
 const closeCall=game();closeCall.click('home-play');closeCall.run(timing(.18));assert.equal(closeCall.run('target.closeAwarded'),true);assert.equal(closeCall.run('score'),16);assert.equal(closeCall.run('perfects'),0);closeCall.run('update(.01)');assert.equal(closeCall.run('score'),16);
 const noClose=game();noClose.click('home-play');noClose.run('shield=1');noClose.run(timing(.08));assert.equal(noClose.run('target.closeAwarded'),undefined);
@@ -470,10 +481,9 @@ assert.equal(previews.run('level'),5);
 console.log('PASS: 99 smooth level boundaries, stable trails, continuous audio phase, safe ring morphs, pause/resume and no premature next-level walls.');
 
 const guideHelp=game();guideHelp.click('tutorial-play');
-assert.equal(guideHelp.nodes.get('game-guide').open,true,'How to play opens full instructions');
-assert.equal(guideHelp.run('screen'),'home','Reading instructions does not start a run');
-assert.equal(guideHelp.focus(),'guide-title');guideHelp.click('tutorial-start');
+assert.equal(guideHelp.nodes.get('training-dialog').open,true,'How to play opens guided practice');
 assert.equal(guideHelp.run('roundKind'),'tutorial');
+const settingsCheck=game();settingsCheck.click('settings-open');assert.equal(settingsCheck.nodes.get('settings-dialog').open,true);settingsCheck.click('theme-toggle');assert.equal(settingsCheck.run('lightTheme'),true);settingsCheck.click('settings-close');assert.equal(settingsCheck.nodes.get('settings-dialog').open,false);assert.equal(settingsCheck.focus(),'settings-open');
 const boardBest=game();boardBest.run('window.LoopShiftBoard={best:()=>72};updateHUD();');
 assert.equal(boardBest.nodes.get('home-best').textContent,'072','Home matches server-confirmed score');
 assert.equal(boardBest.nodes.get('home-best-label').textContent,'ONLINE BEST');

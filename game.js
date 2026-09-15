@@ -198,16 +198,60 @@ function updateExtras(){
   const displayGoal=levelGoal?5:goal;
   $('run-goal').textContent=`${runFocus==='sparks'?'Sparks':runFocus==='perfects'?'Perfects':'Survive'} · ${Math.min(displayGoal,displayCurrent)}/${displayGoal}${runFocus==='survive'?(levelGoal?' levels':' sec'):''}${focusDone?' ✓':''}`;
 }
+const TRAINING = [
+ ['You control the ball','The ball moves by itself. Tap the play area or press Space to switch to the blue arc. Try one switch.'],
+ ['Collect a spark','The gold spark marks a safe ring. Switch to its ring and collect it. Six sparks earn one shield charge.'],
+ ['Avoid a barrier','Coral arcs are dangerous. Switch to the open ring before the barrier reaches you. You can retry safely here.'],
+ ['Feel a shield','This practice gives you one shield. Let the coral barrier touch you: the shield ring breaks, but you keep playing. Two circles mean two charges.'],
+ ['Make a perfect shift','Wait until the approaching barrier is close, then switch away. The gold timing cue marks the window. A perfect dodge earns +25.'],
+ ['Follow the blue arc','A third ring is added. The blue arc shows where your next tap goes. Try a switch; there is still only one player ball.'],
+ ['Moving barriers','Watch the coral arc drift along its ring. Move to the safe ring before it arrives. The warning stays above the arena.'],
+ ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
+ ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
+ ['Ready to play','Every five levels you can take a break. Pause anytime. Your tutorial is unranked; no score or rewards were saved.']
+];
+let trainingWaiting=false,trainingElapsed=0;
+function showTrainingStep(step){
+ tutorialStage=step;trainingWaiting=true;trainingElapsed=0;rows=[];
+ $('training-step').textContent=`GUIDED PRACTICE · ${step+1} / ${TRAINING.length}`;
+ $('training-title').textContent=TRAINING[step][0];$('training-copy').textContent=TRAINING[step][1];
+ $('training-go').textContent=step===9?'Finish tutorial':'Try it';
+ $('training-dialog').showModal();$('training-go').focus();
+}
+function beginTrainingStep(){
+ $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;
+ if(tutorialStage===9){crash(null,true);return;}
+ if(tutorialStage===8){feverTime=5;}
+ if(tutorialStage===5){ringCount=3;lane=Math.min(lane,2);}
+ if(tutorialStage===3){shield=1;shieldSound('gain1');}
+ if((tutorialStage>=1&&tutorialStage<=4)||tutorialStage>=6){
+ const sparkLane=tutorialStage===1?(lane+1)%ringCount:(lane+1)%ringCount;
+ rows=[{angle:angle+1.4,sparkLane,hazardLanes:tutorialStage===1?[]:[lane],hit:tutorialStage===1,collected:tutorialStage!==1,passed:false,open:tutorialStage===1,pattern:tutorialStage===6?'moving':tutorialStage===7?'pulse':'classic',locked:true}];
+ }
+ $('tutorial-instruction').textContent=TRAINING[tutorialStage][1];$('shift').focus();
+}
+function exitTraining(){trainingWaiting=false;$('training-dialog').close();mode='over';window.LoopShiftMusic?.pause();goHome();}
 function updateTutorial(dt){
-  gameTime=Math.min(10,gameTime+dt);angle+=dt*.78;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
-  const prompts=['Tap or press Space to switch rings.','Follow the golden spark.','Demo shield: stay on a ring and watch it absorb a hit.','Shield absorbed the hit. Six sparks earn a new shield.'];
-  if(gameTime>=2.5&&tutorialStage===0){tutorialStage=1;rows=[{angle:angle+.7,sparkLane:lane,hazardLanes:[],hit:true,collected:false,passed:false,open:true,pattern:'classic',locked:true}];}
-  if(gameTime>=5&&tutorialStage===1){tutorialStage=2;shield=1;shieldSound('gain1');rows=[{angle:angle+.9,sparkLane:1-lane,hazardLanes:[0,1],hit:false,collected:true,passed:false,open:false,pattern:'classic',locked:true}];}
-  for(const row of rows){const delta=row.angle-angle;if(!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);}
-    if(!row.hit&&delta<.108){row.hit=true;shield=0;shieldSound('break');shatterShield();tutorialStage=3;}}
-  $('tutorial-instruction').textContent=prompts[tutorialStage];
-  updateHUD();
-  if(gameTime>=10)crash(null,true);
+ if(trainingWaiting)return;
+ gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
+ if((tutorialStage===0||tutorialStage===5)&&tutorialShift){showTrainingStep(tutorialStage+1);return;}
+ for(const row of rows){
+ if(tutorialStage===6)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
+ if(tutorialStage===7)row.open=Math.sin(trainingElapsed*3)>0;
+ const delta=row.angle-angle;
+ if(tutorialStage===8&&delta<.08){feverTime=0;showTrainingStep(9);return;}
+ if(tutorialStage===1&&!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);showTrainingStep(2);return;}
+ if(delta<=.08&&tutorialStage===3){shield=0;shieldSound('break');shatterShield();showTrainingStep(4);return;}
+ if(delta<-.12&&(tutorialStage===2||tutorialStage===4||tutorialStage===6||tutorialStage===7)){
+ const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
+ const perfect=tutorialStage!==4||row.perfectCandidate;
+ if(safe&&perfect){if(tutorialStage===4){score+=25;tone(880,.12);}showTrainingStep(tutorialStage+1);return;}
+ $('tutorial-instruction').textContent=tutorialStage===4?'Try again: switch just before the coral arc arrives.':'Try again: switch away from the coral barrier.';
+ row.hazardLanes=[lane];row.sparkLane=(lane+1)%ringCount;row.angle=angle+1.4;
+ }
+ if(delta<-.2&&tutorialStage===1){row.angle=angle+1.4;}
+ }
+ updateHUD();
 }
 function dailyShareText(){
   const current=new Date().toISOString().slice(0,10)===dailyRun.day;
@@ -475,7 +519,7 @@ function updateCountdown(){
 
 function updateSound(){
   $('sound').setAttribute('aria-label',soundOn?'Turn sound off':'Turn sound on');
-  $('sound').setAttribute('aria-pressed',String(soundOn));
+  $('sound').setAttribute('aria-pressed',String(soundOn));$('sound-label').textContent=soundOn?'Sound effects on':'Sound effects off';
   $('sound-lines').setAttribute('d',soundOn?'M15 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14':'m16 9 6 6m0-6-6 6');
 }
 function unlockAudio(){
@@ -650,7 +694,7 @@ function start(options){
   effectTime=0;patternNoticeTime=0;$('skill-effect').classList.remove('visible');
   $('pattern-notice').textContent=PATTERN_COPY.classic;$('pattern-notice').classList.remove('warning');
   prepareRhythm(level===1?1.65:2.3);rememberSegment();
-  if(roundKind==='tutorial'){rows=[];$('tutorial-instruction').textContent='Tap or press Space to switch rings.';}
+  trainingWaiting=false;$('training-dialog').close();if(roundKind==='tutorial'){rows=[];showTrainingStep(0);}
   $('overlay').hidden=true;$('shift').disabled=false;$('pause').disabled=false;$('restart').hidden=true;
   $('pause').setAttribute('aria-label','Pause game');$('pause-icon').setAttribute('d','M8 5v14M16 5v14');
   enterGame();syncMusic();window.LoopShiftMusic?.play();
@@ -659,14 +703,14 @@ function start(options){
   tone(440,.12);
 }
 function shift(){
-  if(screen!=='game' || mode!=='playing' || startDelay>0 || gameTime-lastShift<.095)return;
+  if(trainingWaiting || screen!=='game' || mode!=='playing' || startDelay>0 || gameTime-lastShift<.095)return;
   const target=guidedTarget(),movement=target-lane;
   if(target===lane)return;
   unlockAudio();lastShift=gameTime;
   for(const row of rows)if(!row.passed){row.perfectCandidate=false;row.closeCandidate=false;}
   const next=rows.find(row=>!row.passed&&row.angle-angle>0);
   if(next && !next.attempted && !next.open && blocks(next,lane) && Math.abs(radius-laneRadius(lane))<.015){
-    const seconds=(next.angle-angle)/speedNow();
+    const seconds=(next.angle-angle)/(roundKind==='tutorial'?.6:speedNow());
     if(seconds<.65){next.attempted=true;next.perfectCandidate=seconds>=.20&&seconds<=.38;next.closeCandidate=seconds>=.14&&seconds<.20;}
   }
   if(roundKind==='tutorial')tutorialShift=true;
@@ -834,7 +878,7 @@ function drawSpark(a,r,alpha=1,color=C.gold){
   const p=point(a,r),s=size*.012;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=reducedMotion?0:10;ctx.fillRect(-s,-s,s*2,s*2);ctx.restore();
 }
 function drawGuide(){
-  if(ringCount===2)return;
+  if(ringCount===2&&roundKind!=='tutorial')return;
   const targetRadius=laneRadius(guidedTarget());
   ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=reducedMotion?0:7;
   // A short track segment is a destination cue, never a second player orb.
@@ -913,7 +957,7 @@ function draw(time,dt){
           for(const offset of [-.11,.11]){const p=point(row.angle+offset,r);ctx.fillStyle=C.gold;ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,TAU);ctx.fill();}
         }
         // A quiet gold outline marks the timing window; no flashing is needed.
-        const seconds=ahead/speedNow();
+        const seconds=ahead/(roundKind==='tutorial'?.6:speedNow());
         if(mode==='playing'&&startDelay===0&&!row.open&&hazard===lane&&seconds>=.20&&seconds<=.38){
           arc(r,row.angle-.08,row.angle+.08,C.gold,size*.05);
           arc(r,row.angle-.06,row.angle+.06,C.coral,size*.027);
@@ -974,7 +1018,7 @@ $('theme-toggle').addEventListener('click',()=>{lightTheme=!lightTheme;try{local
 for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));
 syncComfort();
 $('motion-toggle').addEventListener('click',()=>{reducedMotion=!reducedMotion;try{localStorage.setItem('loop-shift-reduced-motion',String(reducedMotion));}catch{}trail=[];particles=[];shatters=[];syncComfort();});
-$('comfort-play').addEventListener('click',()=>{reducedMotion=true;syncComfort();$('practice-level').value='1';startPractice();});
+$('comfort-play').addEventListener('click',()=>{$('settings-dialog').close();reducedMotion=true;syncComfort();$('practice-level').value='1';startPractice();});
 $('ring-lesson-practice').addEventListener('click',()=>{
   if(!ringLessonPending||!$('ring-lesson').open)return;
   $('ring-lesson-practice').classList.add('practised');
@@ -982,9 +1026,14 @@ $('ring-lesson-practice').addEventListener('click',()=>{
 });
 $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
-$('tutorial-play').addEventListener('click',()=>{const guide=$('game-guide');guide.open=true;guide.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'start'});$('guide-title').focus();});
+$('tutorial-play').addEventListener('click',startTutorial);
 $('tutorial-start').addEventListener('click',startTutorial);
-$('skip-tutorial').addEventListener('click',()=>{if(roundKind==='tutorial'){mode='over';window.LoopShiftMusic?.pause();goHome();}});
+$('skip-tutorial').addEventListener('click',exitTraining);
+$('training-skip').addEventListener('click',exitTraining);
+$('training-go').addEventListener('click',beginTrainingStep);
+$('training-dialog').addEventListener('cancel',event=>{event.preventDefault();exitTraining();});
+$('settings-open').addEventListener('click',()=>{$('settings-dialog').showModal();$('settings-close').focus();});
+$('settings-close').addEventListener('click',()=>{$('settings-dialog').close();$('settings-open').focus();});
 $('share-daily').addEventListener('click',shareDaily);
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
 $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
@@ -1015,7 +1064,7 @@ $('game-screen').addEventListener('pointerdown',event=>{
 });
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
-  if($('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
+  if($('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
   if(event.code==='Space'){
     if(event.target.closest?.('button, a') && event.target.id!=='shift')return;

@@ -4,7 +4,7 @@ export function uiHarness(extra={}){
   const nodes=new Map(),events={},raf=new Map(),painted=[],storage=extra.storage||new Map();let frameId=0,clock=0;
   const context=new Proxy({measureText:value=>({width:String(value).length*18}),fillText:(...args)=>painted.push(args)}, {get:(o,k)=>o[k]||(()=>{}),set:(o,k,v)=>(o[k]=v,true)});
   const node=(tag='',id='')=>({tag,id,children:[],attrs:{},events:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},value:'',textContent:'',hidden:false,disabled:false,open:false,
-    setAttribute(k,v){this.attrs[k]=v;},append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},addEventListener(t,f){this.events[t]=f;},focus(){},select(){},getContext:()=>context,
+    setAttribute(k,v){this.attrs[k]=v;},append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},addEventListener(t,f){this.events[t]=f;},focus(){},showModal(){this.open=true},close(){this.open=false},select(){},getContext:()=>context,
     toBlob(callback){callback(new Blob(['png'],{type:'image/png'}));}
   });
   for(const [,id] of readFileSync(new URL('../www/index.html',import.meta.url),'utf8').matchAll(/id="([^"]+)"/g))nodes.set(id,node('',id));
