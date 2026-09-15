@@ -121,12 +121,12 @@ const corrupt=game(false,new Map([['loop-shift-progress-v2','{"sparks":-1,"ball"
 assert.equal(corrupt.run('progress.sparks'),0);assert.equal(corrupt.run('progress.trail'),'glow');
 
 // Pattern warnings, settled geometry and open/closed collision states.
-const patterns=game();patterns.click('home-play');patterns.run("startDelay=0;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
+const patterns=game();patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
 assert.equal(patterns.run('moving.announced'),true);assert.ok(patterns.nodes.get('pattern-notice').textContent.includes('MOVING'));
 const movingAngle=patterns.run('moving.angle');patterns.run('update(.035)');assert.notEqual(patterns.run('moving.angle'),movingAngle);
 patterns.run('moving.baseAngle=angle+.45;moving.angle=angle+.45;update(.01)');assert.equal(patterns.run('moving.locked'),true);
 const locked=patterns.run('moving.angle');patterns.run('update(.035)');assert.equal(patterns.run('moving.angle'),locked);
-patterns.run("rows=[];addRow(angle+2,24);globalThis.gate=rows[0];gate.phase=Math.PI/2-gameTime*2.4;update(.01)");
+patterns.run("level=4;rows=[];addRow(angle+2,26);globalThis.gate=rows[0];gate.phase=Math.PI/2-gameTime*2.4;update(.01)");
 assert.equal(patterns.run('gate.open'),true);assert.ok(patterns.nodes.get('pattern-notice').textContent.includes('PULSE'));
 patterns.run('gate.phase=-Math.PI/2-gameTime*2.4;update(.01)');assert.equal(patterns.run('gate.open'),false);
 patterns.run('gate.angle=angle+.05;gate.locked=true;gate.open=true;gate.hazardLane=lane;gate.hazardLanes=[lane];radius=laneRadius(lane);update(.035)');
@@ -186,7 +186,7 @@ console.log('PASS: progression to six rings, bounded speed, adjacent safe paths,
 // Actual Space and pointer events must select the same previewed adjacent ring.
 const keys=game();keys.click('home-play');
 function key(code,id='shift',repeat=false){let prevented=false;keys.listeners.keydown({code,repeat,target:{id,closest:selector=>selector==='button, a'?{}:null},preventDefault(){prevented=true;}});return prevented;}
-function tap(id='shift',extra={}){keys.nodes.get(id).handlers.pointerdown({button:0,isPrimary:true,target:{closest:()=>null},preventDefault(){},...extra});}
+function tap(id='shift',extra={}){const event={button:0,isPrimary:true,pointerId:1,clientX:100,clientY:100,target:{id,closest:()=>null},preventDefault(){},...extra};keys.nodes.get('game-screen').handlers.pointerdown(event);keys.nodes.get('game-screen').handlers.pointerup(event);}
 for(let lv=1;lv<=100;lv++){
   keys.run(`levelUp(${lv});levelBannerTime=0;startDelay=0;rows=[];addRow(angle+2,passes);updateGuide();`);
   for(let i=0;i<keys.run('ringCount')*2;i++){
@@ -291,10 +291,10 @@ training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)')
 training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
 training.click('training-go');training.run('for(let i=0;i<150;i++)update(1/60)');assert.equal(training.run('shield'),0);assert.equal(training.run('tutorialStage'),4);
 training.click('training-go');training.run('for(let i=0;i<120;i++)update(1/60);shift();for(let i=0;i<50;i++)update(1/60)');assert.equal(training.run('tutorialStage'),5);assert.equal(training.run('score'),25);
-training.click('training-go');training.run('shift();update(.01)');assert.equal(training.run('ringCount'),3);assert.equal(training.run('tutorialStage'),6);
+training.click('training-go');training.run('shift(-1);update(.2);shift(1);update(.01)');assert.equal(training.run('ringCount'),3);assert.equal(training.run('tutorialStage'),6);
 for(const stage of [6,7]){training.click('training-go');training.run('shift();for(let i=0;i<210;i++)update(1/60)');assert.equal(training.run('tutorialStage'),stage+1);}
 training.click('training-go');training.run('for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),9);
-training.click('training-go');assert.equal(training.run('mode'),'over');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
+training.click('training-go');training.run('for(let i=0;i<610;i++)update(1/120)');assert.equal(training.run('tutorialStage'),10);training.click('training-go');assert.equal(training.run('mode'),'over');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
 training.click('play');assert.equal(training.nodes.get('training-dialog').open,true);training.click('training-skip');assert.equal(training.run('screen'),'home');assert.notEqual(training.run('mode'),'playing');
 
 
@@ -472,7 +472,7 @@ assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departin
 midShift.run('startDelay=0;update(.2);');assert.ok(midShift.run('levelTransition.elapsed')>0,'Morph resumes after countdown');
 
 const previews=game();previews.click('home-play');
-previews.run(`startDelay=0;for(let i=0;i<9000&&level<5&&mode==='playing';i++){
+previews.run(`startDelay=0;for(let i=0;i<18000&&level<5&&mode==='playing';i++){
   if(rows.some(row=>row.index>=level*12))throw Error('Next-level wall previewed with old geometry');
   const next=rows.find(row=>!row.passed);if(next&&lane!==next.sparkLane&&(next.angle-angle)/speedNow()<=.3)shift();
   update(1/120);
@@ -563,7 +563,7 @@ rest.run('startDelay=0;activeSinceBreak=300;update(1/120)');assert.equal(rest.ru
 const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('reducedMotion'),true);assert.equal(comfort.store.get('loop-shift-reduced-motion'),'true');
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
-const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),1.45);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
+const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),.92);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
 const appearance=game();appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
@@ -594,3 +594,25 @@ markedRoute.run('startDelay=0;shield=0;charge=0;rows[0].angle=angle-.38;rows[0].
 const rivals=game();rivals.run('window.LoopShiftFriendTarget({name:"Friend",score:200})');rivals.click('home-play');assert.match(rivals.nodes.get('rival-chip').textContent,/Friend/);rivals.click('clear-friend-target');assert.equal(rivals.run('friendTarget'),null);
 const weeklyMaster=game();weeklyMaster.click('home-play');weeklyMaster.run('roundKind="weekly";dailyRun={kind:"weekly",week:"2026-09-14",rule:{id:"no-fever",name:"No Fever"}};gameTime=120;roundHits=0;crash(null,true)');assert.equal(weeklyMaster.run('extras.weeklyBadge'),'2026-09-14');
 console.log('PASS: journeys, exact-section practice, milestone choices, clean patterns, shield gamble, friend targets and weekly mastery.');
+
+// Radial gestures move once, cancellation never taps, boundaries never wrap.
+const gestures=game();gestures.click('home-play');gestures.run('startDelay=0;ringCount=6;lane=3;radius=laneRadius(lane);gameTime=5;lastShift=-1;');
+gestures.nodes.get('arena').getBoundingClientRect=()=>({left:0,top:0,width:440,height:440});
+const gestureEvent=(x,id=1)=>({pointerId:id,clientX:x,clientY:220,isPrimary:true,button:0,target:{id:'shift',closest:()=>null},preventDefault(){}});
+const gh=gestures.nodes.get('game-screen').handlers;
+gh.pointerdown(gestureEvent(400));gh.pointermove(gestureEvent(350));gh.pointermove(gestureEvent(300));gh.pointerup(gestureEvent(300));assert.equal(gestures.run('lane'),2,'One swipe only moves one ring');
+gestures.run('gameTime+=.2');gh.pointerdown(gestureEvent(300));gh.pointerup(gestureEvent(400));assert.equal(gestures.run('lane'),3,'Outward swipe works on release too');
+gestures.run('gameTime+=.2');gh.pointerdown(gestureEvent(400));gh.pointercancel();gh.pointerup(gestureEvent(400));assert.equal(gestures.run('lane'),3);
+gestures.run('lane=0;lastShift=-1;shift(-1)');assert.equal(gestures.run('lane'),0);gestures.run('lane=5;shift(1)');assert.equal(gestures.run('lane'),5);
+
+const rushTest=game();rushTest.click('home-play');rushTest.run('startDelay=0;collect({angle,sparkLane:lane,special:true});collect({angle,sparkLane:lane,special:true});');assert.equal(rushTest.run('rushQueued'),false);
+rushTest.run('collect({angle,sparkLane:lane,special:true});');assert.equal(rushTest.run('rushQueued'),true);
+rushTest.run('startRush();globalThis.rushPasses=passes;globalThis.rushSpeed=speedNow();combo=5;feverTime=5;globalThis.beforeCoin=score;angle=rushCoins[0].angle-.005;lane=rushCoins[0].lane;radius=laneRadius(lane);update(.01);');assert.equal(rushTest.run('score-beforeCoin'),100,'Rush coin gives x10 base value without combo or Fever stacking');
+rushTest.run('globalThis.remaining=rushTime;setPaused(true);update(3)');assert.equal(rushTest.run('rushTime'),rushTest.run('remaining'));
+rushTest.run('setPaused(false);startDelay=0;for(let i=0;i<610;i++)update(1/120);');assert.equal(rushTest.run('rushTime'),0);assert.equal(rushTest.run('passes'),rushTest.run('rushPasses'));assert.equal(rushTest.run('speedNow()'),rushTest.run('rushSpeed'));assert.ok(rushTest.run('(rows.find(row=>!row.passed).baseAngle-angle)/speedNow()')>2);
+rushTest.run('rushChain=2;rows=[{angle:angle-.2,baseAngle:angle-.2,special:true,collected:false,hit:true,passed:false,open:true,locked:true,hazardLanes:[],sparkLane:1-lane}];update(.01);');assert.equal(rushTest.run('rushChain'),0,'Missing a special resets consecutive chain');
+rushTest.run('startRush();start();');assert.equal(rushTest.run('rushTime'),0);assert.equal(rushTest.run('rushChain'),0);
+const variety=game();variety.click('home-play');variety.run('level=8;phrasePatterns=new Map();gameSeed=123;globalThis.sequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.ok(variety.run('sequence.every((v,i)=>i<2||v!==sequence[i-1]||v!==sequence[i-2])'));
+variety.run('phrasePatterns=new Map();gameSeed=123;globalThis.sameSequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.equal(variety.run('JSON.stringify(sequence)'),variety.run('JSON.stringify(sameSequence)'),'Seeded course pattern order is repeatable');
+const soft=game();soft.click('appearance-soft');assert.equal(soft.store.get('loop-shift-theme'),'soft');assert.equal(game(false,soft.store).run('softTheme'),true);
+console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and Soft theme persistence.');

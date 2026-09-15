@@ -74,3 +74,14 @@ body[data-theme=convergence]{--surface:#172d29;background:#081a18}body[data-them
 .menu-dialog button:focus-visible,.goal-grid button:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
 
 #challenge-choice[type="hidden"]{display:none!important}
+
+/* Quiet backgrounds and explicit appearance choices. */
+body[data-appearance="light"]{--bg:#d6dcd8;--surface:#c7d0ca!important;--ink:#18271f;--muted:#415348;--line:#82968a}
+body[data-appearance="soft"]{color-scheme:dark;--bg:#29363d;--surface:#34434a!important;--ink:#edf1f0;--muted:#bdcbc9;--line:#61747a;--lime:#b8d68f;--gold:#e4bf83;--coral:#e39a83;--sector:#b8d68f!important;--completed-sector:#b8d68f!important}
+body[data-appearance="soft"] :is(.console,.player-summary,.event-card,.community-card,.leaderboard,.menu-dialog){background:var(--surface);color:var(--ink)}
+.appearance-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.appearance-choices button{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.appearance-choices button[aria-pressed=true]{outline:2px solid var(--lime);outline-offset:1px}
+#theme-toggle[hidden]{display:none!important}
+.rush-status{font:700 12px/1.4 Arial,sans-serif;text-align:center;color:var(--gold);margin:3px 0;min-height:18px}
+#game-screen{touch-action:pan-y}#arena{touch-action:none}

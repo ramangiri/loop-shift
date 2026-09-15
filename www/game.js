@@ -20,12 +20,12 @@ function showRest(completed=0){
 }
 
 const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'};
-let lightTheme=false;
-try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';}catch{}
+let lightTheme=false,softTheme=false;
+try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';softTheme=localStorage.getItem('loop-shift-theme')==='soft';}catch{}
 function syncAppearance(){
- document.body.dataset.appearance=lightTheme?'light':'dark';
+ document.body.dataset.appearance=lightTheme?'light':softTheme?'soft':'dark';
  Object.assign(C,lightTheme?{lime:'#286500',coral:'#b43221',gold:'#875700',line:'#7b897d',blue:'#0056a6'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
- $('theme-toggle').textContent=lightTheme?'Theme: Light':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));
+ $('theme-toggle').textContent=lightTheme?'Theme: Light':softTheme?'Theme: Soft':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));for(const name of ['dark','soft','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':softTheme?'soft':'dark')));
 }
 function comfortAnswer(answer){
  if(mode!=='paused')return;
@@ -57,11 +57,11 @@ function showExtrasHome(){
  $('mastery-badge').textContent=extras.weeklyBadge?`Clean weekly badge · ${extras.weeklyBadge} · This device`:'Weekly mastery: finish a weekly challenge without a hit · Device badge';
  $('milestone-collection').textContent=`Five-level milestones: ${extras.milestones}/20 · This device`;
 }
-function rememberSegment(){segmentSnapshot=JSON.parse(JSON.stringify({level,ringCount,passes,angle,lane,radius,rows,gameSeed,pathLane,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,motionSpeed,sectionChoice}));}
+function rememberSegment(){segmentSnapshot=JSON.parse(JSON.stringify({level,ringCount,passes,angle,lane,radius,rows,gameSeed,pathLane,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,motionSpeed,sectionChoice,patterns:[...phrasePatterns]}));}
 function practiseFailure(){
  if(!failedSegment)return;const saved=JSON.parse(JSON.stringify(failedSegment));
  dailyRequestId++;roundKind='practice';dailyRun=null;practiceLevel=saved.level;start({fresh:true});
- ({level,ringCount,passes,angle,lane,radius,rows,gameSeed,pathLane,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,motionSpeed,sectionChoice}=saved);
+ ({level,ringCount,passes,angle,lane,radius,rows,gameSeed,pathLane,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,motionSpeed,sectionChoice}=saved);phrasePatterns=new Map(saved.patterns||[]);
  comfortRun=false;levelTransition=null;departingRows=[];score=0;shield=1;charge=0;
  // Give a clear lead-in to the same ordered obstacles and gaps.
  const shift=rows.length?Math.max(0,angle+motionSpeed*2.3-rows[0].baseAngle):0;
@@ -154,7 +154,7 @@ let vibrationOn=true,shareText='',lastGuideTarget=-1;
 let landing=null,landingTime=0,landingLane=1;
 try{vibrationOn=localStorage.getItem('loop-shift-vibration')!=='false';}catch{}
 const isRankedMode=()=>roundKind==='endless'||timedRun();
-const targetSpeed=()=>Math.min(.78+(level-1)*.065,timedRun()?1.9:1.45)*(comfortRun?.75:1);
+const targetSpeed=()=>Math.min(.78+(level-1)*.035,.92)*(comfortRun?.75:1);
 function startSprint(){dailyRequestId++;roundKind='sprint';dailyRun=null;start({fresh:true});}
 function startTutorial(){dailyRequestId++;roundKind='tutorial';dailyRun=null;start({fresh:true});}
 function feedback(kind){
@@ -204,25 +204,27 @@ const TRAINING = [
  ['Avoid a barrier','Coral arcs are dangerous. Switch to the open ring before the barrier reaches you. You can retry safely here.'],
  ['Feel a shield','This practice gives you one shield. Let the coral barrier touch you: the shield ring breaks, but you keep playing. Two circles mean two charges.'],
  ['Make a perfect shift','Wait until the approaching barrier is close, then switch away. The gold timing cue marks the window. A perfect dodge earns +25.'],
- ['Follow the blue arc','A third ring is added. The blue arc shows where your next tap goes. Try a switch; there is still only one player ball.'],
+ ['Choose either direction','A third ring is added. Swipe toward the centre to move inward; swipe away to move outward. Try both. On a keyboard use Arrow Up for inward and Arrow Down for outward. Taps and Space still follow the blue arc.'],
  ['Moving barriers','Watch the coral arc drift along its ring. Move to the safe ring before it arrives. The warning stays above the arena.'],
  ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
  ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
+ ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc; speed stays steady.'],
  ['Ready to play','Every five levels you can take a break. Pause anytime. Your tutorial is unranked; no score or rewards were saved.']
 ];
-let trainingWaiting=false,trainingElapsed=0;
+let trainingWaiting=false,trainingElapsed=0,trainingDirections=0;
 function showTrainingStep(step){
  tutorialStage=step;trainingWaiting=true;trainingElapsed=0;rows=[];
  $('training-step').textContent=`GUIDED PRACTICE · ${step+1} / ${TRAINING.length}`;
  $('training-title').textContent=TRAINING[step][0];$('training-copy').textContent=TRAINING[step][1];
- $('training-go').textContent=step===9?'Finish tutorial':'Try it';
+ $('training-go').textContent=step===10?'Finish tutorial':'Try it';
  $('training-dialog').showModal();$('training-go').focus();
 }
 function beginTrainingStep(){
  $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;
- if(tutorialStage===9){crash(null,true);return;}
+ if(tutorialStage===10){crash(null,true);return;}
+ if(tutorialStage===9){startRush();return;}
  if(tutorialStage===8){feverTime=5;}
- if(tutorialStage===5){ringCount=3;lane=Math.min(lane,2);}
+ if(tutorialStage===5){ringCount=3;lane=1;radius=laneRadius(lane);trainingDirections=0;}
  if(tutorialStage===3){shield=1;shieldSound('gain1');}
  if((tutorialStage>=1&&tutorialStage<=4)||tutorialStage>=6){
  const sparkLane=tutorialStage===1?(lane+1)%ringCount:(lane+1)%ringCount;
@@ -233,8 +235,9 @@ function beginTrainingStep(){
 function exitTraining(){trainingWaiting=false;$('training-dialog').close();mode='over';window.LoopShiftMusic?.pause();goHome();}
 function updateTutorial(dt){
  if(trainingWaiting)return;
+ if(tutorialStage===9){gameTime+=dt;updateRush(dt);if(rushTime===0)showTrainingStep(10);return;}
  gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
- if((tutorialStage===0||tutorialStage===5)&&tutorialShift){showTrainingStep(tutorialStage+1);return;}
+ if((tutorialStage===0&&tutorialShift)||(tutorialStage===5&&trainingDirections===3)){showTrainingStep(tutorialStage+1);return;}
  for(const row of rows){
  if(tutorialStage===6)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
  if(tutorialStage===7)row.open=Math.sin(trainingElapsed*3)>0;
@@ -299,6 +302,7 @@ const blocks=(row,n)=>blockedLanes(row).includes(n);
 // The nearest wall owns the route until it has passed. Moving early never
 // advances the guide to a later wall; another tap returns toward its entry ring.
 function guidedTarget(){
+  if(rushTime>0){const coin=rushCoins.find(c=>!c.collected&&c.angle>angle);if(coin&&coin.lane!==lane)return lane+Math.sign(coin.lane-lane);}
   if(ringCount===2)return 1-lane;
   const next=rows.find(row=>!row.passed);
   let destination=next?.sparkLane;
@@ -372,7 +376,7 @@ function syncMusic(){
   window.LoopShiftMusic?.sync?.({
     phase:roundKind==='tutorial'?gameTime*4/.9:rhythmPhase(),
     rate:roundKind==='tutorial'?4/.9:4*speedNow()/rhythmUnit,
-    accents:rows.filter(row=>!row.passed&&!row.open).map(row=>rhythmPhaseOffset+4*(row.baseAngle-rhythmOrigin)/rhythmUnit),
+    accents:(rushTime>0?[]:rows).filter(row=>!row.passed&&!row.open).map(row=>rhythmPhaseOffset+4*(row.baseAngle-rhythmOrigin)/rhythmUnit),
     epoch:rhythmEpoch,running:mode==='playing'&&startDelay===0
   });
 }
@@ -526,11 +530,11 @@ function unlockAudio(){
   if(!soundOn)return;
   try{audioContext ||= new (window.AudioContext || window.webkitAudioContext)();audioContext.resume().catch(()=>{});}catch{}
 }
-function tone(hz,duration=.08,type='sine',volume=.07){
+function tone(hz,duration=.08,type='sine',volume=.07,endHz=null){
   if(breakPending)return;
   if(!soundOn || !audioContext)return;
   window.LoopShiftMusic?.duck?.(duration);
-  try { const o=audioContext.createOscillator(),g=audioContext.createGain();o.type=type;o.frequency.setValueAtTime(hz,audioContext.currentTime);g.gain.setValueAtTime(volume,audioContext.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+duration); }catch{}
+  try { const o=audioContext.createOscillator(),g=audioContext.createGain();o.type=type;o.frequency.setValueAtTime(hz,audioContext.currentTime);if(endHz)o.frequency.exponentialRampToValueAtTime(endHz,audioContext.currentTime+duration);g.gain.setValueAtTime(volume,audioContext.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+duration); }catch{}
 }
 function vibrate(ms){
   if(!vibrationOn)return;
@@ -615,6 +619,7 @@ function warnPattern(row){
   tone(330,.13,'triangle',.035);
 }
 function updateHUD(){
+  updateRushHUD();
   $('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
@@ -632,6 +637,16 @@ function updateHUD(){
   $('ghost-status').textContent=roundKind==='endless'&&ghostTarget>0?(passes>=ghostTarget?'👻 Past your best distance!':`👻 Best run: Level ${Math.min(100,1+Math.floor(ghostTarget/12))} · ${ghostTarget-passes} obstacles ahead`):roundKind==='practice'?'Practice · No ranking or unlocks':'New run. Set your distance record.';
   updateExtras();updateRhythm();updateHome();
 }
+let phrasePatterns=new Map();
+function phrasePattern(index){
+ const phrase=Math.floor(index/4),key=`${level}:${phrase}`;
+ if(!phrasePatterns.has(key)){
+  const previous=phrasePatterns.get(`${level}:${phrase-1}`),before=phrasePatterns.get(`${level}:${phrase-2}`);
+  const choices=PATTERNS.filter(pattern=>!(pattern===previous&&pattern===before));
+  phrasePatterns.set(key,choices[Math.floor(courseRandom()*choices.length)]);
+ }
+ return phrasePatterns.get(key);
+}
 function addRow(a,index=nextRowIndex++){
   nextRowIndex=Math.max(nextRowIndex,index+1);
   const previous=rows.at(-1);
@@ -647,11 +662,11 @@ function addRow(a,index=nextRowIndex++){
   else if(bossLevel()&&bossType()===1)safeLane=previousSafe+sweepDirection;
   const hazardLane=ringCount===2?1-safeLane:previousSafe;
   const hazardLanes=ringCount===2?[hazardLane]:Array.from({length:ringCount},(_,n)=>n).filter(n=>n!==safeLane);
-  const pattern=!timedRun()&&!bossLevel()&&level%5===0&&index%12>=9?'classic':!timedRun()&&sectionChoice==='timing'&&!bossLevel()&&level>1?PATTERNS[1+Math.floor(index/4)%2]:recovery?'classic':bossLevel()?(bossType()===0?'classic':bossType()===1?'moving':'pulse'):PATTERNS[Math.floor(index/12)%3];
+  const pattern=!timedRun()&&!bossLevel()&&level%5===0&&index%12>=9?'classic':!timedRun()&&sectionChoice==='timing'&&!bossLevel()&&level>1?PATTERNS[1+Math.floor(index/4)%2]:recovery?'classic':bossLevel()?(bossType()===0?'classic':bossType()===1?'moving':'pulse'):level<=2?'classic':level===3?'moving':level===4?'pulse':phrasePattern(index);
   // A bonus between walls sits on the next guided ring, reachable with an early
   // shift. Its destination is fixed before it comes into view.
   if(previous&&previous.bonusLane!==null&&previous.bonusLane!==undefined)previous.bonusLane=safeLane;
-  rows.push({angle:a,baseAngle:a,index,bornAt:gameTime,entryLane:previousSafe,pattern,recovery,sweepDirection,patternStart:index>0&&index%12===0,
+  rows.push({angle:a,baseAngle:a,index,bornAt:gameTime,entryLane:previousSafe,pattern,recovery,sweepDirection,patternStart:index>0&&(!previous||previous.pattern!==pattern),special:level>=2&&index%6===3,
     bonusLane:!recovery&&level>=4&&index%3===1?hazardLane:null,bonusCollected:false,shieldBonus:!timedRun()&&index%6===4,
     phase:courseRange(0,TAU),locked:pattern==='classic',open:false,hazardLane,hazardLanes,sparkLane:safeLane,
     collected:false,hit:false,passed:false,perfectCandidate:false,attempted:false});
@@ -683,7 +698,7 @@ function start(options){
   $('safe-pin').hidden=true;$('hit-feedback').textContent='';$('share-daily').hidden=true;$('share-fallback').hidden=true;$('share-status').textContent='';
   $('tutorial-instruction').hidden=roundKind!=='tutorial';$('skip-tutorial').hidden=roundKind!=='tutorial';
   ghostTarget=journey.distance;levelSparks=0;levelPerfects=0;levelHits=0;roundHits=0;objectiveAwarded=false;
-  pathLane=1;prepareCourse(options?.fresh===true);frameCarry=0;impactTime=0;lastGuideTarget=-1;landing=null;landingTime=0;
+  phrasePatterns=new Map();rushTime=0;rushChain=0;rushQueued=false;rushCoins=[];rushGlow=0;window.LoopShiftMusic?.setRush?.(false);pathLane=1;prepareCourse(options?.fresh===true);frameCarry=0;impactTime=0;lastGuideTarget=-1;landing=null;landingTime=0;
   $('collision-pin').classList.remove('show');$('result-coaching').hidden=true;$('result-gap').hidden=true;
   unlockAudio();mode='playing';score=0;passes=0;level=1;ringCount=2;shiftDirection=1;sparks=0;charge=0;shield=0;invulnerable=0;levelBannerTime=0;
   $('level-banner-wrap').classList.remove('show');$('arena').classList.remove('celebrating');
@@ -702,9 +717,9 @@ function start(options){
   $('announcement').textContent='Round started. Tap to switch rings. Dodge barriers and collect six sparks for a shield.';
   tone(440,.12);
 }
-function shift(){
+function shift(direction=0){
   if(trainingWaiting || screen!=='game' || mode!=='playing' || startDelay>0 || gameTime-lastShift<.095)return;
-  const target=guidedTarget(),movement=target-lane;
+  const target=direction?Math.max(0,Math.min(ringCount-1,lane+Math.sign(direction))):guidedTarget(),movement=target-lane;
   if(target===lane)return;
   unlockAudio();lastShift=gameTime;
   for(const row of rows)if(!row.passed){row.perfectCandidate=false;row.closeCandidate=false;}
@@ -713,7 +728,7 @@ function shift(){
     const seconds=(next.angle-angle)/(roundKind==='tutorial'?.6:speedNow());
     if(seconds<.65){next.attempted=true;next.perfectCandidate=seconds>=.20&&seconds<=.38;next.closeCandidate=seconds>=.14&&seconds<.20;}
   }
-  if(roundKind==='tutorial')tutorialShift=true;
+  if(roundKind==='tutorial'){tutorialShift=true;if(tutorialStage===5&&direction)trainingDirections|=direction<0?1:2;}
   shiftDirection=movement;lane=target;landing=target;landingTime=0;updateGuide();
 }
 function setPaused(paused, moveFocus=true){
@@ -748,7 +763,35 @@ function burst(a,r,color,n=14){
   const p=point(a,r);
   for(let i=0;i<n;i++){const d=random(0,TAU),v=random(18,90);particles.push({x:p.x/size,y:p.y/size,vx:Math.cos(d)*v/440,vy:Math.sin(d)*v/440,life:1,color});}
 }
+let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0;
+function startRush(){
+ rushQueued=false;rushChain=0;rushTime=5;rushGlow=1;rushStartAngle=angle;trail=[];
+ const speed=speedNow();let route=lane;
+ rushCoins=Array.from({length:8},(_,i)=>{
+  if(i&&i%2===0)route=route===0?1:route===ringCount-1?route-1:route+(i%4?-1:1);
+  return {angle:angle+speed*(.55+i*.55),lane:route,collected:false};
+ });
+ window.LoopShiftMusic?.setRush?.(true);tone(180,.22,'triangle',.045,720);showEffect('SPARK RUSH · ×10');
+}
+function finishRush(){
+ rushTime=0;window.LoopShiftMusic?.setRush?.(false);
+ const first=rows.find(row=>!row.passed),advance=angle-rushStartAngle;
+ const offset=Math.max(advance,first?angle+speedNow()*2.3-first.baseAngle:advance);
+ for(const row of rows){row.angle+=offset;row.baseAngle+=offset;}
+ rhythmOrigin+=offset;comeback=null;rushCoins=[];invulnerable=Math.max(invulnerable,.35);updateHUD();
+}
+function updateRush(dt){
+ const elapsed=Math.min(dt,rushTime);rushTime=Math.max(0,rushTime-elapsed);
+ angle+=elapsed*speedNow();radius+=(laneRadius(lane)-radius)*(1-Math.exp(-elapsed*24));updateLanding(elapsed);
+ for(const coin of rushCoins){if(!coin.collected&&Math.abs(coin.angle-angle)<.1&&Math.abs(radius-laneRadius(coin.lane))<.032){coin.collected=true;score+=100;sparks++;advanceMission('sparks');tone(800,.06,'sine',.025);}}
+ if(!rushTime)finishRush();updateHUD();
+}
+function updateRushHUD(){
+ $('rush-status').textContent=rushTime>0?`RUSH ×10 · ${Math.ceil(rushTime)}s`:`Special coins · ${rushChain}/3`;
+ $('rush-status').hidden=roundKind==='tutorial'&&rushTime<=0;
+}
 function collect(row){
+  if(row.special&&rushTime<=0){rushChain++;feedback('bonus');if(rushChain>=3)rushQueued=true;}
   row.collected=true;sparks++;levelSparks++;if(!timedRun()&&sectionChoice==='sparks'){sparks++;levelSparks++;score+=10*scoreFactor();}score+=10*(weeklyRule()==='double-sparks'?2:1)*scoreFactor();advanceMission('sparks');burst(row.angle,laneRadius(row.sparkLane),C.gold,10);tone(620+(sparks%6)*75,.13,'sine',.07);
   if(shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;toast(`Shield ready · ${shield} / ${shieldCapacity()}`);shieldSound(shield===2?'gain2':'gain1');}}
   updateHUD();
@@ -776,7 +819,7 @@ function crash(hitRow=null,completed=false){
   $('result-gap').hidden=true;
   if(hitRow){impactTime=1.4;const p=point(hitRow.angle,radius);$('collision-pin').style.left=`${p.x}px`;$('collision-pin').style.top=`${p.y}px`;$('collision-pin').classList.add('show');}
 
-  window.LoopShiftMusic?.pause();feverTime=0;resetCombo();
+  window.LoopShiftMusic?.pause();window.LoopShiftMusic?.setRush?.(false);rushTime=0;rushQueued=false;feverTime=0;resetCombo();
   mode='over';burst(angle,radius,completed?({forest:C.gold,ion:'#72e6ff',nebula:'#c8a4ff',solar:'#ffcc78'}[selectedTheme]||C.gold):C.coral,completed&&bossLevel()?40:28);
   if(completed){tone(660,.2);setTimeout(()=>tone(880,.2),140);setTimeout(()=>tone(1320,.35),280);}else{tone(130,.28,'triangle',.1);vibrate(65);}
   const isBest=score>previousBest;
@@ -804,6 +847,8 @@ function update(dt){
   if(roundKind==='tutorial'){updateTutorial(dt);return;}
   motionSpeed+=(targetSpeed()-motionSpeed)*(1-Math.exp(-dt*.8));
   gameTime+=dt;updateLevelTransition(dt);
+  if(rushTime>0){if(timedRun()&&gameTime>=120){rushTime=0;crash(null,true);return;}updateRush(dt);return;}
+  rushGlow=Math.max(0,rushGlow-dt*2);
   if(timedRun()&&gameTime>=120){gameTime=120;crash(null,true);return;}
   effectTime=Math.max(0,effectTime-dt);if(effectTime===0)$('skill-effect').classList.remove('visible');
   patternNoticeTime=Math.max(0,patternNoticeTime-dt);
@@ -817,7 +862,7 @@ function update(dt){
   angle+=dt*speed;
   radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
   invulnerable=Math.max(0,invulnerable-dt);
-  if(!reducedMotion){trail.push({a:angle,r:radius});if(trail.length>(progress.trail==='comet'?18:12))trail.shift();}
+  if(!reducedMotion){trail.push({a:angle,r:radius});if(trail.length>(progress.trail==='comet'?9:6))trail.shift();}
   for(let i=0;i<rows.length;i++){
     const row=rows[i],delta=row.angle-angle,previousDelta=previousAngles[i]-oldAngle;
     if(row.patternStart&&!row.announced&&delta<speed*3&&delta>0)warnPattern(row);
@@ -837,7 +882,7 @@ function update(dt){
     if(delta<.105&&previousDelta>-.105&&!row.collected&&Math.abs(radius-laneRadius(row.sparkLane))<.032)collect(row);
     if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&delta+.40<.055&&previousDelta+.40>-.055&&Math.abs(radius-laneRadius(row.bonusLane))<.018){row.bonusCollected=true;if(!timedRun()){sparks+=2;levelSparks+=2;advanceMission('sparks');advanceMission('sparks');}if(row.shieldBonus&&shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;shieldSound(shield===2?'gain2':'gain1');}toast('Bonus shield charge +1');}const reward=40*scoreFactor();score+=reward;showEffect(`BONUS! +${reward}`);burst(row.angle+.40,laneRadius(row.bonusLane),'#ffa8da',14);feedback('bonus');}
     if(delta<-.16&&!row.passed){
-      row.passed=true;passes++;pathLane=row.sparkLane;
+      if(row.special&&!row.collected)rushChain=0;row.passed=true;passes++;pathLane=row.sparkLane;
       if(row.hit)patternHits++;
       if(passes%4===0){if(patternHits===0&&!timedRun()&&roundKind!=='tutorial'){score+=30;showEffect('CLEAN PATTERN! +30');tone(880,.1,'sine',.04);}patternHits=0;}
       if(row.perfectCandidate&&!row.hit&&!row.open)awardPerfect(row);
@@ -849,7 +894,7 @@ function update(dt){
       if(roundKind==='practice'&&passes%12===0){finishLevel();crash(null,true);return;}
       if(!timedRun()&&passes>=1200){finishLevel();crash(null,true);return;}
       const nextLevel=Math.min(100,1+Math.floor(passes/12));
-      if(nextLevel>level){captureReplay();levelUp(nextLevel);updateHUD();return;}
+      if(nextLevel>level){if(rushQueued)startRush();captureReplay();levelUp(nextLevel);updateHUD();return;}
       updateHUD();
     }
   }
@@ -863,7 +908,7 @@ function update(dt){
     const next=rows.find(row=>row.angle>angle&&!row.passed);
     $('pattern-notice').textContent=next?.recovery?'BREATHE · Easy gaps and golden sparks':bossLevel()?`BOSS ${level} · ${BOSS_TYPES[bossType()][0]}`:PATTERN_COPY[next?.pattern??'classic'];
   }
-  updateExtras();updateRhythm();updateGuide();captureReplay();
+  if(rushQueued)startRush();updateRushHUD();updateExtras();updateRhythm();updateGuide();captureReplay();
 }
 function shatterShield(){
   if(reducedMotion)return;
@@ -911,8 +956,8 @@ function draw(time,dt){
     const r=laneRadius(ring);
     ctx.save();ctx.globalAlpha=(levelTransition&&ring>=levelTransition.oldRings?morphProgress():1)*(ring!==lane&&ring!==guidedTarget()?.35:1);
     arc(r+.006,0,TAU,lightTheme?'#e1e8dd':'#070f0b',size*ringSize(.053,.035));
-    arc(r,0,TAU,lightTheme?'#c6d3c1':'#223b2e',size*ringSize(.043,.026));arc(r-.012,0,TAU,lightTheme?'#526a4d':'#415a46',1);
-    arc(r+.018,0,TAU,lightTheme?'#d8e2d3':'#0a140e',2);arc(r,0,TAU,lightTheme?'#486840':levelColor()+'88',1.5);
+    arc(r,0,TAU,lightTheme?'#c6d3c1':'#223b2e',size*ringSize(.043,.026));
+    arc(r,0,TAU,lightTheme?'#486840':levelColor()+'88',1.5);
     if(feverTime>0&&!reducedMotion){
       ctx.save();ctx.shadowBlur=reducedMotion?0:12;
       for(let i=0;i<12;i++){
@@ -931,7 +976,7 @@ function draw(time,dt){
     drawOrb(-1.2+demoTime,.385,false);
   }else{
     const nearest=rows.find(row=>!row.passed&&row.angle>angle);
-    for(const row of [...departingRows,...rows]){
+    for(const row of (rushTime>0?[]:[...departingRows,...rows])){
       const rowRadius=n=>row.radii?.[n]??laneRadius(n);
       const arrival=Math.min(1,Math.max(0,(gameTime-(row.bornAt??gameTime-1))/.35));
       const fade=row.radii?Math.max(0,1-(gameTime-row.leavingAt)/.4):arrival*arrival*(3-2*arrival);
@@ -967,7 +1012,7 @@ function draw(time,dt){
       if(row===nearest&&ahead>0&&!row.open&&!row.hit){for(const n of blockedLanes(row))arc(rowRadius(n),row.angle-.085,row.angle+.085,'#ffe7d9',2);}
       if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8*opacity;ctx.shadowColor=C.gold;ctx.shadowBlur=reducedMotion?0:12;arc(rowRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
       if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){drawSpark(row.angle+.4,rowRadius(row.bonusLane),opacity,row.shieldBonus?C.gold:'#ffa8da');if(row.shieldBonus){const b=point(row.angle+.4,rowRadius(row.bonusLane));ctx.strokeStyle=C.gold;ctx.strokeRect(b.x-8,b.y-8,16,16);}}
-      if(!row.collected){drawSpark(row.angle,rowRadius(row.sparkLane),opacity);}
+      if(!row.collected){drawSpark(row.angle,rowRadius(row.sparkLane),opacity,row.special?'#dc7b25':C.gold);if(row.special){const specialPoint=point(row.angle,rowRadius(row.sparkLane));ctx.strokeStyle='#dc7b25';ctx.lineWidth=2;ctx.beginPath();ctx.arc(specialPoint.x,specialPoint.y,size*.021,0,TAU);ctx.stroke();}}
     }
     ctx.globalAlpha=1;
     if(comeback)drawSpark(comeback.angle,laneRadius(comeback.lane),1,'#83f5c0');
@@ -984,7 +1029,7 @@ function draw(time,dt){
     }
     ctx.restore();
     if(mode==='playing'){drawGuide();drawLanding();}
-    if(mode!=='over')drawOrb(angle,radius,shield);
+    drawRush();if(mode!=='over')drawOrb(angle,radius,shield);
   }
   for(const p of particles){
     if(mode!=='paused'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt*2;}
@@ -999,11 +1044,15 @@ function draw(time,dt){
   }
   shatters=shatters.filter(shard=>shard.life>0);
 }
+function drawRush(){
+ if(rushTime>0)for(const coin of rushCoins)if(!coin.collected&&coin.angle>angle-.12)drawSpark(coin.angle,laneRadius(coin.lane),1,C.gold);
+}
 function drawOrb(a,r,safe){
   const p=point(a,r);ctx.save();
+  if(rushGlow>0){ctx.save();ctx.globalAlpha=rushGlow;ctx.strokeStyle='#dc7b25';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,size*.028,0,TAU);ctx.stroke();if(!reducedMotion)for(let i=1;i<=5;i++){const tail=point(a-i*.035,r);ctx.globalAlpha=rushGlow*(1-i/6);ctx.fillStyle=i%2?'#dc7b25':'#efb45c';ctx.beginPath();ctx.arc(tail.x,tail.y,size*(.019-i*.002),0,TAU);ctx.fill();}ctx.restore();}
   if(invulnerable>0)ctx.globalAlpha=.65;
   if(safe){for(let i=0;i<shield;i++){ctx.beginPath();ctx.arc(p.x,p.y,size*(.024+i*.008),0,TAU);ctx.strokeStyle=C.lime;ctx.shadowColor=C.lime;ctx.shadowBlur=reducedMotion?0:7;ctx.lineWidth=2;ctx.stroke();}}
-  ctx.shadowColor=ballColor();ctx.shadowBlur=reducedMotion?0:24;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
+  ctx.shadowColor=ballColor();ctx.shadowBlur=reducedMotion?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
@@ -1014,7 +1063,9 @@ $('section-timing').addEventListener('click',()=>chooseSection('timing'));
 window.LoopShiftFriendTarget=(entry)=>{friendTarget=entry&&typeof entry.name==='string'&&Number.isFinite(entry.score)?{name:entry.name.slice(0,32),score:Math.max(0,entry.score)}:null;$('friend-target-status').textContent=friendTarget?`Next run: beat ${friendTarget.name} · ${friendTarget.score} points`:'No friend selected';};
 $('clear-friend-target').addEventListener('click',()=>window.LoopShiftFriendTarget(null));
 syncAppearance();
-$('theme-toggle').addEventListener('click',()=>{lightTheme=!lightTheme;try{localStorage.setItem('loop-shift-theme',lightTheme?'light':'dark');}catch{}syncAppearance();});
+function chooseAppearance(value){lightTheme=value==='light';softTheme=value==='soft';try{localStorage.setItem('loop-shift-theme',value);}catch{}syncAppearance();}
+$('theme-toggle').addEventListener('click',()=>chooseAppearance(lightTheme?'soft':softTheme?'dark':'light'));
+for(const name of ['dark','soft','light'])$('appearance-'+name).addEventListener('click',()=>chooseAppearance(name));
 for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));
 syncComfort();
 $('motion-toggle').addEventListener('click',()=>{reducedMotion=!reducedMotion;try{localStorage.setItem('loop-shift-reduced-motion',String(reducedMotion));}catch{}trail=[];particles=[];shatters=[];syncComfort();});
@@ -1057,15 +1108,38 @@ function tapShift(event){
   if(event.isPrimary===false||(event.button!==undefined&&event.button!==0))return;
   event.preventDefault();shift();$('shift').focus({preventScroll:true});
 }
-$('shift').addEventListener('pointerdown',tapShift);
+let gesture=null;
+function beginGesture(event){
+ if(event.isPrimary===false||(event.button!==undefined&&event.button!==0)||mode!=='playing')return;
+ if(event.target.id!=='shift'&&event.target.closest?.('button,a,input,textarea,select,details'))return;
+ event.preventDefault();
+ const box=$('arena').getBoundingClientRect(),cx=(box.left??0)+box.width/2,cy=(box.top??0)+(box.height??box.width)/2;
+ gesture={id:event.pointerId,x:event.clientX,y:event.clientY,cx,cy,moved:false};
+ $('game-screen').setPointerCapture?.(event.pointerId);
+}
+function moveGesture(event){
+ if(!gesture||gesture.id!==event.pointerId||gesture.moved)return;
+ const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+ if(Math.hypot(dx,dy)<24)return;
+ const before=Math.hypot(gesture.x-gesture.cx,gesture.y-gesture.cy),after=Math.hypot(event.clientX-gesture.cx,event.clientY-gesture.cy);
+ if(Math.abs(after-before)<18)return;
+ event.preventDefault();gesture.moved=true;shift(after<before?-1:1);
+}
+function endGesture(event){
+ if(!gesture||gesture.id!==event.pointerId)return;
+ moveGesture(event);const moved=gesture.moved;gesture=null;
+ if(!moved)tapShift(event);
+}
+$('game-screen').addEventListener('pointerdown',beginGesture);
+$('game-screen').addEventListener('pointermove',moveGesture);
+$('game-screen').addEventListener('pointerup',endGesture);
+$('game-screen').addEventListener('pointercancel',()=>{gesture=null;});
 $('shift').addEventListener('click',event=>{if(event.detail===0)shift();});
-$('game-screen').addEventListener('pointerdown',event=>{
-  if(mode==='playing'&&!event.target.closest?.('button,a,input,textarea,select,details'))tapShift(event);
-});
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
   if($('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
+  if(screen==='game'&&mode==='playing'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();shift(event.code==='ArrowUp'?-1:1);return;}
   if(event.code==='Space'){
     if(event.target.closest?.('button, a') && event.target.id!=='shift')return;
     event.preventDefault();if(screen==='home')homePlay();else if(mode==='playing')shift();else if(mode==='ready'||mode==='over')start();else setPaused(false);

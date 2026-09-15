@@ -1,13 +1,13 @@
 // Original mellow arcade beat, synthesized locally. No external recordings.
 (() => {
   let context,master,timer,enabled=true,active=false,level=1,fever=false,step=0,next=0,blocked=false;
-  let transport=null,nextStep=null,combo=0,bassMix=0,melodyMix=0,duckUntil=0;
+  let transport=null,nextStep=null,combo=0,bassMix=0,melodyMix=0,duckUntil=0,rush=false,rushMix=0;
   const voices=new Set();
   try{enabled=localStorage.getItem('loop-shift-music')!=='false';}catch{}
   const button=document.getElementById('music-toggle');
   function label(){button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',enabled?(blocked?'Enable background music':'Mute background music'):'Enable background music');button.setAttribute('title',enabled?(blocked?'Tap to enable music':'Music on'):'Music off');}
   function note(hz,time,length,volume,type='sine',endHz=null){
-    volume *= time < duckUntil ? .38 : 1;
+    volume *= (time < duckUntil ? .38 : 1)*(1-rushMix*.3);
     const oscillator=context.createOscillator(),gain=context.createGain();
     oscillator.type=type;oscillator.frequency.setValueAtTime(hz,time);
     if(endHz)oscillator.frequency.exponentialRampToValueAtTime(endHz,time+length);
@@ -19,7 +19,8 @@
     const bar=((position%16)+16)%16,chord=[55,65.406,49,58.27][((Math.floor(position/32)%4)+4)%4];
     // Layers ease in on the existing beat; performance never restarts the transport.
     const bassTarget=combo>=5?1:combo>=3?.75:combo>=2?.45:0;
-    bassMix+=(bassTarget-bassMix)*.28;melodyMix+=((fever?1:0)-melodyMix)*.25;
+    rushMix+=((rush?1:0)-rushMix)*.3;bassMix+=(bassTarget-bassMix)*.28;melodyMix+=((fever?1:0)-melodyMix)*.25;
+    if(rushMix>.02&&bar%2===0)note(chord*[4,6,5,8][Math.floor(bar/2)%4],time,beat*.7,.022*rushMix,'triangle');
     if(accent)note(chord*8,time,.11,.10,'triangle');
     if(bar%4===0)note(110,time,.14,.042,'sine',42);
     if([0,6,8,14].includes(bar)&&bassMix>.02)note(chord*(bar===14?1.5:1),time,beat*2.1,.055*bassMix,'triangle');
@@ -89,6 +90,6 @@
   document.addEventListener('keydown',retry);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){active=false;stop();}});
   window.addEventListener('blur',()=>{active=false;stop();});
-  window.LoopShiftMusic={sync,unlock(){if(!enabled)return;try{context ||= new (window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{});}catch{}},play(){active=true;begin();},pause(){active=false;stop();},setLevel(value){level=value;},setFever(value){fever=!!value;},setCombo(value){combo=Math.max(0,Number(value)||0);},duck(seconds=.16){if(context)duckUntil=Math.max(duckUntil,context.currentTime+Math.min(.5,seconds));}};
+  window.LoopShiftMusic={sync,unlock(){if(!enabled)return;try{context ||= new (window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{});}catch{}},play(){active=true;begin();},pause(){active=false;stop();},setLevel(value){level=value;},setRush(value){rush=!!value;},setFever(value){fever=!!value;},setCombo(value){combo=Math.max(0,Number(value)||0);},duck(seconds=.16){if(context)duckUntil=Math.max(duckUntil,context.currentTime+Math.min(.5,seconds));}};
   label();
 })();
