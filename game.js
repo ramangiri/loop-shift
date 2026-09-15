@@ -44,12 +44,14 @@ function shieldSound(kind){
 let ringCount=2, levelBannerTime=0, shiftDirection=1;
 const LEVEL_MORPH_SECONDS=1.1;
 let levelTransition=null,departingRows=[];
-const RING_LESSON_KEY='loop-shift-ring-lesson-v1';
+const RING_LESSON_KEY='loop-shift-ring-lesson-v2';
 let ringLessonSeen=false,ringLessonPending=false;
 try{ringLessonSeen=localStorage.getItem(RING_LESSON_KEY)==='true';}catch{}
 function showRingLesson(){
   ringLessonPending=true;
-  $('ring-lesson-orb').setAttribute('fill',ballColor());
+  $('ring-lesson-practice').classList.remove('practised');
+  $('ring-practice-status').textContent='Try one safe tap on the picture — optional.';
+  $('ring-lesson-orb').setAttribute('fill','#d6ff62');
   setPaused(true,false);
   $('overlay').hidden=true;
   if(!$('ring-lesson').open)$('ring-lesson').showModal();
@@ -867,6 +869,11 @@ function drawOrb(a,r,safe){
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
+$('ring-lesson-practice').addEventListener('click',()=>{
+  if(!ringLessonPending||!$('ring-lesson').open)return;
+  $('ring-lesson-practice').classList.add('practised');
+  $('ring-practice-status').textContent='That’s it! ✓ Press GOT IT — PLAY when ready.';
+});
 $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
 $('sprint-play').addEventListener('click',startSprint);

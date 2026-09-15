@@ -253,6 +253,7 @@
     <dialog id="ring-lesson" aria-labelledby="ring-lesson-title" aria-describedby="ring-lesson-copy">
       <p class="ring-lesson-kicker">YOUR THIRD RING</p>
       <h2 id="ring-lesson-title">New ring unlocked!</h2>
+      <button id="ring-lesson-practice" type="button" aria-label="Practise one safe ring switch" aria-describedby="ring-practice-status">
       <svg class="ring-lesson-picture" viewBox="0 0 320 210" role="img" aria-label="One lime player ball on a ring. A short blue arc on its neighbouring ring marks the next tap destination.">
         <g fill="none" stroke="#496452" stroke-width="3">
           <circle cx="140" cy="108" r="48"/><circle cx="140" cy="108" r="72"/>
@@ -263,9 +264,11 @@
         <path d="M202 54 L224 37 H250 M186 79 L220 96 H250" fill="none" stroke="#b9c8bd" stroke-width="1.5"/>
         <text x="229" y="29" fill="#d6ff62">YOU</text><text x="224" y="115" fill="#72e6ff">NEXT TAP</text>
       </svg>
-      <div id="ring-lesson-copy"><p><strong>Your ball = you.</strong></p><p><strong>Blue arc = next tap destination.</strong></p><p>Tap anywhere on the play area, or press Space, to switch one ring.</p></div>
+      </button>
+      <p id="ring-practice-status" role="status">Try one safe tap on the picture — optional.</p>
+      <div id="ring-lesson-copy"><p><strong>🟢 Lime ball = you</strong></p><p><strong>Blue arc = your next tap destination</strong></p><p><strong>Tap anywhere to switch rings</strong></p></div>
       <button id="ring-lesson-play" type="button" class="primary">GOT IT — PLAY</button>
-      <p class="ring-lesson-foot">A short clear stretch gives you time to settle in.</p>
+      <p class="ring-lesson-foot">Tap the play area or press Space. Play resumes with a short safe stretch.</p>
     </dialog>
     <dialog id="name-dialog" aria-labelledby="name-title" aria-describedby="name-copy">
       <form id="name-form">

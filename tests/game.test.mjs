@@ -39,7 +39,7 @@ function game(native = false, saved = null, reduced = false, firstLesson = false
     back() { if (this.index > 0) { const e = stack[--this.index]; this.state = e.state; location.hash = e.hash; listeners.popstate?.(); } }
   };
   const store = saved || new Map([['loop-shift-best-v2', '143']]);
-  if(!firstLesson)store.set('loop-shift-ring-lesson-v1','true');
+  if(!firstLesson)store.set('loop-shift-ring-lesson-v2','true');
   let seed=42;const seededMath=Object.create(Math);seededMath.random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
   const sandbox = {
     console, Math: seededMath, location, history, performance: { now: () => 0 },
@@ -506,7 +506,7 @@ assert.ok(recording.run('recorded')>0);assert.equal(recording.run('resultData.sc
 console.log('PASS: three fair weekly courses, isolated weekly scores, boss collection, clean titles and replay capture.');
 
 // First-time instructions freeze the entire round and cannot leak a tap into play.
-const lesson=game(false,new Map(),false,true);lesson.click('home-play');
+const lesson=game(false,new Map([['loop-shift-ring-lesson-v1','true']]),false,true);lesson.click('home-play');
 lesson.run('startDelay=0;passes=12;levelUp(2);');
 assert.equal(lesson.run('mode'),'paused');assert.equal(lesson.nodes.get('ring-lesson').open,true);
 assert.equal(lesson.focus(),'ring-lesson-play');
@@ -517,12 +517,16 @@ lesson.listeners.keydown({code:'Space',target:{},preventDefault(){throw Error('M
 let cancelled=false;lesson.nodes.get('ring-lesson').handlers.cancel({preventDefault(){cancelled=true;}});assert.ok(cancelled);
 lesson.click('back-home');assert.equal(lesson.nodes.get('ring-lesson').open,false);
 lesson.click('home-play');assert.equal(lesson.nodes.get('ring-lesson').open,true,'Returning Home does not skip unread instructions');
+lesson.click('ring-lesson-practice');
+assert.equal(lesson.run('mode'),'paused','Practice must not resume the round');
+assert.equal(lesson.run('JSON.stringify({angle,radius,gameTime,score,shield,feverTime,rows,levelTransition})'),lessonFrame,'Practice must not change real gameplay');
+assert.match(lesson.nodes.get('ring-practice-status').textContent,/That’s it/);
 lesson.click('ring-lesson-play');
 assert.equal(lesson.run('mode'),'playing');assert.equal(lesson.run('startDelay'),0);
 assert.equal(lesson.nodes.get('ring-lesson').open,false);assert.equal(lesson.focus(),'shift');
 assert.equal(lesson.run('JSON.stringify({angle,radius,gameTime,score,shield,feverTime,rows,levelTransition})'),lessonFrame);
 assert.ok(lesson.run('(rows[0].baseAngle-angle)/speedNow()')>=2.3);
-assert.equal(lesson.store.get('loop-shift-ring-lesson-v1'),'true');
+assert.equal(lesson.store.get('loop-shift-ring-lesson-v2'),'true');
 lesson.run('update(1/120)');assert.ok(lesson.run('levelTransition.elapsed')>0);
 lesson.run('passes=24;levelUp(3)');assert.equal(lesson.run('mode'),'playing');
 lesson.run('passes=48;levelUp(5)');assert.equal(lesson.run('mode'),'playing','Later ring unlocks never interrupt play');
@@ -533,3 +537,5 @@ arcOnly.run("ringCount=3;globalThis.guideArcs=[];globalThis.guideFills=0;arc=(..
 assert.equal(arcOnly.run('guideArcs.length'),1);assert.ok(arcOnly.run('guideArcs[0][2]-guideArcs[0][1]')<.3);
 assert.equal(arcOnly.run('guideFills'),0,'Destination is a short arc, not another ball');
 console.log('PASS: one-time ring lesson, input isolation, frozen timers, safe resume, persistent dismissal and arc-only guidance.');
+
+const skippedPractice=game(false,new Map(),false,true);skippedPractice.click('home-play');skippedPractice.run('startDelay=0;passes=12;levelUp(2)');skippedPractice.click('ring-lesson-play');assert.equal(skippedPractice.run('mode'),'playing','Practice is optional');

@@ -275,3 +275,12 @@ body[data-hand="left"] .movement-controls{direction:rtl}body[data-hand="left"] .
 .game-feedback .toast{top:25px;left:0;right:0;max-width:100%;width:auto;box-sizing:border-box;padding:0 4px;border:0;background:transparent;box-shadow:none;border-radius:0;font-size:12px;line-height:14px;max-height:28px;overflow:hidden;transform:translateY(3px)}
 .game-feedback .toast.show{transform:translateY(0)}
 @media(prefers-reduced-motion:reduce){.game-feedback .skill-effect,.game-feedback .toast{transition:none;transform:none}}
+
+/* Practice is an isolated illustration: it never advances the real round. */
+#ring-lesson-practice{display:block;width:100%;padding:0;border:1px solid #496452;border-radius:16px;background:#0c1814;cursor:pointer;touch-action:manipulation;color:inherit}
+#ring-lesson-practice:focus-visible{outline:3px solid #72e6ff;outline-offset:3px}
+#ring-lesson-orb{transition:transform .35s ease-in-out}
+#ring-lesson-practice.practised #ring-lesson-orb{transform:translate(-17px,17px)}
+#ring-lesson-practice.practised svg>path,#ring-lesson-practice.practised svg>text{opacity:0}
+#ring-practice-status{min-height:2.8em;color:#d6ff62;font:14px/1.4 Arial,sans-serif;margin:8px 0}
+@media(prefers-reduced-motion:reduce){#ring-lesson-orb{transition:none}}
