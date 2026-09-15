@@ -964,7 +964,6 @@ function drawOrb(a,r,safe){
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
 showExtrasHome();
-$('journey-play').addEventListener('click',()=>{dailyRequestId++;roundKind='journey';dailyRun=null;start({fresh:true});});
 $('practice-failure').addEventListener('click',practiseFailure);
 $('section-sparks').addEventListener('click',()=>chooseSection('sparks'));
 $('section-timing').addEventListener('click',()=>chooseSection('timing'));
@@ -983,7 +982,6 @@ $('ring-lesson-practice').addEventListener('click',()=>{
 });
 $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
-$('sprint-play').addEventListener('click',startSprint);
 $('tutorial-play').addEventListener('click',()=>{const guide=$('game-guide');guide.open=true;guide.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'start'});$('guide-title').focus();});
 $('tutorial-start').addEventListener('click',startTutorial);
 $('skip-tutorial').addEventListener('click',()=>{if(roundKind==='tutorial'){mode='over';window.LoopShiftMusic?.pause();goHome();}});

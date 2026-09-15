@@ -558,7 +558,7 @@ const appearance=game();appearance.click('theme-toggle');assert.equal(appearance
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
 // Short journeys finish cleanly and keep their medal separate from ranked progress.
-const shortJourney=game();shortJourney.click('journey-play');assert.equal(shortJourney.run('roundKind'),'journey');assert.equal(shortJourney.run('isRankedMode()'),false);
+const shortJourney=game();shortJourney.run("roundKind='journey';dailyRun=null;start({fresh:true})");assert.equal(shortJourney.run('roundKind'),'journey');assert.equal(shortJourney.run('isRankedMode()'),false);
 shortJourney.run('startDelay=0;level=3;ringCount=3;passes=35;rows=[];addRow(angle-.15,35);rows[0].hazardLanes=[];rows[0].collected=true;update(.04)');
 assert.equal(shortJourney.run('mode'),'over');assert.equal(shortJourney.run('passes'),36);assert.equal(shortJourney.run('extras.journeyMedal'),'Gold');assert.match(shortJourney.nodes.get('overlay-title').textContent,/journey medal/);
 const journeyAgain=game(false,shortJourney.store);assert.equal(journeyAgain.run('extras.journeyMedal'),'Gold');
