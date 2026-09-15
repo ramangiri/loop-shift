@@ -266,3 +266,12 @@ body[data-hand="left"] .movement-controls{direction:rtl}body[data-hand="left"] .
 .lesson-new-ring{animation:lesson-ring-reveal 1.2s ease-out both}@keyframes lesson-ring-reveal{from{opacity:0}to{opacity:.75}}
 @media(prefers-reduced-motion:reduce){.lesson-new-ring{animation:none;opacity:.75}}
 @media(max-height:600px){#ring-lesson{padding:16px}.ring-lesson-picture{max-height:125px}}
+
+/* Keep the moving rings clear. Reserve space so feedback never shifts the arena. */
+.orbit-center:not(.counting),.arena .safe-pin{display:none}
+.game-feedback{position:relative;height:54px;min-height:54px;pointer-events:none;contain:layout}
+.game-feedback .skill-effect{top:0;left:0;right:0;height:24px;line-height:24px;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-feedback .skill-effect[data-kind="fever"]{font-size:18px}
+.game-feedback .toast{top:25px;left:0;right:0;max-width:100%;width:auto;box-sizing:border-box;padding:0 4px;border:0;background:transparent;box-shadow:none;border-radius:0;font-size:12px;line-height:14px;max-height:28px;overflow:hidden;transform:translateY(3px)}
+.game-feedback .toast.show{transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.game-feedback .skill-effect,.game-feedback .toast{transition:none;transform:none}}
