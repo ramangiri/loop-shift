@@ -284,3 +284,10 @@ body[data-hand="left"] .movement-controls{direction:rtl}body[data-hand="left"] .
 #ring-lesson-practice.practised svg>path,#ring-lesson-practice.practised svg>text{opacity:0}
 #ring-practice-status{min-height:2.8em;color:#d6ff62;font:14px/1.4 Arial,sans-serif;margin:8px 0}
 @media(prefers-reduced-motion:reduce){#ring-lesson-orb{transition:none}}
+
+.motion-options{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.motion-options button{min-height:44px;flex:1;font-size:14px}
+body[data-reduced-motion="true"] *,body[data-rest="true"] *{animation:none!important;scroll-behavior:auto!important}
+body[data-reduced-motion="true"] .arena{transform:none!important}
+body[data-rest="true"] #overlay{position:fixed;inset:0;z-index:100;background:#101c16;overflow:auto;border-radius:0;padding:24px;display:flex;align-items:center;justify-content:center}
+body[data-rest="true"] #overlay .overlay-card{max-height:90dvh;overflow:auto}
+body[data-screen="game"] #pause{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:50;background:#14251b;min-width:48px;min-height:48px}

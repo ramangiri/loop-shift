@@ -17,7 +17,7 @@ for (const file of ['game.js', 'leaderboard.js', 'music.js', 'sw.js']) execFileS
 const manifest = JSON.parse(readFileSync(join(web, 'manifest.webmanifest'), 'utf8'));
 for (const icon of manifest.icons) assert.ok(existsSync(resolve(web, icon.src)));
 
-function game(native = false, saved = null, reduced = false, firstLesson = false) {
+function game(native = false, saved = null, reduced = false, firstLesson = false, autoContinueRest = true) {
   const noop = () => {};
   const listeners = {}, nodes = new Map();
   const paint = new Proxy({}, { get: (o, k) => o[k] || noop, set: (o, k, v) => (o[k] = v, true) });
@@ -53,6 +53,8 @@ function game(native = false, saved = null, reduced = false, firstLesson = false
     requestAnimationFrame: noop, setTimeout: () => 1, clearTimeout: noop
   };
   vm.createContext(sandbox); vm.runInContext(code, sandbox);
+  // Existing long-course simulations act as a player choosing Continue at breaks.
+  if(autoContinueRest)vm.runInContext('const originalRest=showRest;showRest=(completed)=>{originalRest(completed);setPaused(false);startDelay=0;};',sandbox);
   return { run: text => vm.runInContext(text, sandbox), nodes, listeners, history,
     store, click: id => nodes.get(id).handlers.click({ preventDefault: noop }),
     minimized: () => minimized, vibration: () => vibration, focus: () => focus };
@@ -539,3 +541,16 @@ assert.equal(arcOnly.run('guideFills'),0,'Destination is a short arc, not anothe
 console.log('PASS: one-time ring lesson, input isolation, frozen timers, safe resume, persistent dismissal and arc-only guidance.');
 
 const skippedPractice=game(false,new Map(),false,true);skippedPractice.click('home-play');skippedPractice.run('startDelay=0;passes=12;levelUp(2)');skippedPractice.click('ring-lesson-play');assert.equal(skippedPractice.run('mode'),'playing','Practice is optional');
+
+const rest=game(false,null,false,false,false);rest.click('home-play');
+rest.run('startDelay=0;level=5;passes=60;score=123;shield=1;levelUp(6)');
+assert.equal(rest.run('mode'),'paused');assert.equal(rest.nodes.get('overlay-title').textContent,'You’ve completed 5 levels!');
+const restState=rest.run('JSON.stringify({angle,score,shield,gameTime,rows})');rest.run('for(let i=0;i<100;i++)update(1)');
+assert.equal(rest.run('JSON.stringify({angle,score,shield,gameTime,rows})'),restState);
+rest.click('result-home');rest.click('home-play');assert.equal(rest.run('mode'),'playing');assert.equal(rest.run('startDelay'),1.5);assert.equal(rest.run('score'),123);assert.equal(rest.run('shield'),1);
+assert.ok(rest.run('(rows.find(r=>!r.passed).baseAngle-angle)/speedNow()')>=2.3);
+rest.run('startDelay=0;activeSinceBreak=300;update(1/120)');assert.equal(rest.run('mode'),'paused');assert.equal(rest.nodes.get('overlay-title').textContent,'Take a breather.');
+const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('reducedMotion'),true);assert.equal(comfort.store.get('loop-shift-reduced-motion'),'true');
+comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
+
+const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),1.45);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
