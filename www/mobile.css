@@ -154,3 +154,29 @@
   .board-heading{gap:12px;margin-bottom:12px}.board-heading h2{font-size:20px}
   .game-guide h3{font-size:17px}.game-guide p,.game-guide li{font-size:16px}
 }
+
+/* A stable, compact HUD: no stacked empty message panels above the orbit. */
+@media(max-width:700px){
+  .quick-modes{grid-template-columns:1fr}
+  #game-screen #finish-line[hidden]{display:none!important}
+  #game-screen .arena-notices{height:54px;min-height:54px}
+  #game-screen .arena-notices .pattern-notice,
+  #game-screen .arena-notices .level-banner-wrap{height:54px;padding:2px 0;overflow:hidden}
+  #game-screen .level-banner-wrap strong{font-size:14px;line-height:18px}
+  #game-screen .level-banner-wrap span{font-size:11px;line-height:16px}
+  #game-screen .run-targets{position:relative;height:28px;min-height:28px;margin:0}
+  #game-screen .run-targets p{position:absolute;inset:0;margin:0;font-size:11px;line-height:14px;white-space:normal;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  #game-screen .run-targets:has(#route-cue:not(:empty)) #rival-chip{visibility:hidden}
+  #game-screen .run-targets:has(#milestone-countdown:not([hidden])) :is(#route-cue,#rival-chip){visibility:hidden}
+  #game-screen .game-feedback{height:30px;min-height:30px;margin:0}
+  #game-screen .game-feedback .skill-effect{inset:0 50% 0 0;height:30px;line-height:30px;font-size:12px;text-align:left}
+  #game-screen .game-feedback .toast{inset:0 0 0 50%;max-height:30px;font-size:11px;line-height:14px;display:flex;align-items:center;justify-content:flex-end;text-align:right;padding:0 2px}
+  #game-screen .game-feedback:not(:has(.toast.show)) .skill-effect{right:0;text-align:center}
+  #game-screen .game-feedback:not(:has(.skill-effect.visible)) .toast{left:0;justify-content:center;text-align:center}
+  #game-screen .arena{width:min(100%,max(260px,calc(100svh - 340px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))));margin:0 auto;aspect-ratio:1}
+  #game-screen .arena:has(.overlay:not([hidden])){width:100%;min-height:360px}
+  #game-screen .hit-feedback{min-height:16px;margin:2px 0;font-size:11px;line-height:16px}
+  #game-screen .charge-row{padding:2px 0 4px}
+  #game-screen .shift-hint{margin:4px 0 6px;font-size:12px}
+  #game-screen .run-progress{margin-top:6px}
+}
