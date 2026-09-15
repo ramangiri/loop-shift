@@ -15,7 +15,19 @@ function showRest(completed=0){
   $('restart').hidden=true;
 }
 
-const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637'};
+const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'};
+let lightTheme=false;
+try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';}catch{}
+function syncAppearance(){
+ document.body.dataset.appearance=lightTheme?'light':'dark';
+ Object.assign(C,lightTheme?{lime:'#286500',coral:'#b43221',gold:'#875700',line:'#7b897d',blue:'#0056a6'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
+ $('theme-toggle').textContent=lightTheme?'Theme: Light':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));
+}
+function comfortAnswer(answer){
+ if(mode!=='paused')return;
+ $('comfort-response').textContent=answer==='comfortable'?'Continue when you’re ready.':answer==='eyes'?'Rest your eyes and look away from the screen. The game will stay paused.':'Stop playing and rest. The game will stay paused.';
+}
+
 let size = 440, mode = 'ready', screen = 'home', lastTime = 0, totalTime = 0;
 let angle = -Math.PI / 2, lane = 1, radius = .385, rows = [], particles = [], trail = [];
 let score = 0, passes = 0, level = 1, sparks = 0, charge = 0, shield = 0, invulnerable = 0;
@@ -313,7 +325,7 @@ const speedNow=()=>motionSpeed;
 const personalBest=()=>window.LoopShiftBoard?.best?.()??best;
 const multiplier=()=>combo>=5?5:combo>=3?3:combo>=2?2:1;
 const scoreFactor=()=>multiplier()*(feverTime>0?2:1);
-const ballColor=()=>progress.ball==='cyan'?'#72e6ff':progress.ball==='prism'?`hsl(${reducedMotion?285:(gameTime*65)%360} 95% 76%)`:C.lime;
+const ballColor=()=>progress.ball==='cyan'?C.blue:progress.ball==='prism'?`hsl(${reducedMotion?285:(gameTime*65)%360} 85% ${lightTheme?32:76}%)`:C.lime;
 
 try { best = Number(localStorage.getItem('loop-shift-best-v2')) || 0; soundOn = localStorage.getItem('loop-shift-sound') !== 'false'; } catch {}
 const baseLaneRadius=(n,count)=>count===2?(n ? .385 : .27):.14+n*(.275/(count-1));
@@ -614,7 +626,7 @@ function setPaused(paused, moveFocus=true){
   if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;
-    $('score-save-status').hidden=true;$('retry-score').hidden=true;
+    $('score-save-status').hidden=true;$('retry-score').hidden=true;$('comfort-check').hidden=false;$('comfort-response').textContent='';
     window.LoopShiftMusic?.pause();mode='paused';$('overlay').hidden=false;$('overlay-kicker').textContent='TAKE A BREATHER';$('overlay-title').textContent='Round paused.';
     $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;$('result').hidden=true;
     $('play').innerHTML='Keep going <span aria-hidden="true">↗</span>';$('restart').hidden=false;$('shift').disabled=true;
@@ -629,7 +641,7 @@ function setPaused(paused, moveFocus=true){
     }
     if(screen!=='game')enterGame();
     unlockAudio();
-    mode='playing';$('overlay').hidden=true;$('shift').disabled=false;startDelay=1.5;frameCarry=0;lastTime=performance.now();syncMusic();window.LoopShiftMusic?.play();
+    mode='playing';$('comfort-check').hidden=true;$('overlay').hidden=true;$('shift').disabled=false;startDelay=1.5;frameCarry=0;lastTime=performance.now();syncMusic();window.LoopShiftMusic?.play();
     $('pause').setAttribute('aria-label','Pause game');$('announcement').textContent='Game resumed.';
     $('pause-icon').setAttribute('d','M8 5v14M16 5v14');
     if(moveFocus)$('shift').focus({preventScroll:true});
@@ -675,7 +687,7 @@ function crash(hitRow=null,completed=false){
   $('share-daily').hidden=roundKind!=='daily';
   $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result').hidden=false;
   $('play').innerHTML='Try again <span aria-hidden="true">↗</span>';$('restart').hidden=true;
-  $('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
+  $('comfort-check').hidden=true;$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
   $('play').focus({preventScroll:true});
   $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected.`;
@@ -764,9 +776,9 @@ function drawSpark(a,r,alpha=1,color=C.gold){
 function drawGuide(){
   if(ringCount===2)return;
   const targetRadius=laneRadius(guidedTarget());
-  ctx.save();ctx.lineCap='round';ctx.shadowColor='#72e6ff';ctx.shadowBlur=reducedMotion?0:7;
+  ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=reducedMotion?0:7;
   // A short track segment is a destination cue, never a second player orb.
-  arc(targetRadius,angle-.13,angle+.13,'#72e6ff',Math.max(3,size*.009));
+  arc(targetRadius,angle-.13,angle+.13,C.blue,Math.max(3,size*.009));
   ctx.restore();
 }
 function drawLanding(){
@@ -794,9 +806,9 @@ function draw(time,dt){
   for(let ring=0;ring<ringCount;ring++){
     const r=laneRadius(ring);
     ctx.save();ctx.globalAlpha=(levelTransition&&ring>=levelTransition.oldRings?morphProgress():1)*(ring!==lane&&ring!==guidedTarget()?.35:1);
-    arc(r+.006,0,TAU,'#070f0b',size*ringSize(.053,.035));
-    arc(r,0,TAU,'#223b2e',size*ringSize(.043,.026));arc(r-.012,0,TAU,'#415a46',1);
-    arc(r+.018,0,TAU,'#0a140e',2);arc(r,0,TAU,levelColor()+'88',1.5);
+    arc(r+.006,0,TAU,lightTheme?'#e1e8dd':'#070f0b',size*ringSize(.053,.035));
+    arc(r,0,TAU,lightTheme?'#c6d3c1':'#223b2e',size*ringSize(.043,.026));arc(r-.012,0,TAU,lightTheme?'#526a4d':'#415a46',1);
+    arc(r+.018,0,TAU,lightTheme?'#d8e2d3':'#0a140e',2);arc(r,0,TAU,lightTheme?'#486840':levelColor()+'88',1.5);
     if(feverTime>0&&!reducedMotion){
       ctx.save();ctx.shadowBlur=reducedMotion?0:12;
       for(let i=0;i<12;i++){
@@ -891,6 +903,9 @@ function drawOrb(a,r,safe){
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
+syncAppearance();
+$('theme-toggle').addEventListener('click',()=>{lightTheme=!lightTheme;try{localStorage.setItem('loop-shift-theme',lightTheme?'light':'dark');}catch{}syncAppearance();});
+for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));
 syncComfort();
 $('motion-toggle').addEventListener('click',()=>{reducedMotion=!reducedMotion;try{localStorage.setItem('loop-shift-reduced-motion',String(reducedMotion));}catch{}trail=[];particles=[];shatters=[];syncComfort();});
 $('comfort-play').addEventListener('click',()=>{reducedMotion=true;syncComfort();$('practice-level').value='1';startPractice();});
