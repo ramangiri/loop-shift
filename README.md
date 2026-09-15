@@ -217,3 +217,11 @@ The transparent play-area button supports keyboard focus and assistive activatio
 - Ring unlocks are now Level 2 (three), 5 (four), 9 (five, two shield slots), and 13 (six). Level 1 is a short two-ring introduction without a second hollow ball. The existing six-ring trophy still unlocks on completing Level 13.
 
 Automated verification clears all 100 levels and a full daily course without shield/Fever protection, compares retries through all six-ring milestones, checks landing feedback and reduced motion, and tests soundtrack cue timestamps, pause/resume and mute. These checks do not replace listening or touch testing on a physical phone.
+
+
+### Journey and mastery update (2.2.8)
+- Three-level unranked journeys award a device medal; daily personal goals, five-level milestone badges and clean weekly badges are also device-local. Boss trophies and ranked scores continue using the existing server.
+- Four clean obstacles award +30 outside timed events. Optional pink routes grant points and two sparks; outlined gold bonus routes add one shield charge. Standard safe gaps remain available.
+- Milestone breaks offer extra safe-route sparks or timing patterns. Boss patterns remain distinct; ordinary milestone finales alternate gaps.
+- Loss practice restores the generated obstacle section and RNG state with a safe lead-in, unranked. Friend group rows offer a Challenge button; the chosen target appears briefly above play.
+- Existing daily and weekly course generation/scoring remains unchanged, with the new weekly mastery badge recorded separately.

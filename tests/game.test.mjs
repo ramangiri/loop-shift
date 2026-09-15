@@ -556,3 +556,31 @@ comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');
 const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),1.45);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
 const appearance=game();appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
+
+// Short journeys finish cleanly and keep their medal separate from ranked progress.
+const shortJourney=game();shortJourney.click('journey-play');assert.equal(shortJourney.run('roundKind'),'journey');assert.equal(shortJourney.run('isRankedMode()'),false);
+shortJourney.run('startDelay=0;level=3;ringCount=3;passes=35;rows=[];addRow(angle-.15,35);rows[0].hazardLanes=[];rows[0].collected=true;update(.04)');
+assert.equal(shortJourney.run('mode'),'over');assert.equal(shortJourney.run('passes'),36);assert.equal(shortJourney.run('extras.journeyMedal'),'Gold');assert.match(shortJourney.nodes.get('overlay-title').textContent,/journey medal/);
+const journeyAgain=game(false,shortJourney.store);assert.equal(journeyAgain.run('extras.journeyMedal'),'Gold');
+
+// Replay restores the actual generated section, not a freshly randomized level.
+const retrySection=game();retrySection.click('home-play');
+const originalPattern=retrySection.run('JSON.stringify(segmentSnapshot.rows.map(r=>[r.sparkLane,r.pattern,r.phase,r.hazardLanes]))');
+retrySection.run('crash(rows[0])');assert.equal(retrySection.nodes.get('practice-failure').hidden,false);retrySection.click('practice-failure');
+assert.equal(retrySection.run('roundKind'),'practice');assert.equal(retrySection.run('isRankedMode()'),false);assert.equal(retrySection.run('score'),0);
+assert.equal(retrySection.run('JSON.stringify(rows.map(r=>[r.sparkLane,r.pattern,r.phase,r.hazardLanes]))'),originalPattern);
+assert.ok(retrySection.run('(rows[0].baseAngle-angle)/motionSpeed')>=2.3);
+
+// Section choices are made while paused, without changing speed or skipping a level.
+const choices=game(false,null,false,false,false);choices.click('home-play');choices.run('startDelay=0;level=5;passes=60;levelUp(6)');
+const choiceSpeed=choices.run('targetSpeed()');choices.click('section-sparks');assert.equal(choices.run('mode'),'paused');assert.equal(choices.run('sectionChoice'),'sparks');
+choices.run('globalThis.beforeSparks=sparks;collect(rows[0]);');assert.equal(choices.run('sparks-beforeSparks'),2);
+choices.click('section-timing');assert.equal(choices.run('targetSpeed()'),choiceSpeed);assert.ok(choices.run('rows.every(r=>r.pattern!=="classic")'));assert.equal(choices.run('extras.milestones'),1);
+
+// Four clean walls yield a quiet bonus; contact prevents that sequence's award.
+const cleanPattern=game();cleanPattern.click('home-play');cleanPattern.run('startDelay=0;passes=3;score=0;rows=[];addRow(angle-.15,3);rows[0].hazardLanes=[];rows[0].collected=true;update(.04)');assert.equal(cleanPattern.run('score'),31);
+const markedRoute=game();markedRoute.click('home-play');markedRoute.run('level=4;ringCount=3;rows=[];addRow(angle+2,40)');assert.equal(markedRoute.run('rows[0].shieldBonus'),true);assert.ok(markedRoute.run('rows[0].bonusLane!==null'));
+markedRoute.run('startDelay=0;shield=0;charge=0;rows[0].angle=angle-.38;rows[0].baseAngle=rows[0].angle;rows[0].passed=true;rows[0].collected=true;lane=rows[0].bonusLane;radius=laneRadius(lane);update(.04)');assert.equal(markedRoute.run('charge'),1);
+const rivals=game();rivals.run('window.LoopShiftFriendTarget({name:"Friend",score:200})');rivals.click('home-play');assert.match(rivals.nodes.get('rival-chip').textContent,/Friend/);rivals.click('clear-friend-target');assert.equal(rivals.run('friendTarget'),null);
+const weeklyMaster=game();weeklyMaster.click('home-play');weeklyMaster.run('roundKind="weekly";dailyRun={kind:"weekly",week:"2026-09-14",rule:{id:"no-fever",name:"No Fever"}};gameTime=120;roundHits=0;crash(null,true)');assert.equal(weeklyMaster.run('extras.weeklyBadge'),'2026-09-14');
+console.log('PASS: journeys, exact-section practice, milestone choices, clean patterns, shield gamble, friend targets and weekly mastery.');

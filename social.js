@@ -111,7 +111,7 @@
       el('friend-rows').replaceChildren();
       for(const entry of selected.entries){const row=document.createElement('tr');if(entry.isYou)row.className='is-you';
         const rank=document.createElement('td'),name=document.createElement('td'),score=document.createElement('td');rank.textContent=entry.rank?String(entry.rank):'—';name.textContent=entry.name+(entry.isYou?' · You':'');score.textContent=entry.score?entry.score.toLocaleString():'No run yet';
-        if(entry.title){const title=document.createElement('small');title.className='player-title';title.textContent=TITLES.find(x=>x[0]===entry.title)?.[1]||'';name.append(title);}row.append(rank,name,score);el('friend-rows').append(row);
+        if(entry.title){const title=document.createElement('small');title.className='player-title';title.textContent=TITLES.find(x=>x[0]===entry.title)?.[1]||'';name.append(title);}if(!entry.isYou&&entry.score>0){const challenge=document.createElement('button');challenge.type='button';challenge.className='text-button';challenge.textContent='Challenge';challenge.setAttribute('aria-label',`Challenge ${entry.name}`);challenge.addEventListener('click',()=>window.LoopShiftFriendTarget?.({name:entry.name,score:entry.score}));name.append(challenge);}row.append(rank,name,score);el('friend-rows').append(row);
       }
     }
     el('groups-status').textContent=groups.length?`${groups.length}/5 groups joined. Only members can view these boards.`:'Create a group or enter a friend’s invite code.';
