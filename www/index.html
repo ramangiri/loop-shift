@@ -154,7 +154,7 @@
     <li><strong>After a hit ends the round, try again.</strong> Your result shows the score and whether it saved. Retry repeats the same course; Home → Play now gives you a new course.</li>
   </ol>
   <h3>Which ring will I move to?</h3>
-  <p>Level 1 has two rings: each tap switches to the other ring. From Level 2, a hollow blue marker shows the destination. Each tap moves just <strong>one neighbouring ring</strong>; the game chooses inward or outward toward the nearest wall’s safe gap.</p>
+  <p>Level 1 has two rings: each tap switches to the other ring. From Level 2, a short blue arc shows the destination. Each tap moves just <strong>one neighbouring ring</strong>; the game chooses inward or outward toward the nearest wall’s safe gap.</p>
   <p>If you are already in the safe gap, wait. A second tap before that wall passes can move you back to the blocked ring. An open, dotted gate is safe to pass through.</p>
   <h3>Sparks and shields</h3>
   <ul>
@@ -214,7 +214,7 @@
 <div class="arena" id="arena">
 
           <span id="safe-pin" class="safe-pin" hidden>SAFE</span><span class="collision-pin" id="collision-pin" aria-hidden="true">×</span>
-          <canvas id="game" aria-label="Tap or press Space to switch rings. From three rings, a hollow marker shows your next destination."></canvas>
+          <canvas id="game" aria-label="Tap or press Space to switch rings. From three rings, a short blue arc marks your next tap destination."></canvas>
           <button id="shift" class="tap-surface" type="button" aria-label="Shift to the highlighted ring" aria-describedby="shift-hint" disabled><span class="sr-only">Tap to shift</span></button>
           <div class="orbit-center" id="orbit-center" aria-hidden="true"><span id="center-top">FIND YOUR</span><strong id="center-label">FLOW</strong><span id="center-bottom">KEEP IT GOING</span></div>
           <div class="skill-effect" id="skill-effect" role="status"></div>
@@ -248,6 +248,23 @@
     </main>
     <footer><span>FIND YOUR FLOW.</span><span>ONE TAP / 100 LEVELS</span></footer>
     <p id="announcement" class="sr-only" aria-live="polite"></p>
+    <dialog id="ring-lesson" aria-labelledby="ring-lesson-title" aria-describedby="ring-lesson-copy">
+      <p class="ring-lesson-kicker">YOUR THIRD RING</p>
+      <h2 id="ring-lesson-title">New ring unlocked!</h2>
+      <svg class="ring-lesson-picture" viewBox="0 0 320 210" role="img" aria-label="One lime player ball on a ring. A short blue arc on its neighbouring ring marks the next tap destination.">
+        <g fill="none" stroke="#496452" stroke-width="3">
+          <circle cx="140" cy="108" r="48"/><circle cx="140" cy="108" r="72"/>
+          <circle class="lesson-new-ring" cx="140" cy="108" r="96" stroke="#72e6ff" stroke-dasharray="5 6"/>
+        </g>
+        <path d="M169 70 A48 48 0 0 1 181 83" fill="none" stroke="#72e6ff" stroke-width="6" stroke-linecap="round"/>
+        <circle id="ring-lesson-orb" cx="191" cy="57" r="10" fill="#d6ff62"/>
+        <path d="M202 54 L224 37 H250 M186 79 L220 96 H250" fill="none" stroke="#b9c8bd" stroke-width="1.5"/>
+        <text x="229" y="29" fill="#d6ff62">YOU</text><text x="224" y="115" fill="#72e6ff">NEXT TAP</text>
+      </svg>
+      <div id="ring-lesson-copy"><p><strong>Your ball = you.</strong></p><p><strong>Blue arc = next tap destination.</strong></p><p>Tap anywhere on the play area, or press Space, to switch one ring.</p></div>
+      <button id="ring-lesson-play" type="button" class="primary">GOT IT — PLAY</button>
+      <p class="ring-lesson-foot">A short clear stretch gives you time to settle in.</p>
+    </dialog>
     <dialog id="name-dialog" aria-labelledby="name-title" aria-describedby="name-copy">
       <form id="name-form">
         <span class="board-kicker">YOUR PLACE IN THE LOOP</span>

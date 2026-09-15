@@ -2,6 +2,10 @@
 
 Two screens: Home and Play. Players choose a nickname before their first round. Home shows the ten highest personal bests and the current player's rank.
 
+## First extra ring explanation (2.2.3)
+
+The first transition from two rings to three (Level 2) pauses for a compact illustrated lesson: one player ball, a short blue arc marking the next tap destination, and a **Got it — Play** button. The illustration uses the selected ball colour. Gameplay, score, Fever and course timers freeze while the native modal contains keyboard focus. Dismissal is remembered on the device; returning Home without dismissal keeps the lesson pending. Resume keeps the same player position and the existing 2.3-second safe approach, without a countdown. Ordinary levels and later ring unlocks remain continuous with the existing ring fade, smooth geometry and speed ramp. The hollow destination ball and dotted route are replaced with one short blue track segment.
+
 ## Persistent server storage (2.2.2)
 
 The Node server now supports a remote Turso libSQL database. **This must be connected in Render before it can stop temporary-filesystem resets.** Follow [RENDER-STORAGE.md](./RENDER-STORAGE.md) to create a database, set `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and `LOOPSHIFT_REQUIRE_REMOTE_DB=true`, and verify `/api/health` reports `turso`. Tokens remain server-only. No provider account or paid resource is provisioned by the code.

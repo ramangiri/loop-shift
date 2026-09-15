@@ -44,6 +44,27 @@ function shieldSound(kind){
 let ringCount=2, levelBannerTime=0, shiftDirection=1;
 const LEVEL_MORPH_SECONDS=1.1;
 let levelTransition=null,departingRows=[];
+const RING_LESSON_KEY='loop-shift-ring-lesson-v1';
+let ringLessonSeen=false,ringLessonPending=false;
+try{ringLessonSeen=localStorage.getItem(RING_LESSON_KEY)==='true';}catch{}
+function showRingLesson(){
+  ringLessonPending=true;
+  $('ring-lesson-orb').setAttribute('fill',ballColor());
+  setPaused(true,false);
+  $('overlay').hidden=true;
+  if(!$('ring-lesson').open)$('ring-lesson').showModal();
+  $('ring-lesson-play').focus({preventScroll:true});
+}
+function finishRingLesson(){
+  if(!ringLessonPending)return;
+  ringLessonSeen=true;ringLessonPending=false;
+  try{localStorage.setItem(RING_LESSON_KEY,'true');}catch{}
+  $('ring-lesson').close();
+  setPaused(false);
+  // Level setup already left 2.3 seconds of clear track. Resume that exact frame.
+  startDelay=0;frameCarry=0;lastTime=performance.now();updateCountdown();
+}
+
 const ringLimit=l=>2+[2,5,9,13].filter(unlock=>l>=unlock).length;
 const shieldCapacity=()=>weeklyRule()==='one-shield'?1:ringCount>=5?2:1;
 const THEMES=[['#d6ff62','ORBIT'],['#72e6ff','ION'],['#c8a4ff','NEBULA'],['#ffcc78','SOLAR'],['#83f5c0','AURORA'],['#ffa8da','NOVA']];
@@ -207,6 +228,7 @@ function levelUp(next){
   $('level-reward').textContent=goalResult;
   $('announcement').textContent=$('level-banner').textContent+' '+$('level-detail').textContent;
   applyTheme();tone(660,.13);setTimeout(()=>tone(880,.16),110);setTimeout(()=>tone(1100,.22),230);
+  if(oldRings===2&&ringCount===3&&!ringLessonSeen)showRingLesson();
 }
 // Three walls over four beats form a learnable 'tap, tap, wait, tap' phrase. No random spacing jitter.
 const RHYTHM_GAPS=[1,2,1];
@@ -338,6 +360,7 @@ function updateHome(){
   $('home-status').textContent=mode==='paused'?`Paused · ${score} points`:'';
 }
 function showScreen(next, moveFocus=true){
+  if(next==='home'&&$('ring-lesson').open)$('ring-lesson').close();
   if(next==='home' && mode==='playing')setPaused(true,false);
   screen=next;
   if(next==='home'){window.LoopShiftResults?.stop();window.LoopShiftBoard?.refresh();window.LoopShiftSocial?.refresh();}
@@ -529,6 +552,7 @@ function start(options){
   else if(roundKind==='weekly'){startWeekly();return;}
 
   if(isRankedMode()&&window.LoopShiftBoard && !window.LoopShiftBoard.ready()){window.LoopShiftBoard.askName(()=>start(options));return;}
+  if($('ring-lesson').open)$('ring-lesson').close();ringLessonPending=false;
   window.LoopShiftResults?.reset();window.LoopShiftBoard?.beginRound();
   socialAttempt=window.LoopShiftSocial?.begin(roundKind);runBosses=0;runCleanBest=0;
   previousRecords={...journey};cleanStreak=0;levelShieldLost=false;hitReview=null;comeback=null;tutorialStage=0;tutorialShift=false;
@@ -570,6 +594,7 @@ function shift(){
   shiftDirection=movement;lane=target;landing=target;landingTime=0;updateGuide();
 }
 function setPaused(paused, moveFocus=true){
+  if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;
@@ -714,12 +739,11 @@ function drawSpark(a,r,alpha=1,color=C.gold){
 }
 function drawGuide(){
   if(ringCount===2)return;
-  const targetRadius=laneRadius(guidedTarget()),from=point(angle,radius),to=point(angle,targetRadius);
-  ctx.save();ctx.strokeStyle='#b6dfff';ctx.lineWidth=1.5;ctx.setLineDash([3,6]);
-  arc(targetRadius,0,TAU,'#b6dfff66',1.5);
-  ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#0c1922';ctx.beginPath();ctx.arc(to.x,to.y,Math.max(5,size*.018),0,TAU);ctx.fill();
-  ctx.strokeStyle='#b6dfff';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  const targetRadius=laneRadius(guidedTarget());
+  ctx.save();ctx.lineCap='round';ctx.shadowColor='#72e6ff';ctx.shadowBlur=reducedMotion?0:7;
+  // A short track segment is a destination cue, never a second player orb.
+  arc(targetRadius,angle-.13,angle+.13,'#72e6ff',Math.max(3,size*.009));
+  ctx.restore();
 }
 function drawLanding(){
   if(landingTime<=0)return;
@@ -843,6 +867,8 @@ function drawOrb(a,r,safe){
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
+$('ring-lesson-play').addEventListener('click',finishRingLesson);
+$('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
 $('sprint-play').addEventListener('click',startSprint);
 $('tutorial-play').addEventListener('click',()=>{const guide=$('game-guide');guide.open=true;guide.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'start'});$('guide-title').focus();});
 $('tutorial-start').addEventListener('click',startTutorial);
@@ -877,7 +903,7 @@ $('game-screen').addEventListener('pointerdown',event=>{
 });
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
-  if($('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
+  if($('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
   if(event.code==='Space'){
     if(event.target.closest?.('button, a') && event.target.id!=='shift')return;
