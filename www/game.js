@@ -20,16 +20,17 @@ function showRest(completed=0){
 }
 
 const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'};
-let lightTheme=false,softTheme=false;
-try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';softTheme=localStorage.getItem('loop-shift-theme')==='soft';}catch{}
+let lightTheme=false,softTheme=true;
+try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';softTheme=!localStorage.getItem('loop-shift-theme')||localStorage.getItem('loop-shift-theme')==='soft';}catch{}
 function syncAppearance(){
  document.body.dataset.appearance=lightTheme?'light':softTheme?'soft':'dark';
- Object.assign(C,lightTheme?{lime:'#286500',coral:'#b43221',gold:'#875700',line:'#7b897d',blue:'#0056a6'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
- $('theme-toggle').textContent=lightTheme?'Theme: Light':softTheme?'Theme: Soft':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));for(const name of ['dark','soft','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':softTheme?'soft':'dark')));
+ Object.assign(C,lightTheme?{lime:'#286500',coral:'#b43221',gold:'#875700',line:'#7b897d',blue:'#0056a6'}:softTheme?{lime:'#b8d68f',coral:'#e39a83',gold:'#e4bf83',line:'#61747a',blue:'#8ac5d1'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
+ $('theme-toggle').textContent=lightTheme?'Theme: Light':softTheme?'Theme: Comfort':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));for(const name of ['dark','soft','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':softTheme?'soft':'dark')));
 }
 function comfortAnswer(answer){
- if(mode!=='paused')return;
- $('comfort-response').textContent=answer==='comfortable'?'Continue when you’re ready.':answer==='eyes'?'Rest your eyes and look away from the screen. The game will stay paused.':'Stop playing and rest. The game will stay paused.';
+ if(mode!=='paused'&&mode!=='over')return;
+ try{localStorage.setItem('loop-shift-comfort-feedback',JSON.stringify({answer,level,time:Date.now()}));}catch{}
+ $('comfort-response').textContent=answer==='comfortable'?'Thanks for your feedback.':answer==='eyes'?'Rest your eyes and look away from the screen. Take a break before another round.':'Stop playing and rest. Take a break before another round.';
 }
 
 let size = 440, mode = 'ready', screen = 'home', lastTime = 0, totalTime = 0;
@@ -208,7 +209,7 @@ const TRAINING = [
  ['Moving barriers','Watch the coral arc drift along its ring. Move to the safe ring before it arrives. The warning stays above the arena.'],
  ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
  ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
- ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc: Fire Ball boosts your speed to three times normal for five seconds.'],
+ ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc: Fire Ball lasts five seconds. Speed stays normal unless the optional 3× boost is enabled in Settings.'],
  ["Near-miss bonus", "A late but safe switch can earn CLOSE +5. It is optional: safe early moves are always valid. Try switching just after the gold perfect window."],
  ["Two shield charges", "From five rings you can hold two shields. Two outlines surround your ball. Let two separated barriers touch you and watch each outline disappear."],
  ["Earn a shield", "Six sparks fill one shield charge. You start with five here. Collect the next gold diamond to earn a shield."],
@@ -480,7 +481,7 @@ const speedNow=()=>motionSpeed;
 const personalBest=()=>window.LoopShiftBoard?.best?.()??best;
 const multiplier=()=>combo>=5?5:combo>=3?3:combo>=2?2:1;
 const scoreFactor=()=>multiplier()*(feverTime>0?2:1);
-const ballColor=()=>progress.ball==='cyan'?C.blue:progress.ball==='prism'?`hsl(${reducedMotion?285:(gameTime*65)%360} 85% ${lightTheme?32:76}%)`:C.lime;
+const ballColor=()=>progress.ball==='cyan'?C.blue:progress.ball==='prism'&&!softTheme?`hsl(${reducedMotion?285:(gameTime*65)%360} 85% ${lightTheme?32:76}%)`:C.lime;
 
 try { best = Number(localStorage.getItem('loop-shift-best-v2')) || 0; soundOn = localStorage.getItem('loop-shift-sound') !== 'false'; } catch {}
 const baseLaneRadius=(n,count)=>count===2?(n ? .385 : .27):.14+n*(.275/(count-1));
@@ -841,18 +842,21 @@ function setPaused(paused, moveFocus=true){
   updateHUD();
 }
 function burst(a,r,color,n=14){
-  if(reducedMotion)return;
+  if(reducedMotion||softTheme)return;
   const p=point(a,r);
   for(let i=0;i<n;i++){const d=random(0,TAU),v=random(18,90);particles.push({x:p.x/size,y:p.y/size,vx:Math.cos(d)*v/440,vy:Math.sin(d)*v/440,life:1,color});}
 }
-let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0,rushBaseSpeed=0;
+let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0,rushBaseSpeed=0,rushBoost=0;
+let fireSpeedEnabled=false;
+try{fireSpeedEnabled=localStorage.getItem('loop-shift-fire-speed')==='true';}catch{}
+function syncFireSpeed(){$('fire-speed-toggle').setAttribute('aria-pressed',String(fireSpeedEnabled));$('fire-speed-toggle').textContent='Fire Ball speed boost: '+(fireSpeedEnabled?'3×':'OFF');}
 let pendingPower='';
 function showPowerLesson(kind){
  if(roundKind==='tutorial'||roundKind==='practice')return;
  try{if(localStorage.getItem('loop-shift-learned-'+kind)==='true')return;}catch{}
  pendingPower=kind;setPaused(true,false);
  $('power-title').textContent=kind==='rush'?'Fire ball · Spark Rush':'Fever unlocked';
- $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Fire Ball boosts your speed to three times normal, easing in and out over five seconds.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
+ $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Speed stays normal by default. The optional 3× speed boost is in Settings.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
  $('power-dialog').showModal();
 }
 // Integrated speed curve: smooth acceleration, 3x cruise, smooth return.
@@ -860,11 +864,11 @@ function rushDistance(t){
  t=Math.max(0,Math.min(5,t));
  const integral=x=>x*x*x-.5*x*x*x*x;
  const boost=t<.4?.4*integral(t/.4):t<=4.4?.2+t-.4:4.2+.6*((t-4.4)/.6-integral((t-4.4)/.6));
- return rushBaseSpeed*(t+2*boost);
+ return rushBaseSpeed*(t+rushBoost*boost);
 }
 function startRush(){
  rushQueued=false;rushChain=0;rushTime=5;rushGlow=1;rushStartAngle=angle;trail=[];
- rushBaseSpeed=speedNow();let route=lane;
+ rushBaseSpeed=speedNow();rushBoost=fireSpeedEnabled?2:0;let route=lane;
  rushCoins=Array.from({length:8},(_,i)=>{
   if(i&&i%2===0)route=route===0?1:route===ringCount-1?route-1:route+(i%4?-1:1);
   return {angle:angle+rushDistance(.55+i*.55),lane:route,collected:false};
@@ -932,7 +936,7 @@ function crash(hitRow=null,completed=false){
   $('share-daily').hidden=roundKind!=='daily';
   $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result-best').textContent=Math.max(score,previousBest).toLocaleString();$('result').hidden=false;
   $('play').innerHTML='Try again <span aria-hidden="true">↗</span>';$('restart').hidden=true;
-  $('comfort-check').hidden=true;$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
+  $('comfort-check').hidden=false;$('comfort-response').textContent='';$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
   $('play').focus({preventScroll:true});
   $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected.`;
@@ -943,7 +947,7 @@ function update(dt){
   levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime)$('level-banner-wrap').classList.remove('show');
   if(startDelay>0){startDelay=Math.max(0,startDelay-dt);updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
   activeSinceBreak+=dt;
-  if(activeSinceBreak>=300&&roundKind!=='tutorial'){showRest();return;}
+  if(activeSinceBreak>=180&&roundKind!=='tutorial'){showRest();return;}
   if(timedRun())dt=Math.min(dt,Math.max(0,120-gameTime));
   if(roundKind==='tutorial'){updateTutorial(dt);return;}
   motionSpeed+=(targetSpeed()-motionSpeed)*(1-Math.exp(-dt*.8));
@@ -963,7 +967,7 @@ function update(dt){
   angle+=dt*speed;
   radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
   invulnerable=Math.max(0,invulnerable-dt);
-  if(!reducedMotion){trail.push({a:angle,r:radius});if(trail.length>(progress.trail==='comet'?9:6))trail.shift();}
+  if(!reducedMotion&&!softTheme){trail.push({a:angle,r:radius});if(trail.length>(progress.trail==='comet'?9:6))trail.shift();}
   for(let i=0;i<rows.length;i++){
     const row=rows[i],delta=row.angle-angle,previousDelta=previousAngles[i]-oldAngle;
     if(row.patternStart&&!row.announced&&delta<speed*3&&delta>0)warnPattern(row);
@@ -1012,7 +1016,7 @@ function update(dt){
   if(rushQueued)startRush();updateRushHUD();updateExtras();updateRhythm();updateGuide();captureReplay();
 }
 function shatterShield(){
-  if(reducedMotion)return;
+  if(reducedMotion||softTheme)return;
   const p=point(angle,radius);
   for(let i=0;i<10;i++){
     const a=i/10*TAU;
@@ -1021,12 +1025,12 @@ function shatterShield(){
 }
 function arc(r,start,end,color,width){ctx.beginPath();ctx.arc(size/2,size/2,r*size,start,end);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
 function drawSpark(a,r,alpha=1,color=C.gold){
-  const p=point(a,r),s=size*.012;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=reducedMotion?0:10;ctx.fillRect(-s,-s,s*2,s*2);ctx.restore();
+  const p=point(a,r),s=size*.012;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=(reducedMotion||softTheme)?0:10;ctx.fillRect(-s,-s,s*2,s*2);ctx.restore();
 }
 function drawGuide(){
   if(ringCount===2&&roundKind!=='tutorial')return;
   const targetRadius=laneRadius(guidedTarget());
-  ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=reducedMotion?0:7;
+  ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=(reducedMotion||softTheme)?0:7;
   // A short track segment is a destination cue, never a second player orb.
   arc(targetRadius,angle-.13,angle+.13,C.blue,Math.max(3,size*.009));
   ctx.restore();
@@ -1036,7 +1040,7 @@ function drawLanding(){
   const fade=landingTime/.28,r=laneRadius(landingLane),p=point(angle,r);
   ctx.save();ctx.globalAlpha=fade*.8;
   arc(r,0,TAU,levelColor(),2.5);
-  if(!reducedMotion){
+  if(!reducedMotion&&!softTheme){
     ctx.beginPath();ctx.arc(p.x,p.y,size*(.021+(1-fade)*.045),0,TAU);
     ctx.strokeStyle='#f4ffd9';ctx.lineWidth=1.8;ctx.stroke();
   }
@@ -1047,20 +1051,21 @@ function draw(time,dt){
   impactTime=Math.max(0,impactTime-dt);if(!impactTime)$('collision-pin').classList.remove('show');
   ctx.clearRect(0,0,size,size);ctx.lineCap='round';
   // Faint orbit ticks and crosshairs provide a stable frame of reference.
-  for(let i=0;i<60;i++){
+  for(let i=0;i<(softTheme?0:60);i++){
     const a=i/60*TAU,p1=point(a,.462),p2=point(a,i%5===0?.451:.457);
     ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.strokeStyle=i%5===0?'#405042':'#2a392e';ctx.lineWidth=1;ctx.stroke();
   }
   if(roundKind==='endless'&&ghostTarget>0){const ghostLevel=Math.min(100,1+Math.floor(ghostTarget/12));if(level===ghostLevel){ctx.save();ctx.setLineDash([3,3]);arc(.46,-Math.PI/2,-Math.PI/2+TAU*(ghostTarget===1200?12:ghostTarget%12)/12,'#b5c5ee',3);const g=point(-Math.PI/2+TAU*(ghostTarget===1200?12:ghostTarget%12)/12,.46);ctx.fillStyle='#b5c5ee';ctx.beginPath();ctx.arc(g.x,g.y,4,0,TAU);ctx.fill();ctx.restore();}}
-  ctx.setLineDash([2,7]);arc(.16,0,TAU,'#29392d',1);ctx.setLineDash([]);
+  if(!softTheme){ctx.setLineDash([2,7]);arc(.16,0,TAU,'#29392d',1);ctx.setLineDash([]);}
   for(let ring=0;ring<ringCount;ring++){
     const r=laneRadius(ring);
     ctx.save();ctx.globalAlpha=(levelTransition&&ring>=levelTransition.oldRings?morphProgress():1)*(ring!==lane&&ring!==guidedTarget()?.35:1);
-    arc(r+.006,0,TAU,lightTheme?'#e1e8dd':'#070f0b',size*ringSize(.053,.035));
+    if(!softTheme){arc(r+.006,0,TAU,lightTheme?'#e1e8dd':'#070f0b',size*ringSize(.053,.035));
     arc(r,0,TAU,lightTheme?'#c6d3c1':'#223b2e',size*ringSize(.043,.026));
-    arc(r,0,TAU,lightTheme?'#486840':levelColor()+'88',1.5);
-    if(feverTime>0&&!reducedMotion){
-      ctx.save();ctx.shadowBlur=reducedMotion?0:12;
+    }
+    arc(r,0,TAU,softTheme?C.line:lightTheme?'#486840':levelColor()+'88',1.5);
+    if(feverTime>0&&!reducedMotion&&!softTheme){
+      ctx.save();ctx.shadowBlur=(reducedMotion||softTheme)?0:12;
       for(let i=0;i<12;i++){
         const color=`hsl(${i*30} 95% 73%)`;ctx.shadowColor=color;
         const a=i/12*TAU;
@@ -1070,7 +1075,7 @@ function draw(time,dt){
     }
   ctx.restore();}
   if(mode==='ready'){
-    const demoTime=reducedMotion?0:time*.00015;
+    const demoTime=(reducedMotion||softTheme)?0:time*.00015;
     for(const [a,l] of [[.2,1],[2.3,0],[4.4,1]]){
       arc(laneRadius(l),a-.073,a+.073,C.coral,size*.033);drawSpark(a,laneRadius(1-l));
     }
@@ -1111,7 +1116,7 @@ function draw(time,dt){
       }
       }
       if(row===nearest&&ahead>0&&!row.open&&!row.hit){for(const n of blockedLanes(row))arc(rowRadius(n),row.angle-.085,row.angle+.085,'#ffe7d9',2);}
-      if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8*opacity;ctx.shadowColor=C.gold;ctx.shadowBlur=reducedMotion?0:12;arc(rowRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
+      if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8*opacity;ctx.shadowColor=C.gold;ctx.shadowBlur=(reducedMotion||softTheme)?0:12;arc(rowRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
       if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){drawSpark(row.angle+.4,rowRadius(row.bonusLane),opacity,row.shieldBonus?C.gold:'#ffa8da');if(row.shieldBonus){const b=point(row.angle+.4,rowRadius(row.bonusLane));ctx.strokeStyle=C.gold;ctx.strokeRect(b.x-8,b.y-8,16,16);}}
       if(!row.collected){drawSpark(row.angle,rowRadius(row.sparkLane),opacity,row.special?'#dc7b25':C.gold);if(row.special){const specialPoint=point(row.angle,rowRadius(row.sparkLane));ctx.strokeStyle='#dc7b25';ctx.lineWidth=2;ctx.beginPath();ctx.arc(specialPoint.x,specialPoint.y,size*.021,0,TAU);ctx.stroke();}}
     }
@@ -1150,10 +1155,10 @@ function drawRush(){
 }
 function drawOrb(a,r,safe){
   const p=point(a,r);ctx.save();
-  if(rushGlow>0){ctx.save();ctx.globalAlpha=rushGlow;ctx.strokeStyle='#dc7b25';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,size*.028,0,TAU);ctx.stroke();if(!reducedMotion)for(let i=1;i<=5;i++){const tail=point(a-i*.035,r);ctx.globalAlpha=rushGlow*(1-i/6);ctx.fillStyle=i%2?'#dc7b25':'#efb45c';ctx.beginPath();ctx.arc(tail.x,tail.y,size*(.019-i*.002),0,TAU);ctx.fill();}ctx.restore();}
+  if(rushGlow>0){ctx.save();ctx.globalAlpha=rushGlow;ctx.strokeStyle='#dc7b25';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,size*.028,0,TAU);ctx.stroke();if(!reducedMotion&&!softTheme)for(let i=1;i<=5;i++){const tail=point(a-i*.035,r);ctx.globalAlpha=rushGlow*(1-i/6);ctx.fillStyle=i%2?'#dc7b25':'#efb45c';ctx.beginPath();ctx.arc(tail.x,tail.y,size*(.019-i*.002),0,TAU);ctx.fill();}ctx.restore();}
   if(invulnerable>0)ctx.globalAlpha=.65;
-  if(safe){for(let i=0;i<shield;i++){ctx.beginPath();ctx.arc(p.x,p.y,size*(.024+i*.008),0,TAU);ctx.strokeStyle=C.lime;ctx.shadowColor=C.lime;ctx.shadowBlur=reducedMotion?0:7;ctx.lineWidth=2;ctx.stroke();}}
-  ctx.shadowColor=ballColor();ctx.shadowBlur=reducedMotion?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
+  if(safe){for(let i=0;i<shield;i++){ctx.beginPath();ctx.arc(p.x,p.y,size*(.024+i*.008),0,TAU);ctx.strokeStyle=C.lime;ctx.shadowColor=C.lime;ctx.shadowBlur=(reducedMotion||softTheme)?0:7;ctx.lineWidth=2;ctx.stroke();}}
+  ctx.shadowColor=ballColor();ctx.shadowBlur=(reducedMotion||softTheme)?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
@@ -1163,8 +1168,10 @@ $('section-sparks').addEventListener('click',()=>chooseSection('sparks'));
 $('section-timing').addEventListener('click',()=>chooseSection('timing'));
 window.LoopShiftFriendTarget=(entry)=>{friendTarget=entry&&typeof entry.name==='string'&&Number.isFinite(entry.score)?{name:entry.name.slice(0,32),score:Math.max(0,entry.score)}:null;$('friend-target-status').textContent=friendTarget?`Next run: beat ${friendTarget.name} · ${friendTarget.score} points`:'No friend selected';};
 $('clear-friend-target').addEventListener('click',()=>window.LoopShiftFriendTarget(null));
+syncFireSpeed();
+$('fire-speed-toggle').addEventListener('click',()=>{fireSpeedEnabled=!fireSpeedEnabled;try{localStorage.setItem('loop-shift-fire-speed',String(fireSpeedEnabled));}catch{}syncFireSpeed();});
 syncAppearance();
-function chooseAppearance(value){lightTheme=value==='light';softTheme=value==='soft';try{localStorage.setItem('loop-shift-theme',value);}catch{}syncAppearance();}
+function chooseAppearance(value){lightTheme=value==='light';softTheme=value==='soft';trail=[];particles=[];shatters=[];try{localStorage.setItem('loop-shift-theme',value);}catch{}syncAppearance();}
 $('theme-toggle').addEventListener('click',()=>chooseAppearance(lightTheme?'soft':softTheme?'dark':'light'));
 for(const name of ['dark','soft','light'])$('appearance-'+name).addEventListener('click',()=>chooseAppearance(name));
 for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));

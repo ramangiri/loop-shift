@@ -310,3 +310,9 @@ body[data-reduced-motion=true][data-screen=game] #game-screen .arena-messages :i
  body[data-screen=game][data-playstate=playing] #game-screen .arena-stage .arena{width:var(--orbit-diameter)}
  body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{position:absolute;z-index:2;top:calc(50% + var(--orbit-diameter)/2 + 8px);left:16px;right:16px;margin:0;height:64px}
 }
+
+/* Comfort uses stable, subdued surfaces and no ambient motion. */
+body[data-appearance=soft]{--bg:#242d2b;--surface:#303b37!important}
+body[data-appearance=soft] *,body[data-appearance=soft] *::before,body[data-appearance=soft] *::after{animation:none!important;transition:none!important}
+body[data-appearance=soft] .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){opacity:1;transform:none}
+body[data-appearance=light]{--bg:#eee9de;--surface:#e5dfd2!important}

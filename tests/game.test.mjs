@@ -122,7 +122,7 @@ const corrupt=game(false,new Map([['loop-shift-progress-v2','{"sparks":-1,"ball"
 assert.equal(corrupt.run('progress.sparks'),0);assert.equal(corrupt.run('progress.trail'),'glow');
 
 // Pattern warnings, settled geometry and open/closed collision states.
-const patterns=game();patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
+const patterns=game();patterns.click('appearance-dark');patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
 assert.equal(patterns.run('moving.announced'),true);assert.ok(patterns.nodes.get('pattern-notice').textContent.includes('MOVING'));
 const movingAngle=patterns.run('moving.angle');patterns.run('update(.035)');assert.notEqual(patterns.run('moving.angle'),movingAngle);
 patterns.run('moving.baseAngle=angle+.45;moving.angle=angle+.45;update(.01)');assert.equal(patterns.run('moving.locked'),true);
@@ -484,7 +484,7 @@ console.log('PASS: 99 smooth level boundaries, stable trails, continuous audio p
 const guideHelp=game();guideHelp.click('tutorial-play');
 assert.equal(guideHelp.nodes.get('training-dialog').open,true,'How to play opens guided practice');
 assert.equal(guideHelp.run('roundKind'),'tutorial');
-const settingsCheck=game();settingsCheck.click('settings-open');assert.equal(settingsCheck.nodes.get('settings-dialog').open,true);settingsCheck.click('theme-toggle');assert.equal(settingsCheck.run('lightTheme'),true);settingsCheck.click('settings-close');assert.equal(settingsCheck.nodes.get('settings-dialog').open,false);assert.equal(settingsCheck.focus(),'settings-open');
+const settingsCheck=game();settingsCheck.click('settings-open');assert.equal(settingsCheck.nodes.get('settings-dialog').open,true);settingsCheck.click('appearance-light');assert.equal(settingsCheck.run('lightTheme'),true);settingsCheck.click('settings-close');assert.equal(settingsCheck.nodes.get('settings-dialog').open,false);assert.equal(settingsCheck.focus(),'settings-open');
 const boardBest=game();boardBest.run('window.LoopShiftBoard={best:()=>72};updateHUD();');
 assert.equal(boardBest.nodes.get('home-best').textContent,'072','Home matches server-confirmed score');
 assert.equal(boardBest.nodes.get('home-best-label').textContent,'ONLINE BEST');
@@ -565,7 +565,7 @@ const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('re
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
 const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),.92);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
-const appearance=game();appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
+const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
 // Short journeys finish cleanly and keep their medal separate from ranked progress.
@@ -643,8 +643,10 @@ const afterOutside=anywhere.run('lane');anywhere.run('gameTime+=.2');anywhere.li
 anywhere.run('goHome();gameTime+=.2');anywhere.listeners.pointerdown(outsideTap);anywhere.listeners.pointerup(outsideTap);assert.equal(anywhere.run('lane'),afterOutside,'Home screen ignores gameplay gestures');
 console.log('PASS: page-wide taps are gameplay-only and exclude utility controls.');
 
-const fastFire=game();fastFire.click('home-play');fastFire.run('startDelay=0;startRush();globalThis.initialAngle=angle;globalThis.base=speedNow();updateRush(1);globalThis.firstAngle=angle;updateRush(1);');
+const fastFire=game();fastFire.click('home-play');fastFire.run('fireSpeedEnabled=true;startDelay=0;startRush();globalThis.initialAngle=angle;globalThis.base=speedNow();updateRush(1);globalThis.firstAngle=angle;updateRush(1);');
 assert.ok(Math.abs(fastFire.run('(angle-firstAngle)/base')-3)<1e-8,'Fire Ball cruises at triple speed');
 fastFire.run('updateRush(3)');assert.equal(fastFire.run('rushTime'),0,'Fire Ball lasts exactly five seconds');
 assert.ok(Math.abs(fastFire.run('(angle-initialAngle)/base')-14)<1e-8,'Speed ramps preserve frame-independent travel');
 assert.equal(fastFire.run('speedNow()'),fastFire.run('base'),'Normal speed is restored');
+
+const calm=game(false,null,false,false,false);assert.equal(calm.run('softTheme'),true);calm.click('home-play');calm.run('startDelay=0;startRush();globalThis.calmAngle=angle;globalThis.calmSpeed=speedNow();updateRush(5)');assert.ok(Math.abs(calm.run('(angle-calmAngle)/calmSpeed')-5)<1e-8);calm.run('activeSinceBreak=180;update(.01)');assert.equal(calm.run('mode'),'paused');calm.click('fire-speed-toggle');assert.equal(game(false,calm.store).run('fireSpeedEnabled'),true);
