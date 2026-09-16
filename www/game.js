@@ -742,7 +742,7 @@ function warnPattern(row){
   $('announcement').textContent=PATTERN_COPY[row.pattern]+'. The next pattern is approaching.';
   tone(330,.13,'triangle',.035);
 }
-let lastAutoScore=0,lastAutoTime=0;
+let lastAutoScore=0,lastAutoTime=0,shiftHintCount=0;
 function autoSaveScore(force=false){
  if(screen!=='game'||!['playing','paused'].includes(mode)||roundKind!=='endless'||score<=lastAutoScore)return;
  if(!force&&gameTime-lastAutoTime<15)return;
@@ -825,7 +825,7 @@ function start(options){
  }
 
   const quickRetry=mode==='over';
- lastAutoScore=0;lastAutoTime=0;
+ lastAutoScore=0;lastAutoTime=0;shiftHintCount=0;$('tap-anywhere-hint').classList.remove('faded');
  checkpointEligible=false;$('save-checkpoint').hidden=true;try{localStorage.removeItem(checkpointKey());}catch{}
  comfortStop=false;$('play').hidden=false;$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;
   sectionChoice='balanced';patternHits=0;$('practice-failure').hidden=true;$('section-choices').hidden=true;$('break-reward').textContent='';showExtrasHome();
@@ -869,6 +869,7 @@ function shift(direction=0){
   if(trainingWaiting || screen!=='game' || mode!=='playing' || startDelay>0 || gameTime-lastShift<.095)return;
   const target=direction?Math.max(0,Math.min(ringCount-1,lane+Math.sign(direction))):guidedTarget(),movement=target-lane;
   if(target===lane)return;
+  shiftHintCount++;if(shiftHintCount>=3)$('tap-anywhere-hint').classList.add('faded');
   unlockAudio();lastShift=gameTime;
   for(const row of rows)if(!row.passed){row.perfectCandidate=false;row.closeCandidate=false;}
   const next=rows.find(row=>!row.passed&&row.angle-angle>0);
