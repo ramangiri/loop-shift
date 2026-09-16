@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="./mobile.css">
   <link rel="stylesheet" href="./events.css">
   <script defer src="./native-bridge.js"></script>
+  <script defer src="./avatars.js"></script>
   <script defer src="./leaderboard.js"></script>
   <script defer src="./music.js"></script>
   <script defer src="./challenge-picker.js"></script>
@@ -40,15 +41,15 @@
             <div class="eyebrow"><span class="tiny-cross" aria-hidden="true">✳</span> SIX RINGS. FIND YOUR LIMIT.</div>
             <h1 id="home-title">LOOP<br><span class="title-word">SHIFT</span><span class="title-period">.</span></h1>
             <p class="intro-copy">Shift rings. Dodge barriers.</p>
-            <div class="player-summary"><div class="player-line"><span id="player-label">Ready to play?</span><button class="text-button" id="edit-name">Add name</button></div>
+            <div class="player-summary"><div class="player-line"><span id="profile-avatar" aria-hidden="true"></span><span id="player-label">Ready to play?</span><button class="text-button" id="edit-name">Add name</button></div>
 
             <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">ONLINE BEST</span><strong id="home-best">—</strong></div>
-            <div class="home-record-status"><p id="home-best-note" role="status">Connecting to your saved score…</p><button class="text-button" id="retry-home-score" hidden>Retry save</button></div>
+            <p id="home-player-level" class="home-player-level"></p><div class="home-record-status"><p id="home-best-note" role="status">Connecting to your saved score…</p><button class="text-button" id="retry-home-score" hidden>Retry save</button></div>
             <details class="device-record" id="device-record" hidden><summary>On this device: <strong id="device-best">0</strong></summary><p>This record can include offline rounds or another player. Only scores saved to your profile appear on the shared board.</p></details></div>
-<fieldset class="goal-cards" id="challenge-picker"><legend>Pick a goal</legend><input id="challenge-choice" type="hidden" value="survive"><div class="goal-grid"><button type="button" data-value="survive" aria-pressed="true">Survive<span>5 levels</span></button><button type="button" data-value="sparks" aria-pressed="false">Sparks<span>Collect 20</span></button><button type="button" data-value="perfects" aria-pressed="false">Perfects<span>Make 5</span></button></div></fieldset><button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
+<fieldset class="goal-cards" id="challenge-picker"><legend>Select your game · swipe for more</legend><input id="challenge-choice" type="hidden" value="survive"><div class="goal-grid mode-deck"><button type="button" data-value="survive" aria-pressed="true"><span class="mode-art" aria-hidden="true">◉</span><strong>Survive</strong><span>100-level run · Goal: clear 5</span></button><button type="button" data-value="sparks" aria-pressed="false"><span class="mode-art" aria-hidden="true">✦</span><strong>Sparks</strong><span>100-level run · Collect 20</span></button><button type="button" data-value="perfects" aria-pressed="false"><span class="mode-art" aria-hidden="true">ϟ</span><strong>Perfects</strong><span>100-level run · Make 5</span></button><button type="button" data-value="daily" aria-pressed="false"><span class="mode-art" aria-hidden="true">◷</span><strong>Daily</strong><span>Shared course · 2 minutes</span></button><button type="button" data-value="weekly" aria-pressed="false"><span class="mode-art" aria-hidden="true">◇</span><strong>Weekly</strong><span>Rule twist · 2 minutes</span></button></div><p id="mode-caption" role="status">Selected: Survive</p></fieldset><button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
             <button class="text-button" id="home-new" hidden>Start a new course</button>
             <p class="home-status" id="home-status" hidden></p>
-        <div class="quick-modes"><button id="settings-open" class="secondary-button">Settings</button><button id="tutorial-play" class="secondary-button">How to play</button></div>
+        <div class="quick-modes"><button id="settings-open" class="secondary-button"><span aria-hidden="true">⚙</span> Settings</button><button id="tutorial-play" class="secondary-button"><span aria-hidden="true">▷</span> How to play</button></div>
           </div>
           <div class="home-orbit" aria-hidden="true">
             <svg class="orbit-diagram" viewBox="0 0 440 440">
@@ -70,13 +71,13 @@
 
 
 
-<details class="home-index"><summary>Daily &amp; weekly challenges</summary><section id="daily" class="daily-card" aria-labelledby="daily-title"><div><h2 id="daily-title">Daily challenge</h2><p>2 minutes. One shared course.</p><p id="daily-status" role="status">Resets 05:30 IST · Online</p></div><button class="primary-button" id="daily-play">Play daily</button></section>
+<details class="home-index"><summary>Daily &amp; weekly challenges</summary><section id="daily" class="daily-card" aria-labelledby="daily-title"><div><h2 id="daily-title">Daily challenge</h2><p>2 minutes. One shared course.</p><p id="daily-status" role="status">Resets 05:30 IST · Online</p></div><button class="primary-button" id="daily-play" hidden>Play daily</button></section>
 
 
 
 <section id="weekly" class="event-card" aria-labelledby="weekly-title">
   <div><span class="event-eyebrow" id="weekly-title">WEEKLY TWIST</span><h2 id="weekly-name">A fresh rule every week</h2><p id="weekly-status" role="status">Connecting…</p></div>
-  <button id="weekly-play" class="secondary-button">Play weekly</button>
+  <button id="weekly-play" class="secondary-button" hidden>Play weekly</button>
   <details class="event-rule"><summary>This week’s rule</summary><p id="weekly-rule">One shared course with its own Top 10.</p></details>
 </section>
 </details><details class="home-index"><summary>Community goal</summary><section class="community-card" aria-labelledby="community-title">
@@ -90,8 +91,8 @@
           <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button><button id="board-weekly" aria-pressed="false">Weekly</button></div>
 
           <p id="board-status" role="status">Loading the leaderboard…</p>
-          <div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
-          <p class="board-you" id="board-you" hidden></p>
+          <div id="board-podium" class="board-podium" aria-label="Top three players"></div><p class="board-you" id="board-you" hidden></p><div class="board-table-wrap" id="board-table-wrap" hidden><table class="board-table"><caption class="sr-only">Top ten Loop Shift players by best score</caption><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best score</th></tr></thead><tbody id="board-rows"></tbody></table></div>
+
           <button class="text-button" id="board-add-name" hidden>Add name</button>
           <p id="board-save-status" role="status" hidden></p><button id="retry-board-score" class="text-button" hidden>Retry saving score</button>
           <p class="board-note">Your row is marked “You”. Each mode has its own best. Only saved ranked rounds count; ties go to the earlier score.</p>

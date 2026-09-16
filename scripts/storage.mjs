@@ -9,6 +9,8 @@ export async function openStorage(env = process.env) {
   const url = env.TURSO_DATABASE_URL?.trim(), token = env.TURSO_AUTH_TOKEN?.trim();
   if (url || token) {
     const DB = await openTursoDatabase(url, token, migrations);
+    const removed = await DB.prepare('SELECT COUNT(*) AS count FROM board_removals').first();
+    console.log(`Board cleanup: ${removed.count} screenshot entries archived from the main board; player scores retained.`);
     return { DB, kind: 'turso', description: 'Storage: Turso connected. Scores and migration history are stored outside this server.' };
   }
   if (env.LOOPSHIFT_REQUIRE_REMOTE_DB === 'true') {

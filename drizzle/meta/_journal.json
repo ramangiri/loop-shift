@@ -43,6 +43,13 @@
       "when": 1789402073066,
       "tag": "0005_many_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789516800000,
+      "tag": "0006_selected_board_removals",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,15 @@
 (() => {
-  const root = document.getElementById('challenge-picker');
-  const value = document.getElementById('challenge-choice');
-  const buttons = [...root.querySelectorAll('[data-value]')];
-  buttons.forEach(button => button.addEventListener('click', () => {
-    value.value = button.dataset.value;
-    buttons.forEach(option => option.setAttribute('aria-pressed', String(option === button)));
-  }));
+ const root=document.getElementById('challenge-picker'),value=document.getElementById('challenge-choice'),caption=document.getElementById('mode-caption');
+ const buttons=[...root.querySelectorAll('[data-value]')];
+ function choose(button,remember=true){
+  value.value=button.dataset.value;buttons.forEach(option=>option.setAttribute('aria-pressed',String(option===button)));
+  const names={survive:'Survive',sparks:'Sparks',perfects:'Perfects',daily:'Daily',weekly:'Weekly'};
+  caption.textContent='Selected: '+names[value.value];
+  document.getElementById('board-'+(['daily','weekly'].includes(value.value)?value.value:'endless'))?.click?.();
+  if(remember){try{localStorage.setItem('loop-shift-selected-mode',value.value);}catch{}}
+ }
+ buttons.forEach(button=>button.addEventListener('click',()=>choose(button)));
+ let saved;try{saved=localStorage.getItem('loop-shift-selected-mode');}catch{}
+ const selected=buttons.find(button=>button.dataset.value===saved)||buttons[0];choose(selected,false);
+ selected.scrollIntoView?.({block:'nearest',inline:'nearest'});
 })();

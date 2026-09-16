@@ -215,3 +215,29 @@ test('rate-limited score retries automatically and daily scores remain separate'
   assert.equal(client.nodes.get('board-rows').children[0].children[2].textContent,'50');
  }finally{client?.close();DB.close();}
 });
+
+test('requested board cleanup archives only unique screenshot matches and keeps scores through restarts',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'loop-board-cleanup-')),file=join(dir,'board.sqlite'),old=join(dir,'old');mkdirSync(old);
+ for(const name of readdirSync(migrations).filter(n=>n.endsWith('.sql')&&n<'0006'))copyFileSync(join(migrations,name),join(old,name));
+ let DB=openDatabase(file,old);
+ try{
+  DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('winner','Girija',10199,1),('main','Giri',5044,1),('extra','Giri',1087,1),('n','Naveen',547,1),('t','Toby',313,1),('m','Mom',298,1),('other-m','Mom',250,1)");
+  DB.close();DB=openDatabase(file,migrations);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM board_removals').get().n,3);
+  assert.equal(DB.sqlite.prepare('SELECT best FROM players WHERE id=?').get('main').best,5044);
+  assert.equal(DB.sqlite.prepare('SELECT best FROM players WHERE id=?').get('extra').best,1087,'Removal retains historical score');
+  let data=await (await api(new Request('https://game.test/api/leaderboard'),{DB})).json();
+  assert.deepEqual(data.entries.map(p=>[p.name,p.rank]),[['Girija',1],['Giri',2],['Naveen',3],['Mom',4]]);
+  DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('new','Giri',1087,2)");
+  DB.close();DB=openDatabase(file,migrations);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM board_removals').get().n,3,'Cleanup is not repeated on future players');
+ }finally{DB.close();rmSync(dir,{recursive:true,force:true});}
+});
+test('cleanup refuses ambiguous matches or scores that changed since the screenshot',()=>{
+ const {DB}=fixture();
+ try{
+  DB.sqlite.exec("INSERT INTO players(id,name,best,achieved_at) VALUES('a','Mom',298,1),('b','Mom',298,1),('t','Toby',314,1),('g','Giri',5044,1)");
+  const insert=readFileSync(new URL('../drizzle/0006_selected_board_removals.sql',import.meta.url),'utf8').split('--> statement-breakpoint')[1];DB.sqlite.exec(insert);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM board_removals').get().n,0);
+ }finally{DB.close();}
+});

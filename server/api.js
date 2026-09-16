@@ -26,11 +26,11 @@ async function identity(request, create = false) {
   return { id: Array.from(new Uint8Array(bytes), n => n.toString(16).padStart(2, '0')).join(''), cookie };
 }
 async function board(db, id) {
-  const { results } = await db.prepare('SELECT id, name, selected_title, best FROM players WHERE best > 0 ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
+  const { results } = await db.prepare('SELECT id, name, selected_title, best FROM players WHERE best > 0 AND id NOT IN (SELECT player_id FROM board_removals) ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
   const me = id ? await db.prepare('SELECT name, selected_title, best, achieved_at, highest_level, furthest_pass, achievements, best_chain, best_clean FROM players WHERE id = ?').bind(id).first() : null;
   let rank = null;
-  if (me?.best > 0) {
-    const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?)))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
+  if (me?.best > 0 && !(await db.prepare('SELECT player_id FROM board_removals WHERE player_id = ?').bind(id).first())) {
+    const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE id NOT IN (SELECT player_id FROM board_removals) AND (best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?))))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
     rank = row.rank;
   }
   return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, title:me.selected_title, best: me.best, mainBest:me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };

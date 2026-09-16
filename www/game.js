@@ -477,7 +477,7 @@ function updateHome(){
   if(!record?.pending)$('retry-home-score').hidden=true;
   $('device-best').textContent=best.toLocaleString();
   $('device-record').hidden=best<=0||(hasOnlineBest&&best===onlineBest);
-  $('home-play-label').textContent=mode==='paused'?'Resume round':'Play now';
+  $('home-play-label').textContent=mode==='paused'?'Continue game':'Play now';
   $('home-new').hidden=mode!=='paused';
   $('home-status').hidden=mode!=='paused';
   $('home-status').textContent=mode==='paused'?`Paused · ${score} points`:'';
@@ -507,7 +507,7 @@ function goHome(){
   else history.replaceState(null,'','#home');
 }
 function homePlay(){
-  if(mode==='paused'){enterGame();setPaused(false);}else startEndless();
+  if(mode==='paused'){enterGame();setPaused(false);}else if($('challenge-choice').value==='daily')startDaily();else if($('challenge-choice').value==='weekly')startWeekly();else startEndless();
 }
 function syncRoute(){
   const next=location.hash==='#play'?'game':'home';
