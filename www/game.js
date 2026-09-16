@@ -519,9 +519,11 @@ const pad = (n) => String(n).padStart(3,'0');
 function fitPlayViewport(){
  if(!document.body.style?.setProperty)return;
  const height=Math.min(window.innerHeight||800,window.visualViewport?.height||window.innerHeight||800);
+ document.body.style.setProperty('--play-height',height+'px');
+ document.body.style.setProperty('--play-top',(window.visualViewport?.offsetTop||0)+'px');
  document.body.style.setProperty('--fit-arena',`max(0px, calc(${height}px - 220px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))`);
 }
-window.addEventListener('resize',fitPlayViewport);window.visualViewport?.addEventListener('resize',fitPlayViewport);
+window.addEventListener('resize',fitPlayViewport);window.visualViewport?.addEventListener('resize',fitPlayViewport);window.visualViewport?.addEventListener('scroll',fitPlayViewport);
 fitPlayViewport();
 function resize(){
   const bounds=canvas.getBoundingClientRect(); if(bounds.width<=0)return; size=bounds.width;
