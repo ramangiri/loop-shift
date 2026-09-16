@@ -642,3 +642,9 @@ const beforeOutside=anywhere.run('lane');anywhere.listeners.pointerdown(outsideT
 const afterOutside=anywhere.run('lane');anywhere.run('gameTime+=.2');anywhere.listeners.pointerdown({...outsideTap,target:{id:'pause',closest:selector=>selector==='#game-screen'?null:{}}});anywhere.listeners.pointerup(outsideTap);assert.equal(anywhere.run('lane'),afterOutside,'Utility controls never shift the ball');
 anywhere.run('goHome();gameTime+=.2');anywhere.listeners.pointerdown(outsideTap);anywhere.listeners.pointerup(outsideTap);assert.equal(anywhere.run('lane'),afterOutside,'Home screen ignores gameplay gestures');
 console.log('PASS: page-wide taps are gameplay-only and exclude utility controls.');
+
+const fastFire=game();fastFire.click('home-play');fastFire.run('startDelay=0;startRush();globalThis.initialAngle=angle;globalThis.base=speedNow();updateRush(1);globalThis.firstAngle=angle;updateRush(1);');
+assert.ok(Math.abs(fastFire.run('(angle-firstAngle)/base')-3)<1e-8,'Fire Ball cruises at triple speed');
+fastFire.run('updateRush(3)');assert.equal(fastFire.run('rushTime'),0,'Fire Ball lasts exactly five seconds');
+assert.ok(Math.abs(fastFire.run('(angle-initialAngle)/base')-14)<1e-8,'Speed ramps preserve frame-independent travel');
+assert.equal(fastFire.run('speedNow()'),fastFire.run('base'),'Normal speed is restored');

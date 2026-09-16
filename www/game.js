@@ -208,7 +208,7 @@ const TRAINING = [
  ['Moving barriers','Watch the coral arc drift along its ring. Move to the safe ring before it arrives. The warning stays above the arena.'],
  ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
  ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
- ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc; speed stays steady.'],
+ ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc: Fire Ball boosts your speed to three times normal for five seconds.'],
  ["Near-miss bonus", "A late but safe switch can earn CLOSE +5. It is optional: safe early moves are always valid. Try switching just after the gold perfect window."],
  ["Two shield charges", "From five rings you can hold two shields. Two outlines surround your ball. Let two separated barriers touch you and watch each outline disappear."],
  ["Earn a shield", "Six sparks fill one shield charge. You start with five here. Collect the next gold diamond to earn a shield."],
@@ -845,22 +845,29 @@ function burst(a,r,color,n=14){
   const p=point(a,r);
   for(let i=0;i<n;i++){const d=random(0,TAU),v=random(18,90);particles.push({x:p.x/size,y:p.y/size,vx:Math.cos(d)*v/440,vy:Math.sin(d)*v/440,life:1,color});}
 }
-let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0;
+let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0,rushBaseSpeed=0;
 let pendingPower='';
 function showPowerLesson(kind){
  if(roundKind==='tutorial'||roundKind==='practice')return;
  try{if(localStorage.getItem('loop-shift-learned-'+kind)==='true')return;}catch{}
  pendingPower=kind;setPaused(true,false);
  $('power-title').textContent=kind==='rush'?'Fire ball · Spark Rush':'Fever unlocked';
- $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Speed stays steady.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
+ $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Fire Ball boosts your speed to three times normal, easing in and out over five seconds.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
  $('power-dialog').showModal();
+}
+// Integrated speed curve: smooth acceleration, 3x cruise, smooth return.
+function rushDistance(t){
+ t=Math.max(0,Math.min(5,t));
+ const integral=x=>x*x*x-.5*x*x*x*x;
+ const boost=t<.4?.4*integral(t/.4):t<=4.4?.2+t-.4:4.2+.6*((t-4.4)/.6-integral((t-4.4)/.6));
+ return rushBaseSpeed*(t+2*boost);
 }
 function startRush(){
  rushQueued=false;rushChain=0;rushTime=5;rushGlow=1;rushStartAngle=angle;trail=[];
- const speed=speedNow();let route=lane;
+ rushBaseSpeed=speedNow();let route=lane;
  rushCoins=Array.from({length:8},(_,i)=>{
   if(i&&i%2===0)route=route===0?1:route===ringCount-1?route-1:route+(i%4?-1:1);
-  return {angle:angle+speed*(.55+i*.55),lane:route,collected:false};
+  return {angle:angle+rushDistance(.55+i*.55),lane:route,collected:false};
  });
  window.LoopShiftMusic?.setRush?.(true);tone(180,.22,'triangle',.045,720);showEffect('SPARK RUSH · ×10');showPowerLesson('rush');
 }
@@ -872,9 +879,10 @@ function finishRush(){
  rhythmOrigin+=offset;comeback=null;rushCoins=[];invulnerable=Math.max(invulnerable,.35);updateHUD();
 }
 function updateRush(dt){
- const elapsed=Math.min(dt,rushTime);rushTime=Math.max(0,rushTime-elapsed);
- angle+=elapsed*speedNow();radius+=(laneRadius(lane)-radius)*(1-Math.exp(-elapsed*24));updateLanding(elapsed);
- for(const coin of rushCoins){if(!coin.collected&&Math.abs(coin.angle-angle)<.1&&Math.abs(radius-laneRadius(coin.lane))<.032){coin.collected=true;score+=100;sparks++;advanceMission('sparks');tone(800,.06,'sine',.025);}}
+ const elapsed=Math.min(dt,rushTime),before=5-rushTime;const oldAngle=angle;
+ rushTime=Math.max(0,rushTime-elapsed);
+ angle+=rushDistance(5-rushTime)-rushDistance(before);radius+=(laneRadius(lane)-radius)*(1-Math.exp(-elapsed*24));updateLanding(elapsed);
+ for(const coin of rushCoins){if(!coin.collected&&coin.angle>=oldAngle-.1&&coin.angle<=angle+.1&&Math.abs(radius-laneRadius(coin.lane))<.032){coin.collected=true;score+=100;sparks++;advanceMission('sparks');tone(800,.06,'sine',.025);}}
  if(!rushTime)finishRush();updateHUD();
 }
 function updateRushHUD(){
