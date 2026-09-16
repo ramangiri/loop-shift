@@ -58,7 +58,7 @@
     if(data.me){restoreQueue(data.me.key);if(Number.isSafeInteger(data.me.mainBest))savedBest=data.me.mainBest;else if(!daily&&!weekly)savedBest=data.me.best;}
     if(visible){
     el('board-endless').setAttribute('aria-pressed',String(kind==='endless'));el('board-daily').setAttribute('aria-pressed',String(daily));el('board-weekly').setAttribute('aria-pressed',String(weekly));
-    el('board-title').textContent=weekly?'🏆 Weekly Top 10':daily?'🏆 Daily Top 10':'🏆 Top 10';
+    el('board-title').textContent=weekly?'🏆 Weekly Top 10':daily?'🏆 Daily Top 10':'Live Top 10 Feed';
     if(daily)el('daily-status').textContent='Resets 05:30 IST (00:00 UTC) · Online';
     latestEntries=data.entries;
     el('board-rows').replaceChildren();el('board-podium').replaceChildren();
@@ -80,11 +80,13 @@
     el('board-you').hidden = false;el('board-you').setAttribute('data-rank',String(data.me?.rank||''));
     el('board-you').textContent=data.me?(data.me.rank?`${data.me.name} · Your rank: #${data.me.rank} · Best: ${data.me.best.toLocaleString()}`:`${data.me.name} · Finish a ranked round to set your first score.`):'Add a name to see your online best and rank.';
     el('board-add-name').hidden=!!data.me;
+    el('personal-standing').hidden=!data.me;
+    if(data.me){el('standing-name').textContent=data.me.name;el('standing-rank').textContent=data.me.rank?'#'+data.me.rank:'—';el('standing-score').textContent=data.me.best.toLocaleString();el('standing-medal').textContent=data.me.rank===1?'🏆':data.me.rank===2?'🥈':data.me.rank===3?'🥉':'';if(window.LoopShiftAvatar)el('standing-avatar').replaceChildren(window.LoopShiftAvatar.make(data.me.name));}
     }
     if (data.me) {
       nickname = data.me.name;ranked = true;offlineReady=false;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
-      if(data.me.progress){el('home-player-level').textContent=`Level ${data.me.progress.highest} / 100`;serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
-    } else { el('home-player-level').textContent='';clearPlayer(); }
+      if(data.me.progress){el('home-player-level').textContent=`Level ${data.me.progress.highest} / 100`;el('home-level-meter').value=data.me.progress.highest;serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
+    } else { el('home-player-level').textContent='';el('home-level-meter').value=0;clearPlayer(); }
     notifyBest();
   }
   async function refresh(force = false) {
