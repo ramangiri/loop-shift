@@ -972,6 +972,7 @@ function collect(row){
   updateHUD();
 }
 function crash(hitRow=null,completed=false){
+ $('checkpoint-status').textContent='';
  if(roundKind==='endless'){try{localStorage.removeItem(checkpointKey());}catch{}}
  if(mode==='over')return;
   failedSegment=hitRow&&segmentSnapshot?JSON.parse(JSON.stringify(segmentSnapshot)):null;

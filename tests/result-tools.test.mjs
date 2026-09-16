@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {uiHarness} from './ui-harness.mjs';
+import {uiHarness,settle} from './ui-harness.mjs';
 const snapshot=time=>({time,angle:time,radius:.385,color:'#d6ff62',shield:1,radii:[.27,.385],rows:[{angle:time+.08,hazards:[1],safe:0,open:false,collected:false}]});
 const result={name:'Giri',title:'Perfect Pilot',score:1234,level:13,chain:7,ranked:true,mode:'100-level run',url:'https://game.test/loop-shift/#home'};
 test('replay keeps only the last three seconds, ends at collision, and resets without touching game state',()=>{
@@ -31,4 +31,14 @@ test('file sharing is user-triggered and a stale card cannot appear after retry'
   const sent=[];const h=uiHarness({navigator:{canShare:()=>true,share:async value=>sent.push(value)}});h.load('result-tools.js');const tools=h.scope.window.LoopShiftResults;
   tools.finish(result,null);const pending=h.click('card-create');tools.reset();await pending;assert.equal(h.nodes.get('card-preview').hidden,true);assert.equal(sent.length,0);
   tools.finish(result,null);await h.click('card-create');assert.equal(sent.length,0);await h.click('card-share');assert.equal(sent[0].files[0].type,'image/png');assert.equal(sent[0].url,result.url);tools.reset();
+});
+
+test('opening Share prepares a card and the share action works before PNG generation',async()=>{
+  const sent=[];const h=uiHarness({navigator:{share:async value=>sent.push(value)}});h.load('result-tools.js');
+  h.scope.window.LoopShiftResults.finish(result,null);
+  assert.equal(h.nodes.get('card-share').hidden,false);
+  await h.click('card-share');assert.equal(sent[0].url,result.url);assert.equal(sent[0].files,undefined);
+  let scrolled=false;h.nodes.get('card-panel').scrollIntoView=()=>{scrolled=true};
+  h.nodes.get('card-panel').open=true;h.nodes.get('card-panel').events.toggle();await settle();
+  assert.equal(scrolled,true);assert.equal(h.nodes.get('card-preview').hidden,false);
 });

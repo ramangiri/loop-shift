@@ -17,6 +17,7 @@
   function finish(data,hit){
     stop();result={...data};loss=hit;
     el('result-extras').hidden=false;el('replay-panel').hidden=!hit||frames.length<2;
+    el('card-share').hidden=false;
     el('card-game-link').href=data.url;el('card-game-link').textContent='Invite friends to play ↗';
     if(hit&&frames.length){paint(frames.at(-1),true);el('replay-caption').textContent=`Last ${Math.min(3,frames.at(-1).time-frames[0].time).toFixed(1)} seconds · Half speed`;} 
   }
@@ -52,7 +53,7 @@
     };raf=requestAnimationFrame(tick);
   }
   async function createCard(){
-    if(!result)return;const version=generation,data={...result};el('card-create').disabled=true;el('card-status').textContent='Creating your card…';
+    if(!result||el('card-create').disabled)return;const version=generation,data={...result};el('card-create').disabled=true;el('card-status').textContent='Creating your card…';
     try{
       if(document.fonts?.ready)await document.fonts.ready;
       if(version!==generation)return;
@@ -78,18 +79,22 @@
     finally{if(version===generation)el('card-create').disabled=false;}
   }
   async function shareCard(){
-    if(!card||!result)return;
+    if(!result)return;
     const text=`Can you beat my score? ${result.score} points in Loop Shift · Level ${result.level} · Best chain ${result.chain}.`;
     try{
-      if(navigator.share&&navigator.canShare?.({files:[card]})){await navigator.share({files:[card],title:'Loop Shift result',text,url:result.url});return;}
+      if(card&&navigator.share&&navigator.canShare?.({files:[card]})){await navigator.share({files:[card],title:'Loop Shift result',text,url:result.url});return;}
       if(navigator.share){await navigator.share({title:'Loop Shift result',text,url:result.url});el('card-status').textContent='Game link shared. Use Save image for your card.';return;}
       if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text+' '+result.url);el('card-status').textContent='Result and game link copied. Use Save image for the card.';return;}
     }catch(error){if(error.name==='AbortError')return;}
     el('card-status').textContent='Use Save image, or press and hold the card to save it. The game link is below.';
   }
   el('replay-play').addEventListener('click',playReplay);el('replay-stop').addEventListener('click',()=>{stop();if(frames.length)paint(frames.at(-1),true);});
-  el('replay-panel').addEventListener('toggle',()=>{if(!el('replay-panel').open)stop();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  for(const id of ['replay-panel','card-panel'])el(id).addEventListener('toggle',()=>{
+    if(!el(id).open){if(id==='replay-panel')stop();return;}
+    el(id).scrollIntoView?.({block:'start',behavior:'auto'});
+    if(id==='card-panel'&&!card)createCard();
+  });
   el('card-create').addEventListener('click',createCard);el('card-share').addEventListener('click',shareCard);
   window.LoopShiftResults={capture,finish,reset,stop,wantsFrame};
 })();

@@ -337,3 +337,24 @@ body[data-training=true] #tap-anywhere-hint,.arena-messages:has(#level-banner-wr
 #overlay .result-actions>button{flex:1 1 145px;width:auto;min-width:0;min-height:52px;margin:0;padding:12px 14px;font-size:14px}
 #overlay .result-actions #result-home{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
 #overlay .result-actions #play{width:auto;margin:0}
+
+/* Results are a scrollable page, not the gesture-controlled play surface. */
+body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #arena{touch-action:pan-y pinch-zoom}
+body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #game-screen{height:auto;max-height:none;overflow:visible;padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+body[data-screen=game] #result-extras{min-width:0;width:100%}
+body[data-screen=game] .result-panel{scroll-margin-top:16px;overflow-wrap:anywhere}
+body[data-screen=game] .result-panel>summary{min-height:48px;touch-action:manipulation}
+body[data-screen=game] #replay-canvas{max-height:55dvh;object-fit:contain}
+body[data-screen=game] #card-preview{display:block;max-height:48dvh;width:auto;max-width:100%;margin:10px auto;object-fit:contain;user-select:auto;-webkit-user-select:auto}
+body[data-screen=game] .card-actions>*{min-height:44px}
+body[data-screen=game] #comfort-response:empty,body[data-screen=game] #checkpoint-status:empty{display:none}
+body[data-screen=game] #comfort-check{min-width:0}
+body[data-screen=game] .comfort-answers button{flex:1 1 85px;min-width:0}
+@media(max-width:480px){
+ body[data-screen=game] .overlay-card{padding:4px 0}
+ body[data-screen=game] .overlay h2{font-size:clamp(22px,6vw,27px)}
+ body[data-screen=game] .result{gap:12px}
+ body[data-screen=game] .result>div{min-width:0;flex:1}
+ body[data-screen=game] .result strong{font-size:clamp(25px,8vw,36px);overflow-wrap:anywhere}
+ body[data-screen=game] .result span{font-size:11px}
+}
