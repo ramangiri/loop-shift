@@ -407,7 +407,7 @@ assert.notEqual(replay.run('retryCourse.seed'),firstSeed,'Home → Play now choo
 const intro=game();intro.click('home-play');
 assert.equal(intro.run('ringCount'),2);assert.match(intro.nodes.get('shift').attrs['aria-label'],/other ring/);
 intro.run('globalThis.guidePaints=0;arc=()=>{guidePaints++};drawGuide();');
-assert.equal(intro.run('guidePaints'),0,'The two-ring intro has no hollow marker or dotted destination');
+assert.equal(intro.run('guidePaints'),1,'The two-ring intro shows one short destination arc, matching the tap hint');
 intro.run('passes=12;levelUp(2);updateGuide();drawGuide();');
 assert.match(intro.nodes.get('shift').attrs['aria-label'],/highlighted ring/);
 assert.equal(intro.run('ringCount'),3);assert.ok(intro.run('guidePaints')>0,'Third-ring guidance starts at Level 2');
@@ -634,7 +634,7 @@ selectLesson(19);expanded.click('pause');assert.equal(expanded.run('mode'),'paus
 selectLesson(20);practiseUntil(21,'{const r=rows[0];if(r&&lane!==r.sparkLane)shift();}');expanded.click('training-go');assert.equal(expanded.run('mode'),'over');assert.equal(expanded.run('saved'),0);
 const stop=game();stop.run('globalThis.submits=0;window.LoopShiftBoard={ready:()=>true,refresh(){},submit(){submits++},beginRound(){},saveProgress(){}};start();score=120;showRest(5);');
 // This helper auto-continues normal break simulations; explicitly pause for the action.
-stop.run('setPaused(true);globalThis.beforeFinishSubmits=submits;');stop.click('finish-save');stop.click('finish-save');assert.equal(stop.run('submits-beforeFinishSubmits'),1);assert.equal(stop.run('mode'),'over');assert.equal(stop.nodes.get('result-score').textContent,120);
+stop.run('setPaused(true);globalThis.beforeFinishSubmits=submits;');stop.click('finish-save');stop.click('finish-save');assert.equal(stop.run('submits-beforeFinishSubmits'),1);assert.equal(stop.run('mode'),'over');assert.equal(stop.nodes.get('result-score').textContent,'120');
 const explain=game();explain.run("localStorage.setItem('loop-shift-learned-rush','false');start();startDelay=0;startRush();");assert.equal(explain.nodes.get('power-dialog').open,true);const rushFrozen=explain.run('rushTime');explain.run('update(1)');assert.equal(explain.run('rushTime'),rushFrozen);explain.click('power-go');assert.equal(explain.run('mode'),'playing');assert.equal(explain.run("localStorage.getItem('loop-shift-learned-rush')"),'true');
 console.log('PASS: every added lesson, optional finish-and-save, and first-power pause/resume.');
 const anywhere=game();anywhere.run('start();startDelay=0;gameTime=2;');
@@ -667,3 +667,33 @@ const autoCheckpoint=game(false,null,false,false,false);autoCheckpoint.click('ho
 autoCheckpoint.run('finishAndSave()');assert.equal(autoCheckpoint.run('readCheckpoint()'),null);
 
 const liveSave=game();liveSave.click('home-play');liveSave.run('globalThis.savedScores=[];window.LoopShiftBoard={submit:(s,t)=>savedScores.push([s,t])};startDelay=0;score=123;gameTime=15;updateHUD();updateHUD()');assert.equal(liveSave.run('savedScores.length'),1);liveSave.run('score=200;gameTime=20;setPaused(true)');assert.equal(liveSave.run('savedScores.length'),2);liveSave.run('roundKind="daily";score=300;gameTime=40;autoSaveScore(true)');assert.equal(liveSave.run('savedScores.length'),2);
+
+// New short mode freezes on pause and keeps ranked scores/checkpoints separate.
+const minute=game(false,null,false,false,false);minute.click('minute-play');
+assert.equal(minute.run('roundKind'),'minute');assert.equal(minute.run('isRankedMode()'),false);
+minute.run('startDelay=0;rows=[];gameTime=20;setPaused(true);update(5)');assert.equal(minute.run('gameTime'),20);
+minute.run('setPaused(false);startDelay=0;rows=[];gameTime=59.99;score=321;update(.02)');
+assert.equal(minute.run('gameTime'),60);assert.equal(minute.run('mode'),'over');assert.equal(minute.store.get('loop-shift-minute-best'),'321');assert.equal(minute.store.get('loop-shift-best-v2'),'143');
+minute.click('play');assert.equal(minute.run('startDelay'),.45);assert.equal(minute.run('gameTime'),0);
+
+const keptCheckpoint=game(false,null,false,false,false);keptCheckpoint.click('home-play');keptCheckpoint.run('startDelay=0;level=5;passes=60;score=500;levelUp(6)');keptCheckpoint.click('save-checkpoint');
+const savedCheckpoint=keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest');
+keptCheckpoint.run("roundKind='practice';practiceLevel=1;start({fresh:true})");assert.equal(keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest'),savedCheckpoint);
+keptCheckpoint.click('minute-play');assert.equal(keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest'),savedCheckpoint);
+const waitingResume=game(false,keptCheckpoint.store,false,false,false);
+waitingResume.run('globalThis.resumeReady=false;globalThis.resumeAction=null;window.LoopShiftBoard={ready:()=>resumeReady,askName:fn=>resumeAction=fn,player:()=>null,beginRound(){},submit(){},saveProgress(){}}');
+waitingResume.click('resume-checkpoint');assert.equal(waitingResume.run('mode'),'ready');assert.ok(waitingResume.run('readCheckpoint()'));
+waitingResume.run('resumeReady=true;resumeAction()');assert.equal(waitingResume.run('level'),6);assert.equal(waitingResume.run('score'),500);assert.equal(waitingResume.run('mode'),'playing');assert.equal(waitingResume.run('readCheckpoint()'),null);
+
+const rushWithRest=game(false,null,false,false,false);rushWithRest.click('home-play');rushWithRest.run('startDelay=0;startRush();updateRush(2);showRest();setPaused(false);startDelay=0;updateRush(3)');
+const rushWithoutRest=game(false,null,false,false,false);rushWithoutRest.click('home-play');rushWithoutRest.run('startDelay=0;startRush();updateRush(5)');
+assert.ok(Math.abs(rushWithRest.run('(rows[0].baseAngle-angle)/speedNow()')-rushWithoutRest.run('(rows[0].baseAngle-angle)/speedNow()'))<1e-8);
+
+const slower=game();slower.click('home-play');slower.run('crash(rows[0])');slower.click('practice-failure');
+assert.equal(slower.run('slowPracticeTime'),8);assert.ok(slower.run('targetSpeed()')<.6);
+slower.run('startDelay=0;rows=[];nextRowIndex=12;for(let i=0;i<960;i++)update(1/120)');assert.ok(slower.run('slowPracticeTime')<.001);
+slower.click('pause-side');assert.equal(slower.run('pauseLeft'),true);assert.equal(game(false,slower.store).run('pauseLeft'),true);
+
+const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,false);
+const localSave=game();localSave.click('home-play');localSave.run('score=987;gameTime=15;updateHUD()');assert.equal(localSave.store.get('loop-shift-best-v2'),'987');assert.equal(localSave.run('deviceScoreSaved'),true);
+console.log('PASS: minute mode, checkpoint preservation/setup, Rush/rest recovery, slower practice, pause placement, local saves and visible personal progress.');

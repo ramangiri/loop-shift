@@ -1,0 +1,86 @@
+/* Shared screen layout. Component decoration remains in style.css/events.css. */
+:root{--control-height:48px;--space:12px;--screen-gutter:clamp(12px,3vw,24px)}
+button,input,select,summary{min-height:var(--control-height)}
+button,input,select,textarea{max-width:100%}
+button{overflow-wrap:anywhere}
+.menu-dialog{width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow-y:auto;padding:clamp(16px,4vw,24px);overscroll-behavior:contain}
+.menu-dialog p,.result-panel p,.result-coaching,.result-storage,.result-comfort{font-family:Arial,sans-serif;line-height:1.5}
+.menu-dialog input,.menu-dialog select{font-size:16px}
+.menu-heading{position:sticky;top:-16px;background:var(--bg);z-index:2;padding:8px 0}
+.settings-grid,.appearance-choices,.quick-modes{display:flex;flex-wrap:wrap;gap:10px}
+.quick-modes>button,.settings-grid>button{flex:1 1 145px;min-width:0}
+body[data-screen=game] .topbar,body[data-screen=game] footer{display:none}
+body[data-screen=game] .shell{width:100%;min-height:100dvh;padding:0 var(--screen-gutter)}
+body[data-screen=game] #game-screen{width:100%;max-width:560px;margin:auto;padding:16px 0 calc(48px + env(safe-area-inset-bottom,0px));touch-action:pan-y pinch-zoom}
+body[data-screen=game] #game-screen .console{display:flex;flex-direction:column;min-width:0;border:0;background:transparent;box-shadow:none;padding:0}
+body[data-screen=game] #game-screen .game-nav{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,1fr) 48px;gap:8px;align-items:center;height:56px;margin:0;padding:0}
+body[data-screen=game] #game-screen .scoreboard{display:contents}
+body[data-screen=game] #game-screen .scoreboard>.stat:first-child{display:none}
+body[data-screen=game] #game-screen .stat{text-align:center;padding:0}
+body[data-screen=game] #game-screen .stat>span{font:11px/1.2 Arial,sans-serif}
+body[data-screen=game] #game-screen .stat strong{font-size:22px;line-height:1.2}
+body[data-screen=game] #pause{position:fixed;top:calc(var(--play-top,0px) + max(8px,env(safe-area-inset-top,0px)));right:max(12px,env(safe-area-inset-right,0px));left:auto;width:48px;height:48px;z-index:50;background:var(--surface)}
+body[data-screen=game][data-pause-side=left] #pause{left:max(12px,env(safe-area-inset-left,0px));right:auto}
+body[data-screen=game][data-pause-side=left] #back-home{grid-column:4;grid-row:1}
+body[data-screen=game] #game-screen .sector-header,body[data-screen=game] #run-goal,body[data-screen=game] .run-progress,body[data-screen=game] .mobile-hint,body[data-screen=game] .desktop-hint,body[data-screen=game] #shift-hint,body[data-screen=game] #hit-feedback{display:none}
+body[data-screen=game][data-playstate=playing]{height:var(--play-height,100dvh);overflow:hidden;overscroll-behavior:none}
+body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 32px),calc(var(--play-height,100dvh) - 236px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),540px));position:fixed;top:var(--play-top,0px);left:0;width:100%;max-width:none;height:var(--play-height,100dvh);margin:0;padding:0;display:block;overflow:hidden;touch-action:none}
+body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 64px),calc(var(--play-height,100dvh) - 280px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),440px))}
+body[data-screen=game][data-playstate=playing] #game-screen .console{display:contents}
+body[data-screen=game][data-playstate=playing] #game-screen .game-nav{position:absolute;top:env(safe-area-inset-top,0px);left:var(--screen-gutter);right:var(--screen-gutter);z-index:3}
+body[data-screen=game][data-playstate=playing] #game-screen .level-progress-track{position:absolute;top:calc(56px + env(safe-area-inset-top,0px));left:var(--screen-gutter);right:var(--screen-gutter);height:3px;margin:0}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-status{position:absolute;top:calc(66px + env(safe-area-inset-top,0px));left:var(--screen-gutter);right:var(--screen-gutter);height:30px;min-height:0;overflow:hidden;text-align:center;z-index:2}
+body[data-screen=game] #game-screen .arena-status .run-targets{display:none}
+body[data-screen=game] #game-screen .arena-notices{height:auto;min-height:0}
+body[data-screen=game] #game-screen .pattern-notice{height:auto;min-height:0;margin:0;padding:0;font:12px/1.4 Arial,sans-serif;visibility:hidden}
+body[data-screen=game] #game-screen .pattern-notice.warning{visibility:visible}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-stage{position:absolute;inset:0;container-type:normal;pointer-events:none}
+body[data-screen=game][data-playstate=playing] #arena{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--orbit-diameter);max-width:none;height:auto;min-height:0;aspect-ratio:1;margin:0;pointer-events:auto;touch-action:none}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{position:absolute;top:calc(50% + var(--orbit-diameter)/2 + 10px);left:var(--screen-gutter);right:var(--screen-gutter);height:64px;min-height:64px;margin:0;z-index:2}
+body[data-screen=game] :is(#section-goal,#practice-pace){position:absolute;inset:0 0 auto;margin:0;font:12px/28px Arial,sans-serif;color:var(--muted);overflow-wrap:anywhere}
+.arena-messages:has(#level-banner-wrap.show,#skill-effect.visible,#toast.show,#tap-anywhere-hint:not(.faded)) :is(#section-goal,#practice-pace){visibility:hidden}
+body[data-screen=game] #game-screen .play-strip{display:none}
+body[data-screen=game] #training-controls{position:absolute;bottom:max(8px,env(safe-area-inset-bottom,0px));left:var(--screen-gutter);right:var(--screen-gutter);z-index:3}
+body[data-screen=game] #game-screen .daily-timer{position:absolute;bottom:max(12px,env(safe-area-inset-bottom,0px));left:var(--screen-gutter);right:var(--screen-gutter);margin:0;font:12px/1.4 Arial,sans-serif;text-align:center}
+body[data-screen=game]:is([data-playstate=paused],[data-playstate=over]){height:auto;overflow-y:auto;overscroll-behavior:auto}
+body[data-screen=game]:is([data-playstate=paused],[data-playstate=over]) #game-screen .arena-stage{position:relative;inset:auto;container-type:normal;pointer-events:auto}
+body[data-screen=game]:is([data-playstate=paused],[data-playstate=over]) #arena{position:relative;inset:auto;transform:none;width:100%;height:auto;max-height:none;min-height:0;aspect-ratio:auto;touch-action:pan-y pinch-zoom}
+body[data-screen=game]:is([data-playstate=paused],[data-playstate=over]) #game{position:absolute;inset:0;opacity:.06;pointer-events:none;width:100%;height:auto}
+body[data-screen=game]:is([data-playstate=paused],[data-playstate=over]) #game-screen :is(.game-nav,.arena-status,.level-progress-track,.arena-messages,.daily-timer){display:none}
+body[data-screen=game][data-playstate=over] #pause{display:none}
+body[data-screen=game] #overlay{position:relative;inset:auto;min-height:0;padding:16px 0;background:none;display:block}
+body[data-screen=game] #game-screen .overlay-card{max-width:520px;width:100%;margin:auto;padding:8px 0}
+body[data-screen=game] #overlay h2{font-size:clamp(22px,6vw,30px);margin:10px 0}
+body[data-screen=game] #overlay p{font-size:14px;line-height:1.5}
+body[data-screen=game] #game-screen .result{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+body[data-screen=game] #game-screen .result strong{font-size:clamp(24px,7vw,36px);overflow-wrap:anywhere}
+body[data-screen=game] #game-screen .result span{font:11px/1.4 Arial,sans-serif}
+body[data-screen=game] #result-avatar .arcade-avatar{width:40px;height:44px}
+body[data-screen=game][data-playstate=over] #overlay-copy{display:none}
+body[data-screen=game] #result-gap{color:var(--lime);font-family:Arial,sans-serif}
+body[data-screen=game] #game-screen .result-storage{color:var(--muted)}
+body[data-screen=game] :is(.result-comfort,#pause-progress){border:1px solid var(--line);border-radius:12px;padding:0 12px;margin:12px 0;text-align:left}
+body[data-screen=game] :is(.result-comfort,#pause-progress)>summary{font:14px/1.4 Arial,sans-serif;cursor:pointer;align-content:center;padding:12px 0}
+body[data-screen=game] #comfort-check{border:0;padding:0;margin:0 0 12px;min-width:0}
+body[data-screen=game] #comfort-check legend{display:none}
+body[data-rest=true] #overlay{position:fixed;inset:0;z-index:100;box-sizing:border-box;height:100dvh;overflow-y:auto;display:block;background:var(--bg);padding:calc(20px + env(safe-area-inset-top,0px)) var(--screen-gutter) calc(32px + env(safe-area-inset-bottom,0px))}
+body[data-rest=true] #overlay .overlay-card{max-height:none;overflow:visible}
+@media(max-height:500px) and (orientation:landscape){
+ body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:max(80px,min(calc(var(--play-height,100dvh) - 150px),430px))}
+ body[data-screen=game][data-playstate=playing] #game-screen .game-nav{height:44px}
+ body[data-screen=game][data-playstate=playing] #game-screen .level-progress-track{top:44px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-status{top:48px;height:20px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{height:40px;min-height:40px;top:calc(50% + var(--orbit-diameter)/2 + 4px)}
+ body[data-screen=game] #game-screen .arena-messages .game-feedback{inset:20px 0 auto}
+ body[data-screen=game] #game-screen .daily-timer{bottom:4px}
+}
+@media(min-width:900px){body[data-screen=home] .shell{max-width:1140px}body[data-screen=game] #game-screen .overlay-card{padding:16px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+body[data-screen=game] #game-screen .main-score{grid-column:2;grid-row:1}
+body[data-screen=game] #game-screen .right-stat{grid-column:3;grid-row:1}
+body[data-screen=game] #back-home{grid-row:1}
+body[data-screen=game] #result-progress{color:var(--lime);font-family:Arial,sans-serif}
+body[data-screen=home] .quick-modes{display:flex;flex-wrap:wrap}
+body[data-screen=home] .quick-modes>button{flex:1 1 145px;width:auto}
+body[data-screen=game][data-playstate=over] .result-comfort:not(:has(#comfort-check:not([hidden]))){display:none}

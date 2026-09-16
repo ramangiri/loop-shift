@@ -1,3 +1,16 @@
+## Version 2.3.0 · Responsive play and clearer progress
+
+- `responsive.css` owns game-screen geometry for portrait, compact landscape, desktop, and scrollable results/settings. Browser viewport changes and safe areas are respected.
+- Home includes an unranked 60-second round with a device-only best; pauses freeze its timer.
+- Five-level sections have visible goals and varied existing pattern combinations. Two-ring play now shows the same destination arc described by the hint.
+- Results show personal progress, clearer collision explanations, replay/share, and compact optional feedback. Pause has secondary statistics and the level objective.
+- Settings can place Pause on the left or right. Existing independent music/effects, near-miss feedback, short retries, and comfort effects are retained.
+- Mistake practice starts at 65% target speed for eight active seconds before easing back to normal.
+- Practice and short rounds preserve checkpoints; canceled player setup cannot consume them. Checkpoint section choices are saved immediately. Breaks during Fire Ball no longer add the recovery gap twice.
+- Regular scores autosave a device best and retain the existing online retry queue; result text distinguishes device saving from online synchronization.
+
+Validation: `npm test` covers gameplay, result sharing, audio, ranking isolation, persistence, and the added mode/checkpoint regressions. `npm run build` includes the new stylesheet. Physical-device Safari/Android testing is still recommended for browser chrome and native sharing.
+
 # Loop Shift — website with a shared Top 10
 
 Two screens: Home and Play. Players choose a nickname before their first round. Home shows the ten highest personal bests and the current player's rank.
