@@ -383,6 +383,8 @@ const blocks=(row,n)=>blockedLanes(row).includes(n);
 // advances the guide to a later wall; another tap returns toward its entry ring.
 function guidedTarget(){
   if(rushTime>0){const coin=rushCoins.find(c=>!c.collected&&c.angle>angle);if(coin&&coin.lane!==lane)return lane+Math.sign(coin.lane-lane);}
+  const bonus=rows.find(row=>row.bonusLane!=null&&!row.bonusCollected&&row.angle-angle<-.12&&row.angle+.4-angle>-.04);
+  if(bonus&&bonus.bonusLane!==lane)return lane+Math.sign(bonus.bonusLane-lane);
   if(ringCount===2)return 1-lane;
   const next=rows.find(row=>!row.passed);
   let destination=next?.sparkLane;
@@ -781,7 +783,13 @@ function updateRow(row){
   if(seconds<=.85){row.angle=row.baseAngle;row.locked=true;}
 }
 
+let preplayOptions=null,preplaySeen=false;
+try{preplaySeen=localStorage.getItem('loop-shift-preplay-v1')==='true';}catch{}
 function start(options){
+ if(!preplaySeen&&roundKind!=='tutorial'&&roundKind!=='practice'){
+  preplayOptions=options;$('preplay-dialog').showModal();return;
+ }
+
   const quickRetry=mode==='over';
  comfortStop=false;$('play').hidden=false;$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;
   sectionChoice='balanced';patternHits=0;$('practice-failure').hidden=true;$('section-choices').hidden=true;$('break-reward').textContent='';showExtrasHome();
@@ -1009,7 +1017,7 @@ function update(dt){
       }else{crash(row);return;}
     }
     if(delta<.105&&previousDelta>-.105&&!row.collected&&Math.abs(radius-laneRadius(row.sparkLane))<.032)collect(row);
-    if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&delta+.40<.055&&previousDelta+.40>-.055&&Math.abs(radius-laneRadius(row.bonusLane))<.018){row.bonusCollected=true;if(!timedRun()){sparks+=2;levelSparks+=2;advanceMission('sparks');advanceMission('sparks');}if(row.shieldBonus&&shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;shieldSound(shield===2?'gain2':'gain1');}toast('Bonus shield charge +1');}const reward=40*scoreFactor();score+=reward;showEffect(`BONUS! +${reward}`);burst(row.angle+.40,laneRadius(row.bonusLane),'#ffa8da',14);feedback('bonus');}
+    if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&delta+.40<.09&&previousDelta+.40>-.09&&Math.abs(radius-laneRadius(row.bonusLane))<.032){row.bonusCollected=true;if(!timedRun()){sparks+=2;levelSparks+=2;advanceMission('sparks');advanceMission('sparks');}if(row.shieldBonus&&shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;shieldSound(shield===2?'gain2':'gain1');}toast('Bonus shield charge +1');}const reward=40*scoreFactor();score+=reward;showEffect(`BONUS! +${reward}`);burst(row.angle+.40,laneRadius(row.bonusLane),'#ffa8da',14);feedback('bonus');}
     if(delta<-.16&&!row.passed){
       if(row.special&&!row.collected)rushChain=0;row.passed=true;passes++;if(focusRun&&focusGoal%2===1&&!row.hit)focusCount++;pathLane=row.sparkLane;
       if(row.hit)patternHits++;
@@ -1141,7 +1149,7 @@ function draw(time,dt){
       }
       if(row===nearest&&ahead>0&&!row.open&&!row.hit){for(const n of blockedLanes(row))arc(rowRadius(n),row.angle-.085,row.angle+.085,'#ffe7d9',2);}
       if(row===nearest&&ahead>0){ctx.save();ctx.globalAlpha=.8*opacity;ctx.shadowColor=C.gold;ctx.shadowBlur=(reducedMotion||softTheme)?0:12;arc(rowRadius(row.sparkLane),row.angle-.13,row.angle+.13,C.gold,3);ctx.restore();}
-      if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){drawSpark(row.angle+.4,rowRadius(row.bonusLane),opacity,row.shieldBonus?C.gold:'#ffa8da');if(row.shieldBonus){const b=point(row.angle+.4,rowRadius(row.bonusLane));ctx.strokeStyle=C.gold;ctx.strokeRect(b.x-8,b.y-8,16,16);}}
+      if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&ahead+.4>-.1){ctx.save();ctx.globalAlpha=1;drawSpark(row.angle+.4,rowRadius(row.bonusLane),Math.max(.85,fade),row.shieldBonus?C.gold:'#c9a4e8');if(row.shieldBonus){const b=point(row.angle+.4,rowRadius(row.bonusLane));ctx.strokeStyle=C.gold;ctx.strokeRect(b.x-8,b.y-8,16,16);}ctx.restore();}
       if(!row.collected){drawSpark(row.angle,rowRadius(row.sparkLane),opacity,row.special?'#dc7b25':C.gold);if(row.special){const specialPoint=point(row.angle,rowRadius(row.sparkLane));ctx.strokeStyle='#dc7b25';ctx.lineWidth=2;ctx.beginPath();ctx.arc(specialPoint.x,specialPoint.y,size*.021,0,TAU);ctx.stroke();}}
     }
     ctx.globalAlpha=1;
@@ -1215,6 +1223,9 @@ $('ring-lesson-practice').addEventListener('click',()=>{
 });
 $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
+$('preplay-go').addEventListener('click',()=>{preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v1','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);});
+$('preplay-learn').addEventListener('click',()=>{$('preplay-dialog').close();preplayOptions=null;startTutorial();});
+$('preplay-dialog').addEventListener('cancel',()=>{preplayOptions=null;});
 $('tutorial-play').addEventListener('click',startTutorial);
 $('tutorial-start').addEventListener('click',startTutorial);
 $('skip-tutorial').addEventListener('click',exitTraining);
