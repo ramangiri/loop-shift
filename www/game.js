@@ -34,6 +34,7 @@ function showRest(completed=0){
   $('section-choices').hidden=!completed||roundKind!=='endless';
   $('section-choice-status').textContent='';
   $('break-reward').textContent=completed?`🏆 Milestone ${completed/5} earned · ${$('next-reward').textContent}`:'';
+  if(checkpointEligible)saveCheckpoint(false);
   if(completed&&roundKind==='endless'){extras.milestones=Math.max(extras.milestones,completed/5);saveExtras();showExtrasHome();}
 }
 
@@ -598,9 +599,9 @@ let checkpointEligible=false;
 const checkpointKey=()=> 'loop-shift-checkpoint-v1-'+(window.LoopShiftBoard?.player?.()?.key||'guest');
 function readCheckpoint(){try{const c=JSON.parse(localStorage.getItem(checkpointKey())||'null');if(c?.v!==1||!c.state||!Number.isInteger(c.state.level)||c.state.level<6||c.state.level>100||c.state.passes%60!==0||!Array.isArray(c.rows)||c.rows.length>8||!['score','passes','sparks','shield','angle','radius','motionSpeed','ringCount','gameTime','gameSeed'].every(k=>Number.isFinite(c.state[k]))||c.state.score<0||c.state.ringCount<2||c.state.ringCount>6)return null;return c;}catch{return null;}}
 function syncCheckpoint(){const c=readCheckpoint();$('resume-checkpoint').hidden=!c;$('checkpoint-home-note').hidden=!c;if(c)$('resume-checkpoint').textContent=`Resume · Level ${c.state.level} · Score ${c.state.score}`;}
-function saveCheckpoint(){
+function saveCheckpoint(exit=true){
  if(mode!=='paused'||!checkpointEligible||roundKind!=='endless')return;
- try{const c={v:1,state:{score,passes,level,sparks,charge,shield,gameTime,combo,feverCharge,feverTime,perfects,roundFevers,bestCombo,roundHits,ringCount,lane,radius,angle,motionSpeed,shiftDirection,gameSeed,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,pathLane,sectionChoice,focusRun,focusGoal,focusCount,focusSparkBase,runFocus,levelSparks,levelPerfects,levelHits,levelShieldLost,objectiveAwarded,rushTime,rushChain,rushQueued,rushStartAngle,rushGlow,rushBaseSpeed,rushBoost,patternHits,runBosses,runCleanBest,cleanStreak,activeSinceBreak},rows,rushCoins,phrasePatterns:[...phrasePatterns],retryCourse,levelTransition,departingRows};localStorage.setItem(checkpointKey(),JSON.stringify(c));checkpointEligible=false;mode='ready';breakPending=false;document.body.dataset.rest='false';window.LoopShiftMusic?.pause();goHome();syncCheckpoint();}catch{$('checkpoint-status').textContent='Could not save on this device. Your run is still paused.';}
+ try{const c={v:1,state:{score,passes,level,sparks,charge,shield,gameTime,combo,feverCharge,feverTime,perfects,roundFevers,bestCombo,roundHits,ringCount,lane,radius,angle,motionSpeed,shiftDirection,gameSeed,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,pathLane,sectionChoice,focusRun,focusGoal,focusCount,focusSparkBase,runFocus,levelSparks,levelPerfects,levelHits,levelShieldLost,objectiveAwarded,rushTime,rushChain,rushQueued,rushStartAngle,rushGlow,rushBaseSpeed,rushBoost,patternHits,runBosses,runCleanBest,cleanStreak,activeSinceBreak},rows,rushCoins,phrasePatterns:[...phrasePatterns],retryCourse,levelTransition,departingRows};localStorage.setItem(checkpointKey(),JSON.stringify(c));$('checkpoint-status').textContent='Checkpoint and score saved on this device.';if(!exit){syncCheckpoint();return;}checkpointEligible=false;mode='ready';breakPending=false;document.body.dataset.rest='false';window.LoopShiftMusic?.pause();goHome();syncCheckpoint();}catch{$('checkpoint-status').textContent='Could not save on this device. Your run is still paused.';}
 }
 function resumeCheckpoint(){
  const c=readCheckpoint();if(!c)return;
@@ -956,6 +957,7 @@ function collect(row){
   updateHUD();
 }
 function crash(hitRow=null,completed=false){
+ if(roundKind==='endless'){try{localStorage.removeItem(checkpointKey());}catch{}}
  if(mode==='over')return;
   failedSegment=hitRow&&segmentSnapshot?JSON.parse(JSON.stringify(segmentSnapshot)):null;
   $('practice-failure').hidden=!failedSegment;$('section-choices').hidden=true;$('break-reward').textContent='';
@@ -1254,11 +1256,11 @@ const PREPLAY_SLIDES=[
  ['Dodge the coral barriers','Switch rings before the barrier reaches you. Swipe inward or outward for an adjacent ring.','barrier'],
  ['Collect the coins','Gold sparks charge shields. Purple diamonds are optional bonuses after a barrier.','coins'],
  ['Shields and Fire Ball','Six sparks earn a shield. Three outlined special coins give a five-second bonus.','power'],
- ['Take a break and save','At five-level breaks: Save & Exit stores a checkpoint on this device. Finish Run submits your score and ends the run.','save']];
-function showPreplaySlide(){const [title,copy,kind]=PREPLAY_SLIDES[preplaySlide];$('preplay-title').textContent=title;$('preplay-copy').textContent=copy;$('preplay-step').textContent=`${preplaySlide+1} / ${PREPLAY_SLIDES.length}`;$('preplay-picture').dataset.lesson=kind;$('preplay-back').disabled=preplaySlide===0;$('preplay-go').textContent=preplaySlide===PREPLAY_SLIDES.length-1?'GOT IT — PLAY':'NEXT';}
-$('preplay-back').addEventListener('click',()=>{preplaySlide=Math.max(0,preplaySlide-1);showPreplaySlide();});
-$('preplay-go').addEventListener('click',()=>{if(preplaySlide<PREPLAY_SLIDES.length-1){preplaySlide++;showPreplaySlide();return;}preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v2','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);});
-$('preplay-learn').addEventListener('click',()=>{$('preplay-dialog').close();preplayOptions=null;startTutorial();});
+ ['Take a break and save','Your score and checkpoint save automatically at five-level breaks on this device. Finish Run ends the run and submits ranked scores.','save']];
+function showPreplaySlide(){const [title,copy,kind]=PREPLAY_SLIDES[preplaySlide];$('preplay-title').textContent=title;$('preplay-copy').textContent=copy;$('preplay-step').textContent=`${preplaySlide+1} / ${PREPLAY_SLIDES.length}`;$('preplay-picture').dataset.lesson=kind;$('preplay-go').textContent=preplaySlide===PREPLAY_SLIDES.length-1?'GOT IT — PLAY':'NEXT';}
+function finishPreplay(){preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v2','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);}
+$('preplay-go').addEventListener('click',()=>{if(preplaySlide<PREPLAY_SLIDES.length-1){preplaySlide++;showPreplaySlide();return;}finishPreplay();});
+$('preplay-skip').addEventListener('click',finishPreplay);
 $('preplay-dialog').addEventListener('cancel',()=>{preplayOptions=null;});
 $('tutorial-play').addEventListener('click',startTutorial);
 $('tutorial-start').addEventListener('click',startTutorial);
@@ -1271,7 +1273,7 @@ for(let i=0;i<TRAINING.length;i++)$('lesson-'+i).addEventListener('click',()=>sh
 $('training-dialog').addEventListener('cancel',event=>{event.preventDefault();exitTraining();});
 $('power-go').addEventListener('click',()=>{try{localStorage.setItem('loop-shift-learned-'+pendingPower,'true');}catch{}pendingPower='';$('power-dialog').close();setPaused(false);});
 $('power-dialog').addEventListener('cancel',event=>event.preventDefault());
-$('save-checkpoint').addEventListener('click',saveCheckpoint);
+$('save-checkpoint').addEventListener('click',()=>saveCheckpoint(true));
 $('resume-checkpoint').addEventListener('click',resumeCheckpoint);
 syncCheckpoint();
 $('finish-save').addEventListener('click',()=>finishAndSave());
