@@ -413,6 +413,7 @@ function applyTheme(){
   window.LoopShiftMusic?.setLevel(level);
 }
 function levelUp(next){
+ autoSaveScore(true);
   const completed=level,oldRings=ringCount;
   const fromRadii=Array.from({length:oldRings},(_,n)=>laneRadius(n)),fromColor=levelColor();
   const goalResult=finishLevel();level=Math.min(100,next);ringCount=ringLimit(level);
@@ -741,7 +742,16 @@ function warnPattern(row){
   $('announcement').textContent=PATTERN_COPY[row.pattern]+'. The next pattern is approaching.';
   tone(330,.13,'triangle',.035);
 }
+let lastAutoScore=0,lastAutoTime=0;
+function autoSaveScore(force=false){
+ if(screen!=='game'||!['playing','paused'].includes(mode)||roundKind!=='endless'||score<=lastAutoScore)return;
+ if(!force&&gameTime-lastAutoTime<15)return;
+ lastAutoScore=score;lastAutoTime=gameTime;
+ if(focusRun){try{localStorage.setItem('loop-shift-focus-result',JSON.stringify({score,level}));}catch{}return;}
+ window.LoopShiftBoard?.submit(score,gameTime);
+}
 function updateHUD(){
+ autoSaveScore();
  $('save-checkpoint').hidden=mode!=='paused'||!checkpointEligible;
  if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
@@ -815,6 +825,7 @@ function start(options){
  }
 
   const quickRetry=mode==='over';
+ lastAutoScore=0;lastAutoTime=0;
  checkpointEligible=false;$('save-checkpoint').hidden=true;try{localStorage.removeItem(checkpointKey());}catch{}
  comfortStop=false;$('play').hidden=false;$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;
   sectionChoice='balanced';patternHits=0;$('practice-failure').hidden=true;$('section-choices').hidden=true;$('break-reward').textContent='';showExtrasHome();
@@ -872,6 +883,7 @@ function setPaused(paused, moveFocus=true){
   if(!paused&&(comfortStop||$('power-dialog').open))return;
   if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
+    autoSaveScore(true);
     if(roundKind==='tutorial'&&tutorialStage===19)trainingDidPause=true;
     $('section-choices').hidden=true;$('break-reward').textContent='';$('practice-failure').hidden=true;
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;
@@ -1256,7 +1268,7 @@ const PREPLAY_SLIDES=[
  ['Dodge the coral barriers','Switch rings before the barrier reaches you. Swipe inward or outward for an adjacent ring.','barrier'],
  ['Collect the coins','Gold sparks charge shields. Purple diamonds are optional bonuses after a barrier.','coins'],
  ['Shields and Fire Ball','Six sparks earn a shield. Three outlined special coins give a five-second bonus.','power'],
- ['Take a break and save','Your score and checkpoint save automatically at five-level breaks on this device. Finish Run ends the run and submits ranked scores.','save']];
+ ['Take a break and save','Ranked scores save online during play. Checkpoints save on this device at five-level breaks. Finish Run ends the run.','save']];
 function showPreplaySlide(){const [title,copy,kind]=PREPLAY_SLIDES[preplaySlide];$('preplay-title').textContent=title;$('preplay-copy').textContent=copy;$('preplay-step').textContent=`${preplaySlide+1} / ${PREPLAY_SLIDES.length}`;$('preplay-picture').dataset.lesson=kind;$('preplay-go').textContent=preplaySlide===PREPLAY_SLIDES.length-1?'GOT IT — PLAY':'NEXT';}
 function finishPreplay(){preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v2','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);}
 $('preplay-go').addEventListener('click',()=>{if(preplaySlide<PREPLAY_SLIDES.length-1){preplaySlide++;showPreplaySlide();return;}finishPreplay();});
