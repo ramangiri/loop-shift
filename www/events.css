@@ -258,3 +258,18 @@ body[data-screen=game] #game-screen #level{font-size:19px;line-height:1.2}
 body[data-screen=game] #game-screen .overlay{min-height:0}
 body[data-screen=game] #game-screen .play-strip .charge-row{padding:0;min-height:28px}
 body[data-screen=game] #game-screen #training-controls{margin-top:4px}
+
+/* The free play area, rather than the stack of labels, centres the orbit. */
+body[data-screen=game][data-playstate=playing] .shell>main{display:flex;flex-direction:column;flex:1;min-height:0}
+body[data-screen=game][data-playstate=playing] #game-screen{display:flex;flex-direction:column;flex:1;min-height:0;touch-action:none;padding:0}
+body[data-screen=game][data-playstate=playing] #game-screen .game-nav{flex-shrink:0}
+body[data-screen=game][data-playstate=playing] #game-screen .console{flex:1;min-height:0}
+body[data-screen=game][data-playstate=playing] #game-screen .play-strip{order:0;flex-shrink:0;min-height:30px}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-status{order:1;flex-shrink:0}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-stage{order:2;flex:1;min-height:0;position:relative;container-type:size}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-stage .arena{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;width:min(100%,var(--fit-arena,calc(100svh - 220px)));aspect-ratio:1}
+@supports(width:1cqh){body[data-screen=game][data-playstate=playing] #game-screen .arena-stage .arena{width:min(100cqw,100cqh,540px)}}
+body[data-screen=game][data-playstate=playing] #game-screen #training-controls{order:3;flex-shrink:0}
+body[data-screen=game][data-playstate=playing] #game-screen .tutorial-instruction{order:1;flex-shrink:0}
+body[data-screen=game] #game-screen .run-targets{display:none}
+body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #game-screen .arena-stage{order:2;position:relative}

@@ -636,3 +636,9 @@ const stop=game();stop.run('globalThis.submits=0;window.LoopShiftBoard={ready:()
 stop.run('setPaused(true);');stop.click('finish-save');stop.click('finish-save');assert.equal(stop.run('submits'),1);assert.equal(stop.run('mode'),'over');assert.equal(stop.nodes.get('result-score').textContent,120);
 const explain=game();explain.run("localStorage.setItem('loop-shift-learned-rush','false');start();startDelay=0;startRush();");assert.equal(explain.nodes.get('power-dialog').open,true);const rushFrozen=explain.run('rushTime');explain.run('update(1)');assert.equal(explain.run('rushTime'),rushFrozen);explain.click('power-go');assert.equal(explain.run('mode'),'playing');assert.equal(explain.run("localStorage.getItem('loop-shift-learned-rush')"),'true');
 console.log('PASS: every added lesson, optional finish-and-save, and first-power pause/resume.');
+const anywhere=game();anywhere.run('start();startDelay=0;gameTime=2;');
+const outsideTap={button:0,isPrimary:true,pointerId:9,clientX:8,clientY:500,target:{id:'',closest:()=>null},preventDefault(){}};
+const beforeOutside=anywhere.run('lane');anywhere.listeners.pointerdown(outsideTap);anywhere.listeners.pointerup(outsideTap);assert.notEqual(anywhere.run('lane'),beforeOutside,'Blank page margins accept taps during play');
+const afterOutside=anywhere.run('lane');anywhere.run('gameTime+=.2');anywhere.listeners.pointerdown({...outsideTap,target:{id:'pause',closest:selector=>selector==='#game-screen'?null:{}}});anywhere.listeners.pointerup(outsideTap);assert.equal(anywhere.run('lane'),afterOutside,'Utility controls never shift the ball');
+anywhere.run('goHome();gameTime+=.2');anywhere.listeners.pointerdown(outsideTap);anywhere.listeners.pointerup(outsideTap);assert.equal(anywhere.run('lane'),afterOutside,'Home screen ignores gameplay gestures');
+console.log('PASS: page-wide taps are gameplay-only and exclude utility controls.');

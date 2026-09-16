@@ -1211,8 +1211,8 @@ function tapShift(event){
 }
 let gesture=null;
 function beginGesture(event){
- if(event.isPrimary===false||(event.button!==undefined&&event.button!==0)||mode!=='playing')return;
- if(event.target.id!=='shift'&&event.target.closest?.('button,a,input,textarea,select,details'))return;
+ if(event.isPrimary===false||(event.button!==undefined&&event.button!==0)||screen!=='game'||mode!=='playing'||trainingWaiting)return;
+ if(event.target.id!=='shift'&&event.target.closest?.('button,a,input,textarea,select,details,dialog'))return;
  event.preventDefault();
  const box=$('arena').getBoundingClientRect(),cx=(box.left??0)+box.width/2,cy=(box.top??0)+(box.height??box.width)/2;
  gesture={id:event.pointerId,x:event.clientX,y:event.clientY,cx,cy,moved:false};
@@ -1235,6 +1235,10 @@ $('game-screen').addEventListener('pointerdown',beginGesture);
 $('game-screen').addEventListener('pointermove',moveGesture);
 $('game-screen').addEventListener('pointerup',endGesture);
 $('game-screen').addEventListener('pointercancel',()=>{gesture=null;});
+document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('#game-screen'))beginGesture(event);});
+document.addEventListener('pointermove',moveGesture);
+document.addEventListener('pointerup',endGesture);
+document.addEventListener('pointercancel',()=>{gesture=null;});
 $('shift').addEventListener('click',event=>{if(event.detail===0)shift();});
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
