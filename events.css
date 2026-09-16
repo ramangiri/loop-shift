@@ -288,3 +288,25 @@ body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #game-s
  body[data-screen=game][data-playstate=playing] #game-screen #training-controls{position:absolute;z-index:3;bottom:max(8px,env(safe-area-inset-bottom,0px));left:16px;right:16px;margin:0}
  body[data-screen=game][data-playstate=playing] #game-screen .daily-timer{position:absolute;z-index:2;bottom:max(12px,env(safe-area-inset-bottom,0px));left:16px;right:16px}
 }
+
+/* A stable two-line message dock below the orbit; warnings stay above. */
+body[data-screen=game] #game-screen .arena-messages{order:3;flex-shrink:0;position:relative;height:64px;min-height:64px;margin:6px 0 0;text-align:center;pointer-events:none;font-family:LoopArcade,Arial,sans-serif}
+body[data-screen=game][data-playstate=playing] #game-screen #training-controls{order:4}
+body[data-screen=game] #game-screen .arena-messages #level-banner-wrap{position:absolute;inset:0 0 auto;height:28px;min-height:0;margin:0;padding:0;display:block;transform:none;opacity:0;visibility:visible;transition:opacity .2s}
+body[data-screen=game] #game-screen .arena-messages #level-banner-wrap.show{opacity:1;animation:dock-message 1.4s ease both}
+body[data-screen=game] #game-screen .arena-messages #level-banner{font:800 clamp(13px,3.8vw,17px)/28px LoopArcade,Arial,sans-serif;color:var(--completed-sector,var(--lime));letter-spacing:.025em}
+body[data-screen=game] #game-screen .arena-messages .game-feedback{position:absolute;inset:30px 0 auto;height:28px;min-height:0;margin:0}
+body[data-screen=game] #game-screen .arena-messages :is(#skill-effect,#toast){position:absolute;inset:0;width:100%;max-width:none;height:28px;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;text-align:center;display:block;transform:none;font:800 clamp(12px,3.5vw,16px)/28px LoopArcade,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .2s}
+body[data-screen=game] #game-screen .arena-messages #skill-effect.visible,body[data-screen=game] #game-screen .arena-messages #toast.show{opacity:1;animation:dock-message 1.4s ease both}
+body[data-screen=game] #game-screen .arena-messages .game-feedback:has(#skill-effect.visible) #toast{visibility:hidden}
+body[data-screen=game] #game-screen .arena-messages #tutorial-instruction{position:relative;inset:auto;max-height:60px;margin:0;padding:6px 4px;font:700 clamp(12px,3.4vw,15px)/1.4 LoopArcade,Arial,sans-serif;color:var(--ink);text-align:center;white-space:normal}
+body[data-screen=game][data-training=true] #game-screen .arena-messages :is(#level-banner-wrap,.game-feedback){display:none}
+body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #game-screen .arena-messages{display:none}
+@keyframes dock-message{0%{opacity:0;transform:translateY(5px)}15%,80%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){body[data-screen=game] #game-screen .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){animation:none;transform:none}}
+body[data-reduced-motion=true][data-screen=game] #game-screen .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){animation:none;transform:none}
+@media(max-width:700px){
+ body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:min(calc(100vw - 32px),calc(var(--play-height,100dvh) - 304px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),540px)}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-stage .arena{width:var(--orbit-diameter)}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{position:absolute;z-index:2;top:calc(50% + var(--orbit-diameter)/2 + 8px);left:16px;right:16px;margin:0;height:64px}
+}

@@ -198,13 +198,10 @@
       <section class="console" aria-label="Loop Shift game">
 
 
-        <p id="finish-line" class="finish-line" hidden></p><p id="tutorial-instruction" class="tutorial-instruction" hidden></p><div id="training-controls" hidden><button id="training-repeat" type="button">Repeat</button><button id="training-next" type="button">Next lesson</button><button id="skip-tutorial" type="button" hidden>Done</button></div><div class="arena-status"><div class="arena-notices"><p class="pattern-notice" id="pattern-notice" role="status">RHYTHM · Tap, tap, wait, tap</p>
-        <div id="level-banner-wrap" class="level-banner-wrap" role="status"><strong id="level-banner"></strong><span id="level-reward"></span><span id="level-detail"></span></div></div>
-        <div class="run-targets"><p id="rival-chip"></p><p id="route-cue"></p><p id="milestone-countdown" hidden></p></div>
-        <div class="game-feedback">
-          <div class="skill-effect" id="skill-effect" role="status"></div>
-          <div class="toast" id="toast" aria-live="polite"></div>
+        <p id="finish-line" class="finish-line" hidden></p><div id="training-controls" hidden><button id="training-repeat" type="button">Repeat</button><button id="training-next" type="button">Next lesson</button><button id="skip-tutorial" type="button" hidden>Done</button></div><div class="arena-status"><div class="arena-notices"><p class="pattern-notice" id="pattern-notice" role="status">RHYTHM · Tap, tap, wait, tap</p>
         </div>
+        <div class="run-targets"><p id="rival-chip"></p><p id="route-cue"></p><p id="milestone-countdown" hidden></p></div>
+
         </div>
         <div class="arena-stage"><div class="arena" id="arena">
 
@@ -235,7 +232,10 @@
             </div>
           </div>
         </div>
-        </div><p id="hit-feedback" class="hit-feedback" role="status"></p><div class="play-strip"><div class="charge-row"><span class="shield-icons" id="shield-icons" aria-hidden="true"></span><span id="charge-label">SHIELD CHARGE</span><div class="charge" id="charge" role="meter" aria-label="Shield charge" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><i></i><i></i><i></i><i></i><i></i><i></i></div><span id="charge-count">0 / 6</span></div>        <p id="rush-status" class="rush-status" role="status">Special coins · 0/3</p><div class="rhythm-row"><div class="combo-stat"><strong id="combo">×1</strong><span id="combo-caption">SCORE MULTIPLIER</span></div><div class="fever-status"><div><span id="fever-label">FEVER</span><span id="fever-count">0 / 6</span></div><div class="fever-meter" id="fever-meter" role="meter" aria-label="Fever" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fever-fill"></i></div></div></div></div>
+        </div><div class="arena-messages" aria-label="Game messages"><div id="level-banner-wrap" class="level-banner-wrap" role="status"><strong id="level-banner"></strong><span id="level-reward"></span><span id="level-detail"></span></div><div class="game-feedback">
+          <div class="skill-effect" id="skill-effect" role="status"></div>
+          <div class="toast" id="toast" aria-live="polite"></div>
+        </div><p id="tutorial-instruction" class="tutorial-instruction" hidden></p></div><p id="hit-feedback" class="hit-feedback" role="status"></p><div class="play-strip"><div class="charge-row"><span class="shield-icons" id="shield-icons" aria-hidden="true"></span><span id="charge-label">SHIELD CHARGE</span><div class="charge" id="charge" role="meter" aria-label="Shield charge" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><i></i><i></i><i></i><i></i><i></i><i></i></div><span id="charge-count">0 / 6</span></div>        <p id="rush-status" class="rush-status" role="status">Special coins · 0/3</p><div class="rhythm-row"><div class="combo-stat"><strong id="combo">×1</strong><span id="combo-caption">SCORE MULTIPLIER</span></div><div class="fever-status"><div><span id="fever-label">FEVER</span><span id="fever-count">0 / 6</span></div><div class="fever-meter" id="fever-meter" role="meter" aria-label="Fever" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fever-fill"></i></div></div></div></div>
         <p id="shift-hint" class="shift-hint"><span class="touch-hint">TAP TO SHIFT</span><span class="keyboard-hint">SPACE TO SHIFT</span></p><details class="run-progress"><summary>Run progress</summary><p class="level-objective" id="level-objective"></p><p id="next-reward" class="next-reward"></p><p id="mission-line">Collect 20 sparks · 0/20</p><p id="ghost-status" class="ghost-status"></p><p id="rival-target" class="rival-target"></p></details>
         <p class="mobile-hint"><span class="legend-orb"></span> YOU <span class="legend-barrier"></span> AVOID <span class="legend-spark">✦</span> COLLECT</p>
       </section>
