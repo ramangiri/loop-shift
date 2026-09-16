@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 export function uiHarness(extra={}){
   const nodes=new Map(),events={},raf=new Map(),painted=[],storage=extra.storage||new Map();let frameId=0,clock=0;
   const context=new Proxy({measureText:value=>({width:String(value).length*18}),fillText:(...args)=>painted.push(args)}, {get:(o,k)=>o[k]||(()=>{}),set:(o,k,v)=>(o[k]=v,true)});
-  const node=(tag='',id='')=>({tag,id,children:[],attrs:{},events:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},value:'',textContent:'',hidden:false,disabled:false,open:false,
+  const node=(tag='',id='')=>({tag,id,children:[],attrs:{},dataset:{},events:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},value:'',textContent:'',hidden:false,disabled:false,open:false,
     setAttribute(k,v){this.attrs[k]=v;},append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},addEventListener(t,f){this.events[t]=f;},focus(){},showModal(){this.open=true},close(){this.open=false},select(){},getContext:()=>context,
     toBlob(callback){callback(new Blob(['png'],{type:'image/png'}));}
   });
@@ -11,7 +11,7 @@ export function uiHarness(extra={}){
   const window={addEventListener:(n,f)=>events[n]=f,...extra.window};
   const scope={console,URL,File,Blob,performance:{now:()=>clock},window,navigator:extra.navigator||{},location:{origin:'https://game.test',pathname:'/loop-shift/'},
     document:{hidden:false,getElementById:id=>nodes.get(id),createElement:tag=>node(tag),addEventListener:(n,f)=>events[n]=f,fonts:{ready:Promise.resolve()}},
-    localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout,clearTimeout,setInterval,clearInterval,
+    localStorage:{removeItem:k=>storage.delete(k),getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout,clearTimeout,setInterval,clearInterval,
     requestAnimationFrame:f=>{raf.set(++frameId,f);return frameId;},cancelAnimationFrame:id=>raf.delete(id)
   };
   vm.createContext(scope);

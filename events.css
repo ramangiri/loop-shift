@@ -321,3 +321,5 @@ body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-scre
 body[data-screen=game] #game-screen #focus-goal{position:absolute;inset:0 0 auto;margin:0;font:700 12px/28px LoopArcade,Arial,sans-serif;color:var(--ink)}
 .arena-messages:has(#level-banner-wrap.show) #focus-goal{visibility:hidden}
 #comfort-check button{min-height:44px}
+
+#preplay-dialog{max-height:calc(100dvh - 32px);overflow:auto;width:min(440px,calc(100vw - 32px))}#preplay-picture{display:block;width:100%;height:min(32dvh,230px)}#preplay-picture g[class]{display:none}#preplay-picture[data-lesson=barrier] .slide-barrier,#preplay-picture[data-lesson=coins] .slide-coins,#preplay-picture[data-lesson=power] .slide-power,#preplay-picture[data-lesson=save] .slide-save{display:block}.preplay-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px}#preplay-copy{min-height:4em}#resume-checkpoint{width:100%;margin-top:12px}

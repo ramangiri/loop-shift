@@ -28,7 +28,7 @@ function client(call,state,storage=new Map([['loop-shift-best-v2','612']])){
     node.getBoundingClientRect=()=>({width:390});node.showModal=()=>{node.open=true;};node.close=()=>{node.open=false;};
   }
   h.nodes.get('charge').children=Array.from({length:6},()=>({classList:{toggle(){}}}));
-  h.load('leaderboard.js');h.load('game.js');
+  storage.set('loop-shift-preplay-v2','true');h.load('leaderboard.js');h.load('game.js');
   h.board=h.scope.window.LoopShiftBoard;
   h.ready=()=>waitFor(()=>h.board.record().connection!=='connecting');
   h.run=code=>vm.runInContext(code,h.scope);

@@ -40,7 +40,7 @@ function game(native = false, saved = null, reduced = false, firstLesson = false
   };
   const store = saved || new Map([['loop-shift-best-v2', '143']]);
   if(!firstLesson)store.set('loop-shift-ring-lesson-v2','true');
- store.set('loop-shift-preplay-v1','true');
+ store.set('loop-shift-preplay-v2','true');
   let seed=42;const seededMath=Object.create(Math);seededMath.random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
   const sandbox = {
     console, Math: seededMath, location, history, performance: { now: () => 0 },
@@ -49,7 +49,7 @@ function game(native = false, saved = null, reduced = false, firstLesson = false
       devicePixelRatio: 2, scrollTo: noop, addEventListener: (t, fn) => listeners[t] = fn,
       LoopShiftNative: { isNative: native, minimize: () => { minimized = true; }, vibrate: ms => { vibration = ms; } }
     },
-    navigator: {}, localStorage: { getItem: k => store.get(k), setItem: (k, v) => store.set(k, v) },
+    navigator: {}, localStorage: { removeItem:k=>store.delete(k), getItem: k => store.get(k), setItem: (k, v) => store.set(k, v) },
     matchMedia: () => ({ matches: reduced }), ResizeObserver: class { observe() {} },
     requestAnimationFrame: noop, setTimeout: () => 1, clearTimeout: noop
   };
@@ -656,6 +656,8 @@ const focusPlay=game(false,null,false,false,false);focusPlay.click('focus-toggle
 focusPlay.run('sparks=5;updateHUD()');assert.equal(focusPlay.run('focusGoal'),1);focusPlay.run('focusCount=3;updateHUD()');assert.equal(focusPlay.run('focusGoal'),2);
 focusPlay.run('fireSpeedEnabled=true;startRush()');assert.equal(focusPlay.run('rushBoost'),0);focusPlay.click('break-60');focusPlay.run('activeSinceBreak=60;update(.01)');assert.equal(focusPlay.run('mode'),'paused');focusPlay.click('comfort-eyes');assert.equal(focusPlay.nodes.get('comfort-enable').hidden,false);focusPlay.click('comfort-enable');assert.equal(focusPlay.run('softTheme'),true);focusPlay.click('comfort-sick');focusPlay.run('setPaused(false)');assert.equal(focusPlay.run('mode'),'paused');assert.equal(focusPlay.nodes.get('play').hidden,true);focusPlay.click('comfort-finish');assert.equal(focusPlay.run('mode'),'over');assert.ok(focusPlay.store.get('loop-shift-focus-result'));focusPlay.click('arena-size-toggle');const focusReturn=game(false,focusPlay.store);assert.equal(focusReturn.run('focusEnabled'),true);assert.equal(focusReturn.run('smallArena'),true);assert.equal(focusReturn.run('breakSeconds'),60);
 
-const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v1'),'true');
+const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');for(let i=0;i<5;i++)preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v2'),'true');
 const bonusCatch=game();bonusCatch.click('home-play');bonusCatch.run('startDelay=0;level=4;ringCount=4;rows=[];lane=1;radius=laneRadius(lane);globalThis.beforeBonus=score;rows=[{angle:angle-.35,baseAngle:angle-.35,bonusLane:1,bonusCollected:false,sparkLane:0,collected:true,hit:true,passed:true,locked:true,hazardLanes:[],pattern:"classic"}];update(.01)');assert.equal(bonusCatch.run('rows[0].bonusCollected'),true);assert.ok(bonusCatch.run('score-beforeBonus')>=40);bonusCatch.run('update(.01)');assert.equal(bonusCatch.run('score-beforeBonus'),40);
 bonusCatch.run('rows[0].bonusCollected=false;rows[0].angle=angle-.2;rows[0].bonusLane=2');assert.equal(bonusCatch.run('guidedTarget()'),2);
+
+const checkpoint=game(false,null,false,false,false);checkpoint.click('home-play');checkpoint.run('startDelay=0;level=5;passes=60;score=2468;shield=1;sparks=12;levelUp(6)');checkpoint.click('save-checkpoint');assert.equal(checkpoint.run('screen'),'home');assert.equal(checkpoint.nodes.get('resume-checkpoint').hidden,false);const reopened=game(false,checkpoint.store,false,false,false);reopened.click('resume-checkpoint');assert.equal(reopened.run('mode'),'playing');assert.equal(reopened.run('level'),6);assert.equal(reopened.run('score'),2468);assert.equal(reopened.run('shield'),1);assert.equal(reopened.run('sparks'),12);assert.equal(reopened.run('readCheckpoint()'),null);assert.equal(reopened.run('startDelay'),1.5);reopened.run('setPaused(true);saveCheckpoint()');assert.equal(reopened.run('readCheckpoint()'),null);

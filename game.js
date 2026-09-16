@@ -23,11 +23,13 @@ function updateFocusGoal(){
 let comfortRun=false,breakPending=false,activeSinceBreak=0;
 function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);$('motion-toggle').setAttribute('aria-pressed',String(reducedMotion));$('motion-toggle').textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
 function showRest(completed=0){
+ checkpointEligible=completed>0&&completed%5===0&&roundKind==='endless';
   setPaused(true);breakPending=true;document.body.dataset.rest='true';
   $('overlay-kicker').textContent=completed?'CONGRATULATIONS!':'TIME FOR A BREAK';
   $('overlay-title').textContent=completed?`You’ve completed ${completed} levels!`:'Take a breather.';
   $('overlay-copy').textContent='Look away from the screen and rest. Your round is paused here. If you feel dizzy or sick, stop playing.';
   $('play').textContent=completed?`CONTINUE TO LEVEL ${level}`:'CONTINUE WHEN READY';
+  $('save-checkpoint').hidden=!checkpointEligible;$('checkpoint-status').textContent='';
   $('restart').hidden=true;
   $('section-choices').hidden=!completed||roundKind!=='endless';
   $('section-choice-status').textContent='';
@@ -592,7 +594,26 @@ function enterGame(){
   if(location.hash!=='#play')history.pushState({loopShiftGame:true},'','#play');
   showScreen('game');
 }
+let checkpointEligible=false;
+const checkpointKey=()=> 'loop-shift-checkpoint-v1-'+(window.LoopShiftBoard?.player?.()?.key||'guest');
+function readCheckpoint(){try{const c=JSON.parse(localStorage.getItem(checkpointKey())||'null');if(c?.v!==1||!c.state||!Number.isInteger(c.state.level)||c.state.level<6||c.state.level>100||c.state.passes%60!==0||!Array.isArray(c.rows)||c.rows.length>8||!['score','passes','sparks','shield','angle','radius','motionSpeed','ringCount','gameTime','gameSeed'].every(k=>Number.isFinite(c.state[k]))||c.state.score<0||c.state.ringCount<2||c.state.ringCount>6)return null;return c;}catch{return null;}}
+function syncCheckpoint(){const c=readCheckpoint();$('resume-checkpoint').hidden=!c;$('checkpoint-home-note').hidden=!c;if(c)$('resume-checkpoint').textContent=`Resume · Level ${c.state.level} · Score ${c.state.score}`;}
+function saveCheckpoint(){
+ if(mode!=='paused'||!checkpointEligible||roundKind!=='endless')return;
+ try{const c={v:1,state:{score,passes,level,sparks,charge,shield,gameTime,combo,feverCharge,feverTime,perfects,roundFevers,bestCombo,roundHits,ringCount,lane,radius,angle,motionSpeed,shiftDirection,gameSeed,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,pathLane,sectionChoice,focusRun,focusGoal,focusCount,focusSparkBase,runFocus,levelSparks,levelPerfects,levelHits,levelShieldLost,objectiveAwarded,rushTime,rushChain,rushQueued,rushStartAngle,rushGlow,rushBaseSpeed,rushBoost,patternHits,runBosses,runCleanBest,cleanStreak,activeSinceBreak},rows,rushCoins,phrasePatterns:[...phrasePatterns],retryCourse,levelTransition,departingRows};localStorage.setItem(checkpointKey(),JSON.stringify(c));checkpointEligible=false;mode='ready';breakPending=false;document.body.dataset.rest='false';window.LoopShiftMusic?.pause();goHome();syncCheckpoint();}catch{$('checkpoint-status').textContent='Could not save on this device. Your run is still paused.';}
+}
+function resumeCheckpoint(){
+ const c=readCheckpoint();if(!c)return;
+ // Consume before starting: a finished/lost resumed run cannot reload this checkpoint.
+ try{localStorage.removeItem(checkpointKey());}catch{$('checkpoint-home-note').textContent='Could not open this checkpoint. Please allow device storage.';return;}
+ roundKind='endless';dailyRun=null;preplaySeen=true;const preference=focusEnabled;focusEnabled=!!c.state.focusRun;start({fresh:true});focusEnabled=preference;
+ score=c.state.score;passes=c.state.passes;level=c.state.level;sparks=c.state.sparks;charge=c.state.charge;shield=c.state.shield;gameTime=c.state.gameTime;combo=c.state.combo;feverCharge=c.state.feverCharge;feverTime=c.state.feverTime;perfects=c.state.perfects;roundFevers=c.state.roundFevers;bestCombo=c.state.bestCombo;roundHits=c.state.roundHits;ringCount=c.state.ringCount;lane=c.state.lane;radius=c.state.radius;angle=c.state.angle;motionSpeed=c.state.motionSpeed;shiftDirection=c.state.shiftDirection;gameSeed=c.state.gameSeed;nextRowIndex=c.state.nextRowIndex;rhythmOrigin=c.state.rhythmOrigin;rhythmUnit=c.state.rhythmUnit;rhythmEpoch=c.state.rhythmEpoch;rhythmPhaseOffset=c.state.rhythmPhaseOffset;pathLane=c.state.pathLane;sectionChoice=c.state.sectionChoice;focusRun=c.state.focusRun;focusGoal=c.state.focusGoal;focusCount=c.state.focusCount;focusSparkBase=c.state.focusSparkBase;runFocus=c.state.runFocus;levelSparks=c.state.levelSparks;levelPerfects=c.state.levelPerfects;levelHits=c.state.levelHits;levelShieldLost=c.state.levelShieldLost;objectiveAwarded=c.state.objectiveAwarded;rushTime=c.state.rushTime;rushChain=c.state.rushChain;rushQueued=c.state.rushQueued;rushStartAngle=c.state.rushStartAngle;rushGlow=c.state.rushGlow;rushBaseSpeed=c.state.rushBaseSpeed;rushBoost=c.state.rushBoost;patternHits=c.state.patternHits;runBosses=c.state.runBosses;runCleanBest=c.state.runCleanBest;cleanStreak=c.state.cleanStreak;activeSinceBreak=c.state.activeSinceBreak;
+ rows=c.rows;rushCoins=c.rushCoins||[];phrasePatterns=new Map(c.phrasePatterns||[]);retryCourse=c.retryCourse;levelTransition=c.levelTransition;departingRows=c.departingRows||[];
+ if(focusRun)chooseAppearance('soft');socialAttempt=null;checkpointEligible=false;breakPending=false;activeSinceBreak=0;startDelay=1.5;invulnerable=Math.max(invulnerable,2.3);trail=[];particles=[];shatters=[];lastShift=-1;
+ applyTheme();updateHUD();updateGuide();syncCheckpoint();
+}
 function goHome(){
+ syncCheckpoint();
   showScreen('home');
   if(location.hash==='#play' && history.state?.loopShiftGame)history.back();
   else history.replaceState(null,'','#home');
@@ -720,6 +741,8 @@ function warnPattern(row){
   tone(330,.13,'triangle',.035);
 }
 function updateHUD(){
+ $('save-checkpoint').hidden=mode!=='paused'||!checkpointEligible;
+ if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
   $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||(!isRankedMode()&&!focusRun);
   updateFocusGoal();updateRushHUD();
@@ -784,13 +807,14 @@ function updateRow(row){
 }
 
 let preplayOptions=null,preplaySeen=false;
-try{preplaySeen=localStorage.getItem('loop-shift-preplay-v1')==='true';}catch{}
+try{preplaySeen=localStorage.getItem('loop-shift-preplay-v2')==='true';}catch{}
 function start(options){
  if(!preplaySeen&&roundKind!=='tutorial'&&roundKind!=='practice'){
-  preplayOptions=options;$('preplay-dialog').showModal();return;
+  preplayOptions=options;preplaySlide=0;showPreplaySlide();$('preplay-dialog').showModal();return;
  }
 
   const quickRetry=mode==='over';
+ checkpointEligible=false;$('save-checkpoint').hidden=true;try{localStorage.removeItem(checkpointKey());}catch{}
  comfortStop=false;$('play').hidden=false;$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;
   sectionChoice='balanced';patternHits=0;$('practice-failure').hidden=true;$('section-choices').hidden=true;$('break-reward').textContent='';showExtrasHome();
   comfortRun=roundKind==='practice'&&reducedMotion;breakPending=false;activeSinceBreak=0;document.body.dataset.rest='false';
@@ -858,6 +882,7 @@ function setPaused(paused, moveFocus=true){
     $('pause-icon').setAttribute('d','m8 5 10 7-10 7Z');
     if(moveFocus && screen==='game')$('play').focus({preventScroll:true});
   }else if(!paused && mode==='paused'){
+    checkpointEligible=false;
     if(breakPending){breakPending=false;activeSinceBreak=0;document.body.dataset.rest='false';
       const first=rows.find(row=>!row.passed&&row.baseAngle>angle);
       const offset=first?Math.max(0,angle+speedNow()*2.3-first.baseAngle):0;
@@ -1223,7 +1248,16 @@ $('ring-lesson-practice').addEventListener('click',()=>{
 });
 $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
-$('preplay-go').addEventListener('click',()=>{preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v1','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);});
+let preplaySlide=0;
+const PREPLAY_SLIDES=[
+ ['You are the lime ball','Tap anywhere or press Space. Move to the blue arc.','player'],
+ ['Dodge the coral barriers','Switch rings before the barrier reaches you. Swipe inward or outward for an adjacent ring.','barrier'],
+ ['Collect the coins','Gold sparks charge shields. Purple diamonds are optional bonuses after a barrier.','coins'],
+ ['Shields and Fire Ball','Six sparks earn a shield. Three outlined special coins give a five-second bonus.','power'],
+ ['Take a break and save','At five-level breaks: Save & Exit stores a checkpoint on this device. Finish Run submits your score and ends the run.','save']];
+function showPreplaySlide(){const [title,copy,kind]=PREPLAY_SLIDES[preplaySlide];$('preplay-title').textContent=title;$('preplay-copy').textContent=copy;$('preplay-step').textContent=`${preplaySlide+1} / ${PREPLAY_SLIDES.length}`;$('preplay-picture').dataset.lesson=kind;$('preplay-back').disabled=preplaySlide===0;$('preplay-go').textContent=preplaySlide===PREPLAY_SLIDES.length-1?'GOT IT — PLAY':'NEXT';}
+$('preplay-back').addEventListener('click',()=>{preplaySlide=Math.max(0,preplaySlide-1);showPreplaySlide();});
+$('preplay-go').addEventListener('click',()=>{if(preplaySlide<PREPLAY_SLIDES.length-1){preplaySlide++;showPreplaySlide();return;}preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v2','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);});
 $('preplay-learn').addEventListener('click',()=>{$('preplay-dialog').close();preplayOptions=null;startTutorial();});
 $('preplay-dialog').addEventListener('cancel',()=>{preplayOptions=null;});
 $('tutorial-play').addEventListener('click',startTutorial);
@@ -1237,6 +1271,9 @@ for(let i=0;i<TRAINING.length;i++)$('lesson-'+i).addEventListener('click',()=>sh
 $('training-dialog').addEventListener('cancel',event=>{event.preventDefault();exitTraining();});
 $('power-go').addEventListener('click',()=>{try{localStorage.setItem('loop-shift-learned-'+pendingPower,'true');}catch{}pendingPower='';$('power-dialog').close();setPaused(false);});
 $('power-dialog').addEventListener('cancel',event=>event.preventDefault());
+$('save-checkpoint').addEventListener('click',saveCheckpoint);
+$('resume-checkpoint').addEventListener('click',resumeCheckpoint);
+syncCheckpoint();
 $('finish-save').addEventListener('click',()=>finishAndSave());
 $('exit-resume').addEventListener('click',()=>{$('exit-dialog').close();setPaused(false);});
 $('exit-confirm').addEventListener('click',()=>{$('exit-dialog').close();if(roundKind==='tutorial')exitTraining();else finishAndSave(true);});

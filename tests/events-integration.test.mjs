@@ -16,7 +16,7 @@ test('game boot, weekly start, loss tools, reward submission and instant retry w
   h.nodes.get('charge').children=Array.from({length:6},()=>({classList:{toggle:noop}}));
   for(const file of ['social.js','result-tools.js','music.js','game.js'])h.load(file);
   await settle();assert.equal(h.nodes.get('game-screen').hidden,true);
-  await h.click('weekly-play');await settle();assert.equal(h.nodes.get('preplay-dialog').open,true);await h.click('preplay-go');await settle();assert.equal(h.nodes.get('game-screen').hidden,false);
+  await h.click('weekly-play');await settle();assert.equal(h.nodes.get('preplay-dialog').open,true);for(let i=0;i<5;i++)await h.click('preplay-go');await settle();assert.equal(h.nodes.get('game-screen').hidden,false);
   assert.equal(vm.runInContext('roundKind',h.scope),'weekly');assert.equal(vm.runInContext('shieldCapacity()',h.scope),1);
   vm.runInContext(`startDelay=0;for(let i=0;i<120;i++)update(1/120);crash({angle,hazardLane:lane,sparkLane:1-lane})`,h.scope);await settle();
   assert.equal(h.nodes.get('result-extras').hidden,false);assert.equal(h.nodes.get('replay-panel').hidden,false);
