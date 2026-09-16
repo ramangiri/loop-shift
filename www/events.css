@@ -316,3 +316,8 @@ body[data-appearance=soft]{--bg:#242d2b;--surface:#303b37!important}
 body[data-appearance=soft] *,body[data-appearance=soft] *::before,body[data-appearance=soft] *::after{animation:none!important;transition:none!important}
 body[data-appearance=soft] .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){opacity:1;transform:none}
 body[data-appearance=light]{--bg:#eee9de;--surface:#e5dfd2!important}
+
+body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:min(calc(100vw - 64px),calc(var(--play-height,100dvh) - 344px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),440px)}
+body[data-screen=game] #game-screen #focus-goal{position:absolute;inset:0 0 auto;margin:0;font:700 12px/28px LoopArcade,Arial,sans-serif;color:var(--ink)}
+.arena-messages:has(#level-banner-wrap.show) #focus-goal{visibility:hidden}
+#comfort-check button{min-height:44px}

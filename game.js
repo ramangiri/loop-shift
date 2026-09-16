@@ -4,6 +4,22 @@ const ctx = canvas.getContext('2d');
 const TAU = Math.PI * 2;
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 try{reducedMotion=localStorage.getItem('loop-shift-reduced-motion')==null?reducedMotion:localStorage.getItem('loop-shift-reduced-motion')==='true';}catch{}
+let focusEnabled=false,focusRun=false,smallArena=false,breakSeconds=180,comfortStop=false,focusGoal=0,focusCount=0,focusSparkBase=0;
+try{focusEnabled=localStorage.getItem('loop-shift-focus')==='true';smallArena=localStorage.getItem('loop-shift-small-arena')==='true';const savedBreak=Number(localStorage.getItem('loop-shift-break-seconds'));if([60,120,180].includes(savedBreak))breakSeconds=savedBreak;}catch{}
+function syncFocus(){
+ document.body.dataset.smallArena=String(smallArena);
+ $('focus-toggle').textContent='Focus Play: '+(focusEnabled?'ON':'OFF')+' · unranked';$('focus-toggle').setAttribute('aria-pressed',String(focusEnabled));
+ $('arena-size-toggle').textContent='Arena: '+(smallArena?'Compact':'Full');$('arena-size-toggle').setAttribute('aria-pressed',String(smallArena));
+ for(const seconds of [60,120,180])$('break-'+seconds).setAttribute('aria-pressed',String(breakSeconds===seconds));
+}
+function updateFocusGoal(){
+ $('focus-goal').hidden=!focusRun||mode!=='playing';
+ if(!focusRun)return;
+ if(focusGoal%2===0)focusCount=Math.min(5,sparks-focusSparkBase);
+ const target=focusGoal%2===0?5:3;
+ if(focusCount>=target){showEffect('GOAL COMPLETE ✓');focusGoal++;focusCount=0;focusSparkBase=sparks;}
+ $('focus-goal').textContent=focusGoal%2===0?'Collect 5 sparks · '+focusCount+'/5':'Clear 3 gates without a hit · '+focusCount+'/3';
+}
 let comfortRun=false,breakPending=false,activeSinceBreak=0;
 function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);$('motion-toggle').setAttribute('aria-pressed',String(reducedMotion));$('motion-toggle').textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
 function showRest(completed=0){
@@ -29,6 +45,10 @@ function syncAppearance(){
 }
 function comfortAnswer(answer){
  if(mode!=='paused'&&mode!=='over')return;
+ $('comfort-enable').hidden=answer!=='eyes';
+ if(answer==='sick'){comfortStop=true;$('play').hidden=true;$('restart').hidden=true;}
+ if(answer==='comfortable'){$('comfort-enable').hidden=true;}
+ $('comfort-finish').hidden=mode!=='paused'||answer==='comfortable';
  try{localStorage.setItem('loop-shift-comfort-feedback',JSON.stringify({answer,level,time:Date.now()}));}catch{}
  $('comfort-response').textContent=answer==='comfortable'?'Thanks for your feedback.':answer==='eyes'?'Rest your eyes and look away from the screen. Take a break before another round.':'Stop playing and rest. Take a break before another round.';
 }
@@ -154,8 +174,8 @@ let previousRecords={chain:0,clean:0,distance:0},runFocus='survive',focusDone=fa
 let vibrationOn=true,shareText='',lastGuideTarget=-1;
 let landing=null,landingTime=0,landingLane=1;
 try{vibrationOn=localStorage.getItem('loop-shift-vibration')!=='false';}catch{}
-const isRankedMode=()=>roundKind==='endless'||timedRun();
-const targetSpeed=()=>Math.min(.78+(level-1)*.035,.92)*(comfortRun?.75:1);
+const isRankedMode=()=>!focusRun&&(roundKind==='endless'||timedRun());
+const targetSpeed=()=>(focusRun?.78:Math.min(.78+(level-1)*.035,.92))*(comfortRun?.75:1);
 function startSprint(){dailyRequestId++;roundKind='sprint';dailyRun=null;start({fresh:true});}
 function startTutorial(){dailyRequestId++;roundKind='tutorial';dailyRun=null;start({fresh:true});}
 function feedback(kind){
@@ -699,8 +719,8 @@ function warnPattern(row){
 }
 function updateHUD(){
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
-  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||!isRankedMode();
-  updateRushHUD();
+  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||(!isRankedMode()&&!focusRun);
+  updateFocusGoal();updateRushHUD();
   $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
@@ -733,7 +753,7 @@ function addRow(a,index=nextRowIndex++){
   const previous=rows.at(-1);
   const previousSafe=Math.max(0,Math.min(ringCount-1,previous?.sparkLane??pathLane));
   const safeOptions=[previousSafe-1,previousSafe+1].filter(n=>n>=0&&n<ringCount);
-  const recovery=level>1&&!bossLevel()&&(level%10===1?index%12<3:level%3===1&&index%12<2)||(!timedRun()&&level>1&&!bossLevel()&&level%5!==0&&index%12>=9);
+  const recovery=(focusRun&&index%6>=4)||level>1&&!bossLevel()&&(level%10===1?index%12<3:level%3===1&&index%12<2)||(!timedRun()&&level>1&&!bossLevel()&&level%5!==0&&index%12>=9);
   const direction=previous?.sweepDirection||1;
   const sweepDirection=previousSafe<=0?1:previousSafe>=ringCount-1?-1:direction;
   let safeLane=safeOptions[Math.floor(courseRandom()*safeOptions.length)];
@@ -743,7 +763,7 @@ function addRow(a,index=nextRowIndex++){
   else if(bossLevel()&&bossType()===1)safeLane=previousSafe+sweepDirection;
   const hazardLane=ringCount===2?1-safeLane:previousSafe;
   const hazardLanes=ringCount===2?[hazardLane]:Array.from({length:ringCount},(_,n)=>n).filter(n=>n!==safeLane);
-  const pattern=!timedRun()&&!bossLevel()&&level%5===0&&index%12>=9?'classic':!timedRun()&&sectionChoice==='timing'&&!bossLevel()&&level>1?PATTERNS[1+Math.floor(index/4)%2]:recovery?'classic':bossLevel()?(bossType()===0?'classic':bossType()===1?'moving':'pulse'):level<=2?'classic':level===3?'moving':level===4?'pulse':phrasePattern(index);
+  const pattern=focusRun&&recovery?'classic':!timedRun()&&!bossLevel()&&level%5===0&&index%12>=9?'classic':!timedRun()&&sectionChoice==='timing'&&!bossLevel()&&level>1?PATTERNS[1+Math.floor(index/4)%2]:recovery?'classic':bossLevel()?(bossType()===0?'classic':bossType()===1?'moving':'pulse'):level<=2?'classic':level===3?'moving':level===4?'pulse':phrasePattern(index);
   // A bonus between walls sits on the next guided ring, reachable with an early
   // shift. Its destination is fixed before it comes into view.
   if(previous&&previous.bonusLane!==null&&previous.bonusLane!==undefined)previous.bonusLane=safeLane;
@@ -763,6 +783,7 @@ function updateRow(row){
 
 function start(options){
   const quickRetry=mode==='over';
+ comfortStop=false;$('play').hidden=false;$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;
   sectionChoice='balanced';patternHits=0;$('practice-failure').hidden=true;$('section-choices').hidden=true;$('break-reward').textContent='';showExtrasHome();
   comfortRun=roundKind==='practice'&&reducedMotion;breakPending=false;activeSinceBreak=0;document.body.dataset.rest='false';
   unlockAudio();window.LoopShiftMusic?.unlock();
@@ -770,6 +791,8 @@ function start(options){
   else if(roundKind==='daily'){startDaily();return;}
   else if(roundKind==='weekly'){startWeekly();return;}
 
+  focusRun=focusEnabled&&roundKind==='endless';focusGoal=0;focusCount=0;focusSparkBase=0;
+  if(focusRun){chooseAppearance('soft');}
   if(isRankedMode()&&window.LoopShiftBoard && !window.LoopShiftBoard.ready()){window.LoopShiftBoard.askName(()=>start(options));return;}
   if($('ring-lesson').open)$('ring-lesson').close();ringLessonPending=false;
   window.LoopShiftResults?.reset();window.LoopShiftBoard?.beginRound();
@@ -813,7 +836,7 @@ function shift(direction=0){
   shiftDirection=movement;lane=target;landing=target;landingTime=0;updateGuide();
 }
 function setPaused(paused, moveFocus=true){
-  if(!paused&&$('power-dialog').open)return;
+  if(!paused&&(comfortStop||$('power-dialog').open))return;
   if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
     if(roundKind==='tutorial'&&tutorialStage===19)trainingDidPause=true;
@@ -868,7 +891,7 @@ function rushDistance(t){
 }
 function startRush(){
  rushQueued=false;rushChain=0;rushTime=5;rushGlow=1;rushStartAngle=angle;trail=[];
- rushBaseSpeed=speedNow();rushBoost=fireSpeedEnabled?2:0;let route=lane;
+ rushBaseSpeed=speedNow();rushBoost=fireSpeedEnabled&&!focusRun?2:0;let route=lane;
  rushCoins=Array.from({length:8},(_,i)=>{
   if(i&&i%2===0)route=route===0?1:route===ringCount-1?route-1:route+(i%4?-1:1);
   return {angle:angle+rushDistance(.55+i*.55),lane:route,collected:false};
@@ -930,13 +953,14 @@ function crash(hitRow=null,completed=false){
   const isBest=score>previousBest;
   if(timedRun())dailyBest=Math.max(dailyBest,score);
   else if(roundKind==='endless') {best=Math.max(best,score);try{localStorage.setItem('loop-shift-best-v2',String(best));}catch{}}
-  $('overlay-kicker').textContent=!isRankedMode()?'UNRANKED':roundKind==='practice'?'UNRANKED PRACTICE':champion?'100 / 100 LEVELS COMPLETE':isBest?'A NEW PERSONAL BEST':'ROUND COMPLETE';
+  if(focusRun){try{localStorage.setItem('loop-shift-focus-result',JSON.stringify({score,level}));}catch{}}
+  $('overlay-kicker').textContent=focusRun?'FOCUS PLAY · SAVED ON DEVICE':!isRankedMode()?'UNRANKED':roundKind==='practice'?'UNRANKED PRACTICE':champion?'100 / 100 LEVELS COMPLETE':isBest?'A NEW PERSONAL BEST':'ROUND COMPLETE';
   $('overlay-title').textContent=roundKind==='journey'?(completed?`🏅 ${extras.journeyMedal} journey medal!`:'Try another journey?'):roundKind==='tutorial'?'Ready for the orbit!':roundKind==='sprint'?(completed?'Sprint complete!':'One more sprint?'):roundKind==='practice'?(completed?'Practice complete!':'Try this level again'):champion?'🏆 Loop Champion!':completed?(roundKind==='weekly'?'Weekly complete!':'Daily complete!'):isBest?'A new best!':'One more loop?';
   updateExtras();$('overlay-copy').textContent=resultFact();
   $('share-daily').hidden=roundKind!=='daily';
   $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result-best').textContent=Math.max(score,previousBest).toLocaleString();$('result').hidden=false;
   $('play').innerHTML='Try again <span aria-hidden="true">↗</span>';$('restart').hidden=true;
-  $('comfort-check').hidden=false;$('comfort-response').textContent='';$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
+  $('comfort-check').hidden=false;$('comfort-response').textContent='';$('comfort-enable').hidden=true;$('comfort-finish').hidden=true;$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
   $('play').focus({preventScroll:true});
   $('announcement').textContent=`${champion?'All 100 levels complete. Loop Champion!':'Round over.'} Score ${score}. ${sparks} sparks collected.`;
@@ -947,7 +971,7 @@ function update(dt){
   levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime)$('level-banner-wrap').classList.remove('show');
   if(startDelay>0){startDelay=Math.max(0,startDelay-dt);updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
   activeSinceBreak+=dt;
-  if(activeSinceBreak>=180&&roundKind!=='tutorial'){showRest();return;}
+  if(activeSinceBreak>=breakSeconds&&roundKind!=='tutorial'){showRest();return;}
   if(timedRun())dt=Math.min(dt,Math.max(0,120-gameTime));
   if(roundKind==='tutorial'){updateTutorial(dt);return;}
   motionSpeed+=(targetSpeed()-motionSpeed)*(1-Math.exp(-dt*.8));
@@ -974,7 +998,7 @@ function update(dt){
     const inHazard=delta<.108&&previousDelta>-.108;
     if(inHazard && !row.open && !row.hit && blockedLanes(row).some(n=>Math.abs(radius-laneRadius(n))<(ringCount>2?.021:.038))){
       if(feverTime<=0)markHit(row);
-      row.hit=true;row.perfectCandidate=false;row.closeCandidate=false;if(feverTime<=0){levelHits++;roundHits++;}
+      row.hit=true;if(focusRun&&focusGoal%2===1)focusCount=0;row.perfectCandidate=false;row.closeCandidate=false;if(feverTime<=0){levelHits++;roundHits++;}
       if(feverTime>0){burst(row.angle,laneRadius(row.hazardLane),'#72e6ff',18);}
       else if(shield || invulnerable>0){
         resetCombo();
@@ -987,7 +1011,7 @@ function update(dt){
     if(delta<.105&&previousDelta>-.105&&!row.collected&&Math.abs(radius-laneRadius(row.sparkLane))<.032)collect(row);
     if(row.bonusLane!==null&&row.bonusLane!==undefined&&!row.bonusCollected&&delta+.40<.055&&previousDelta+.40>-.055&&Math.abs(radius-laneRadius(row.bonusLane))<.018){row.bonusCollected=true;if(!timedRun()){sparks+=2;levelSparks+=2;advanceMission('sparks');advanceMission('sparks');}if(row.shieldBonus&&shield<shieldCapacity()){charge++;if(charge>=6){charge=0;shield++;shieldSound(shield===2?'gain2':'gain1');}toast('Bonus shield charge +1');}const reward=40*scoreFactor();score+=reward;showEffect(`BONUS! +${reward}`);burst(row.angle+.40,laneRadius(row.bonusLane),'#ffa8da',14);feedback('bonus');}
     if(delta<-.16&&!row.passed){
-      if(row.special&&!row.collected)rushChain=0;row.passed=true;passes++;pathLane=row.sparkLane;
+      if(row.special&&!row.collected)rushChain=0;row.passed=true;passes++;if(focusRun&&focusGoal%2===1&&!row.hit)focusCount++;pathLane=row.sparkLane;
       if(row.hit)patternHits++;
       if(passes%4===0){if(patternHits===0&&!timedRun()&&roundKind!=='tutorial'){score+=30;showEffect('CLEAN PATTERN! +30');tone(880,.1,'sine',.04);}patternHits=0;}
       if(row.perfectCandidate&&!row.hit&&!row.open)awardPerfect(row);
@@ -1168,6 +1192,12 @@ $('section-sparks').addEventListener('click',()=>chooseSection('sparks'));
 $('section-timing').addEventListener('click',()=>chooseSection('timing'));
 window.LoopShiftFriendTarget=(entry)=>{friendTarget=entry&&typeof entry.name==='string'&&Number.isFinite(entry.score)?{name:entry.name.slice(0,32),score:Math.max(0,entry.score)}:null;$('friend-target-status').textContent=friendTarget?`Next run: beat ${friendTarget.name} · ${friendTarget.score} points`:'No friend selected';};
 $('clear-friend-target').addEventListener('click',()=>window.LoopShiftFriendTarget(null));
+syncFocus();
+$('focus-toggle').addEventListener('click',()=>{focusEnabled=!focusEnabled;try{localStorage.setItem('loop-shift-focus',String(focusEnabled));}catch{}syncFocus();});
+$('arena-size-toggle').addEventListener('click',()=>{smallArena=!smallArena;try{localStorage.setItem('loop-shift-small-arena',String(smallArena));}catch{}syncFocus();resize();});
+for(const seconds of [60,120,180])$('break-'+seconds).addEventListener('click',()=>{breakSeconds=seconds;try{localStorage.setItem('loop-shift-break-seconds',String(seconds));}catch{}syncFocus();});
+$('comfort-enable').addEventListener('click',()=>{chooseAppearance('soft');$('comfort-response').textContent='Comfort visuals enabled. Rest before playing again.';});
+$('comfort-finish').addEventListener('click',()=>{if(focusRun){try{localStorage.setItem('loop-shift-focus-result',JSON.stringify({score,level}));}catch{}}finishAndSave();});
 syncFireSpeed();
 $('fire-speed-toggle').addEventListener('click',()=>{fireSpeedEnabled=!fireSpeedEnabled;try{localStorage.setItem('loop-shift-fire-speed',String(fireSpeedEnabled));}catch{}syncFireSpeed();});
 syncAppearance();
