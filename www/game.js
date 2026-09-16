@@ -51,7 +51,7 @@ function comfortAnswer(answer){
  $('comfort-enable').hidden=answer!=='eyes';
  if(answer==='sick'){comfortStop=true;$('play').hidden=true;$('restart').hidden=true;}
  if(answer==='comfortable'){$('comfort-enable').hidden=true;}
- $('comfort-finish').hidden=mode!=='paused'||answer==='comfortable';
+ $('comfort-finish').hidden=mode!=='paused'||checkpointEligible||answer==='comfortable';
  try{localStorage.setItem('loop-shift-comfort-feedback',JSON.stringify({answer,level,time:Date.now()}));}catch{}
  $('comfort-response').textContent=answer==='comfortable'?'Thanks for your feedback.':answer==='eyes'?'Rest your eyes and look away from the screen. Take a break before another round.':'Stop playing and rest. Take a break before another round.';
 }
@@ -753,9 +753,11 @@ function autoSaveScore(force=false){
 function updateHUD(){
  autoSaveScore();
  $('save-checkpoint').hidden=mode!=='paused'||!checkpointEligible;
+ $('result-home').hidden=!$('save-checkpoint').hidden;
+ if(!$('save-checkpoint').hidden)$('comfort-finish').hidden=true;
  if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
-  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||(!isRankedMode()&&!focusRun);
+  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||checkpointEligible||(!isRankedMode()&&!focusRun);
   updateFocusGoal();updateRushHUD();
   $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
