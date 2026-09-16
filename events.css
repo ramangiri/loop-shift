@@ -331,3 +331,9 @@ body[data-screen=game] #game-screen #tap-anywhere-hint{position:absolute;inset:0
 body[data-screen=game] #game-screen #tap-anywhere-hint.faded{opacity:0}
 body[data-training=true] #tap-anywhere-hint,.arena-messages:has(#level-banner-wrap.show,#skill-effect.visible,#toast.show) #tap-anywhere-hint{visibility:hidden}
 .arena-messages:has(#tap-anywhere-hint:not(.faded)) #focus-goal{visibility:hidden}
+
+/* Keep Home beside the primary action, before optional result content. */
+#overlay .result-actions{display:flex;flex-wrap:wrap;gap:10px;width:100%;margin:16px 0}
+#overlay .result-actions>button{flex:1 1 145px;width:auto;min-width:0;min-height:52px;margin:0;padding:12px 14px;font-size:14px}
+#overlay .result-actions #result-home{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
+#overlay .result-actions #play{width:auto;margin:0}

@@ -218,7 +218,7 @@
               <p id="result-coaching" class="result-coaching" hidden></p><p id="result-gap" class="result-gap" hidden></p>
               <p class="score-save-status" id="score-save-status" role="status" hidden></p>
               <button class="text-button" id="retry-score" hidden>Retry saving score</button>
-                            <button class="primary-button" id="play">Let's play <span aria-hidden="true">↗</span></button>
+                            <div class="result-actions"><button class="primary-button" id="play">Let's play <span aria-hidden="true">↗</span></button><button class="secondary-button" id="result-home" type="button">BACK TO HOME</button></div>
 <p id="break-reward" class="break-reward"></p><fieldset id="section-choices" hidden><legend>Choose your next section</legend><button id="section-sparks" type="button" aria-pressed="false">More sparks</button><button id="section-timing" type="button" aria-pressed="false">Timing challenge</button><p id="section-choice-status" role="status"></p></fieldset><button id="practice-failure" type="button" class="secondary-button" hidden>Practise this pattern</button>
               <fieldset id="comfort-check" hidden><legend>How are you feeling? <small>Optional</small></legend><div class="comfort-answers"><button id="comfort-ok" type="button">Comfortable</button><button id="comfort-eyes" type="button">Eye strain</button><button id="comfort-sick" type="button">Dizzy or sick</button></div><p id="comfort-response" role="status"></p><button id="comfort-enable" type="button" hidden>Enable Comfort visuals</button><button id="comfort-finish" type="button" hidden>Finish Run</button></fieldset>
 
@@ -228,7 +228,7 @@
   <details id="replay-panel" class="result-panel" hidden><summary>Why did I lose?</summary><p id="replay-caption">Last 3 seconds · Half speed</p><canvas id="replay-canvas" width="640" height="640" aria-label="Replay of the last collision; mint shows the safe ring"></canvas><button id="replay-play" class="text-button">Play replay</button><button id="replay-stop" class="text-button">Stop replay</button></details>
   <details id="card-panel" class="result-panel"><summary>Share your result</summary><button id="card-create" class="text-button">Create result card</button><img id="card-preview" hidden alt="Loop Shift result card"><div class="card-actions"><button id="card-share" class="text-button" hidden>Share card</button><a id="card-download" class="text-button" download="LoopShift-result.png" hidden>Save image</a></div><p id="card-status" role="status"></p><a id="card-game-link">Invite friends to play</a></details>
 </div>
-<button class="text-button overlay-home" id="result-home">Back to home</button>
+
             </div>
           </div>
         </div>
