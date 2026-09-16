@@ -12,11 +12,11 @@ export function weeklyInfo(now=Date.now()){
   return {kind:'weekly',week,seed,rule,duration:120,resetsAt:new Date(date.getTime()+604800000).toISOString()};
 }
 export async function weeklyBoard(db,id,week=weeklyInfo().week){
-  const {results}=await db.prepare('SELECT s.player_id,p.name,p.selected_title,s.best FROM weekly_scores s JOIN players p ON p.id=s.player_id WHERE s.week=? AND s.best>0 ORDER BY s.best DESC,s.achieved_at,s.player_id LIMIT 10').bind(week).all();
-  const profile=id?await db.prepare('SELECT name,best,selected_title FROM players WHERE id=?').bind(id).first():null;
+  const {results}=await db.prepare('SELECT s.player_id,p.name,p.avatar,p.selected_title,s.best FROM weekly_scores s JOIN players p ON p.id=s.player_id WHERE s.week=? AND s.best>0 ORDER BY s.best DESC,s.achieved_at,s.player_id LIMIT 10').bind(week).all();
+  const profile=id?await db.prepare('SELECT name,avatar,best,selected_title FROM players WHERE id=?').bind(id).first():null;
   const mine=id?await db.prepare('SELECT best,achieved_at FROM weekly_scores WHERE week=? AND player_id=?').bind(week,id).first():null;
   const rank=mine?.best>0?(await db.prepare('SELECT COUNT(*)+1 AS rank FROM weekly_scores WHERE week=? AND (best>? OR (best=? AND (achieved_at<? OR (achieved_at=? AND player_id<?))))').bind(week,mine.best,mine.best,mine.achieved_at,mine.achieved_at,id).first()).rank:null;
-  return {challenge:weeklyInfo(Date.parse(week+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,title:p.selected_title,score:p.best,isYou:p.player_id===id})),me:profile?{key:id,name:profile.name,title:profile.selected_title,best:mine?.best||0,mainBest:profile.best,rank}:null};
+  return {challenge:weeklyInfo(Date.parse(week+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,avatar:p.avatar,title:p.selected_title,score:p.best,isYou:p.player_id===id})),me:profile?{key:id,name:profile.name,avatar:profile.avatar,title:profile.selected_title,best:mine?.best||0,mainBest:profile.best,rank}:null};
 }
 export async function weeklyAction(path,db,id,data,now){
   if(path==='/api/weekly/start'){

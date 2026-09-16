@@ -209,19 +209,33 @@ const TRAINING = [
  ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
  ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
  ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc; speed stays steady.'],
- ['Ready to play','Every five levels you can take a break. Pause anytime. Your tutorial is unranked; no score or rewards were saved.']
+ ["Near-miss bonus", "A late but safe switch can earn CLOSE +5. It is optional: safe early moves are always valid. Try switching just after the gold perfect window."],
+ ["Two shield charges", "From five rings you can hold two shields. Two outlines surround your ball. Let two separated barriers touch you and watch each outline disappear."],
+ ["Earn a shield", "Six sparks fill one shield charge. You start with five here. Collect the next gold diamond to earn a shield."],
+ ["Special coin chain", "Outlined amber coins are special. Collect three in succession to earn Spark Rush. Missing one resets this chain; ordinary sparks do not. Try three here."],
+ ["Optional bonus route", "Pink diamonds give extra points. An outlined bonus also adds one shield-charge step, not a whole shield. Follow the safe gold ring first, then choose the bonus ring."],
+ ["Boss: alternating gaps", "This boss alternates its safe gap between neighbouring rings. Practise three deliberate switches. Learn the order; speed does not jump."],
+ ["Boss: sweeping gaps", "The safe route travels inward and then outward. Watch each next gap early. Practise following three moving barriers."],
+ ["Boss: timing gates", "This boss opens and closes its barriers. A safe ring always remains. Practise three gates; you do not need to risk a closing barrier."],
+ ["Smooth level changes", "Your ball keeps its position while the new ring fades in. Follow the blue arc after the safe stretch. Try a switch once the third ring appears."],
+ ["Five-level breaks", "Every five levels play pauses. Continue when ready or Finish & save. In this unranked demo, try the pause button and resume. Nothing is submitted."],
+ ["Daily and weekly runs", "Daily players share a two-minute course. Weekly adds a rule such as No Fever, double spark points or one shield maximum. Each has a separate board. Practise one safe dodge."],
+ ["Ready to play", "Practice never changes your ranking. You can repeat any lesson, pause anytime, or finish a ranked run at a break without losing its score."]
 ];
-let trainingWaiting=false,trainingElapsed=0,trainingDirections=0;
+let trainingWaiting=false,trainingElapsed=0,trainingDirections=0,trainingWins=0,trainingDidPause=false;
 function showTrainingStep(step){
- tutorialStage=step;trainingWaiting=true;trainingElapsed=0;rows=[];
+ tutorialStage=step;trainingWaiting=true;trainingElapsed=0;trainingWins=0;trainingDidPause=false;levelTransition=null;rows=[];rushTime=0;rushCoins=[];feverTime=0;window.LoopShiftMusic?.setRush?.(false);
+ $('lesson-menu').open=false;
  $('training-step').textContent=`GUIDED PRACTICE · ${step+1} / ${TRAINING.length}`;
  $('training-title').textContent=TRAINING[step][0];$('training-copy').textContent=TRAINING[step][1];
- $('training-go').textContent=step===10?'Finish tutorial':'Try it';
+ $('training-go').textContent=step===TRAINING.length-1?'Finish tutorial':'Try it';
  $('training-dialog').showModal();$('training-go').focus();
 }
 function beginTrainingStep(){
- $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;
- if(tutorialStage===10){crash(null,true);return;}
+ $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;ringCount=2;lane=1;radius=laneRadius(lane);shield=0;charge=0;rushChain=0;
+ $('tutorial-instruction').textContent=TRAINING_HINTS[tutorialStage];
+ if(tutorialStage===TRAINING.length-1){crash(null,true);return;}
+ if(tutorialStage>=10){beginExtraLesson();return;}
  if(tutorialStage===9){startRush();return;}
  if(tutorialStage===8){feverTime=5;}
  if(tutorialStage===5){ringCount=3;lane=1;radius=laneRadius(lane);trainingDirections=0;}
@@ -230,29 +244,74 @@ function beginTrainingStep(){
  const sparkLane=tutorialStage===1?(lane+1)%ringCount:(lane+1)%ringCount;
  rows=[{angle:angle+1.4,sparkLane,hazardLanes:tutorialStage===1?[]:[lane],hit:tutorialStage===1,collected:tutorialStage!==1,passed:false,open:tutorialStage===1,pattern:tutorialStage===6?'moving':tutorialStage===7?'pulse':'classic',locked:true}];
  }
- $('tutorial-instruction').textContent=TRAINING[tutorialStage][1];$('shift').focus();
+ $('tutorial-instruction').textContent=TRAINING_HINTS[tutorialStage];$('shift').focus();
 }
 function exitTraining(){trainingWaiting=false;$('training-dialog').close();mode='over';window.LoopShiftMusic?.pause();goHome();}
+function completeTrainingLesson(step){showTrainingStep(step);$('training-step').textContent='✓ Lesson complete · '+(step+1)+' / '+TRAINING.length;$('announcement').textContent='Lesson complete. '+TRAINING[step][0];}
 function updateTutorial(dt){
  if(trainingWaiting)return;
- if(tutorialStage===9){gameTime+=dt;updateRush(dt);if(rushTime===0)showTrainingStep(10);return;}
+ if(tutorialStage>=10){updateExtraLesson(dt);return;}
+ if(tutorialStage===9){gameTime+=dt;updateRush(dt);if(rushTime===0)completeTrainingLesson(10);return;}
  gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
- if((tutorialStage===0&&tutorialShift)||(tutorialStage===5&&trainingDirections===3)){showTrainingStep(tutorialStage+1);return;}
+ if((tutorialStage===0&&tutorialShift)||(tutorialStage===5&&trainingDirections===3)){completeTrainingLesson(tutorialStage+1);return;}
  for(const row of rows){
  if(tutorialStage===6)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
  if(tutorialStage===7)row.open=Math.sin(trainingElapsed*3)>0;
  const delta=row.angle-angle;
- if(tutorialStage===8&&delta<.08){feverTime=0;showTrainingStep(9);return;}
- if(tutorialStage===1&&!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);showTrainingStep(2);return;}
- if(delta<=.08&&tutorialStage===3){shield=0;shieldSound('break');shatterShield();showTrainingStep(4);return;}
+ if(tutorialStage===8&&delta<.08){feverTime=0;completeTrainingLesson(9);return;}
+ if(tutorialStage===1&&!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);completeTrainingLesson(2);return;}
+ if(delta<=.08&&tutorialStage===3){shield=0;shieldSound('break');shatterShield();completeTrainingLesson(4);return;}
  if(delta<-.12&&(tutorialStage===2||tutorialStage===4||tutorialStage===6||tutorialStage===7)){
  const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
  const perfect=tutorialStage!==4||row.perfectCandidate;
- if(safe&&perfect){if(tutorialStage===4){score+=25;tone(880,.12);}showTrainingStep(tutorialStage+1);return;}
+ if(safe&&perfect){if(tutorialStage===4){score+=25;tone(880,.12);}completeTrainingLesson(tutorialStage+1);return;}
  $('tutorial-instruction').textContent=tutorialStage===4?'Try again: switch just before the coral arc arrives.':'Try again: switch away from the coral barrier.';
  row.hazardLanes=[lane];row.sparkLane=(lane+1)%ringCount;row.angle=angle+1.4;
  }
  if(delta<-.2&&tutorialStage===1){row.angle=angle+1.4;}
+ }
+ updateHUD();
+}
+const TRAINING_HINTS=['Tap once to follow the blue arc.','Switch to the gold diamond.','Switch away from the coral barrier.','Let one barrier use your shield.','Switch during the gold timing cue.','Try an inward and an outward swipe.','Dodge the drifting coral arc.','Follow the safe gap beside the gate.','Fever is active: try touching the barrier.','Fire ball: collect coins for 100 points each.','Try a late safe switch for CLOSE +5.','Let two hits use your two shields.','Collect one spark to complete your charge.','Collect three outlined amber coins.','Gold first; the outlined pink bonus is optional.','Follow three alternating gaps.','Follow three sweeping gaps.','Dodge three timing gates.','Wait for the new ring, then switch.','Pause, then tap Resume.','Try one safe dodge.','Practice complete.'];
+function trainingRow(){
+ let safe=(lane+1)%ringCount;
+ if(tutorialStage===16)safe=Math.max(0,Math.min(ringCount-1,lane+(trainingWins<2?-1:1)));
+ if(safe===lane)safe=lane===0?1:lane-1;
+ const collectible=[12,13].includes(tutorialStage);
+ rows=[{angle:angle+1.4,baseAngle:angle+1.4,sparkLane:safe,hazardLane:lane,hazardLanes:collectible?[]:[lane],hit:collectible,collected:!collectible&&tutorialStage!==14,passed:false,open:collectible,pattern:[16].includes(tutorialStage)?'moving':tutorialStage===17?'pulse':'classic',locked:true,special:tutorialStage===13,bonusLane:tutorialStage===14?lane:null,shieldBonus:tutorialStage===14,bonusCollected:false}];
+}
+function beginExtraLesson(){
+ ringCount=[11].includes(tutorialStage)?5:tutorialStage===16?3:2;lane=ringCount-1;radius=laneRadius(lane);shield=tutorialStage===11?2:0;charge=tutorialStage===12?5:0;trainingWins=0;
+ if(tutorialStage!==18&&tutorialStage!==19)trainingRow();
+ updateHUD();$('shift').focus({preventScroll:true});
+}
+function updateExtraLesson(dt){
+ if(tutorialStage===13&&rushTime>0){gameTime+=dt;updateRush(dt);if(!rushTime)completeTrainingLesson(14);return;}
+ gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
+ if(tutorialStage===18){if(trainingElapsed>=1&&ringCount===2){const fromRadii=[laneRadius(0),laneRadius(1)],fromColor=levelColor();ringCount=3;levelTransition={elapsed:0,oldRings:2,fromRadii,fromColor};}updateLevelTransition(dt);if(trainingElapsed>=2&&tutorialShift){levelTransition=null;completeTrainingLesson(19);}updateHUD();return;}
+ if(tutorialStage===19){if(trainingDidPause)completeTrainingLesson(20);return;}
+ for(const row of rows){
+  if(tutorialStage===16)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
+  if(tutorialStage===17)row.open=Math.sin(trainingElapsed*3)>0;
+  const delta=row.angle-angle,atSpark=Math.abs(radius-laneRadius(row.sparkLane))<.032;
+  if([12,13].includes(tutorialStage)&&!row.collected&&Math.abs(delta)<.1&&atSpark){row.collected=true;sparks++;trainingWins++;tone(800,.12);if(tutorialStage===12){charge=0;shield=1;shieldSound('gain1');}else rushChain=trainingWins;}
+  if(tutorialStage===11&&delta<=.08&&!row.hit&&row.hazardLanes.includes(lane)){row.hit=true;shield--;trainingWins++;shieldSound('break');shatterShield();}
+  if(tutorialStage===14&&delta<-.16&&!row.passed){row.passed=true;if(atSpark){trainingWins=1;$('tutorial-instruction').textContent='Safe! Now switch to the outlined pink bonus.';}else{trainingRow();return;}}
+  if(tutorialStage===14&&trainingWins===1&&!row.bonusCollected&&Math.abs(delta+.4)<.07&&Math.abs(radius-laneRadius(row.bonusLane))<.032){row.bonusCollected=true;score+=40;charge++;trainingWins=2;feedback('bonus');}
+  const end=tutorialStage===14?-.6:-.18;
+  if(delta<end){
+   const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
+   let success=false;
+   if(tutorialStage===10){success=safe&&row.closeCandidate;if(success){score+=5;showEffect('CLOSE! +5');}}
+   else if(tutorialStage===11)success=trainingWins>=2;
+   else if(tutorialStage===12)success=shield===1;
+   else if(tutorialStage===13)success=trainingWins>=3;
+   else if(tutorialStage===14)success=trainingWins===2;
+   else{if(safe)trainingWins++;success=trainingWins>=([15,16,17].includes(tutorialStage)?3:1);}
+   if(success){if(tutorialStage===13){startRush();return;}completeTrainingLesson(tutorialStage+1);return;}
+   if(tutorialStage===13&&!row.collected){trainingWins=0;rushChain=0;}
+   $('tutorial-instruction').textContent=tutorialStage===10?'Try again: switch just after the gold timing cue.':TRAINING_HINTS[tutorialStage];trainingRow();return;
+  }
  }
  updateHUD();
 }
@@ -457,6 +516,13 @@ const random = (min,max) => min + Math.random() * (max-min);
 const point = (a,r) => ({x:size/2+Math.cos(a)*r*size,y:size/2+Math.sin(a)*r*size});
 const pad = (n) => String(n).padStart(3,'0');
 
+function fitPlayViewport(){
+ if(!document.body.style?.setProperty)return;
+ const height=Math.min(window.innerHeight||800,window.visualViewport?.height||window.innerHeight||800);
+ document.body.style.setProperty('--fit-arena',`max(0px, calc(${height}px - 220px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))`);
+}
+window.addEventListener('resize',fitPlayViewport);window.visualViewport?.addEventListener('resize',fitPlayViewport);
+fitPlayViewport();
 function resize(){
   const bounds=canvas.getBoundingClientRect(); if(bounds.width<=0)return; size=bounds.width;
   const scale=Math.min(window.devicePixelRatio || 1,2);
@@ -505,6 +571,16 @@ function goHome(){
   showScreen('home');
   if(location.hash==='#play' && history.state?.loopShiftGame)history.back();
   else history.replaceState(null,'','#home');
+}
+function finishAndSave(home=false){
+ if(mode!=='paused')return;
+ breakPending=false;document.body.dataset.rest='false';
+ crash(null,false);$('overlay-title').textContent='Run finished';$('result-coaching').textContent='You stopped on your terms. Your progress counts.';
+ if(home)goHome();
+}
+function requestExit(){
+ if($('ring-lesson').open)$('ring-lesson').close();
+ if(screen==='game'&&(mode==='playing'||mode==='paused')){if(mode==='playing')setPaused(true,false);$('exit-dialog').showModal();$('exit-resume').focus();}else goHome();
 }
 function homePlay(){
   if(mode==='paused'){enterGame();setPaused(false);}else if($('challenge-choice').value==='daily')startDaily();else if($('challenge-choice').value==='weekly')startWeekly();else startEndless();
@@ -584,7 +660,7 @@ function updateRhythm(){
   if(timedRun())$('daily-timer').textContent=`${roundKind==='weekly'?'WEEKLY':'DAILY'} · ${Math.ceil(Math.max(0,120-gameTime))}s left`;
 
   document.body.classList.toggle('fever-active',fever);
-  $('combo').textContent=`×${scoreFactor()}`;
+  $('combo').textContent=`×${scoreFactor()}`;$('combo').hidden=scoreFactor()<=1;
   $('combo-caption').textContent=fever?'FEVER SCORE':combo?`${combo} PERFECT CHAIN`:'SCORE MULTIPLIER';
   $('fever-label').textContent=weeklyRule()==='no-fever'?'NO FEVER':fever?`FEVER · ${feverTime.toFixed(1)}s`:'FEVER';
   $('fever-count').textContent=weeklyRule()==='no-fever'?'WEEKLY RULE':fever?'INVINCIBLE':`${feverCharge} / 6`;
@@ -607,7 +683,7 @@ function awardPerfect(row){
   tone(760+Math.min(combo,6)*90,.16,'sine',.08);vibrate(12);
   if(weeklyRule()!=='no-fever' && feverCharge>=6 && feverTime<=0){
     feverTime=5;roundFevers++;advanceMission('fevers');showEffect('FEVER!','fever');
-    $('announcement').textContent='Fever! Five seconds of invincibility and double points.';
+    $('announcement').textContent='Fever! Five seconds of invincibility and double points.';showPowerLesson('fever');
     tone(1320,.35,'sine',.09);
   }
 }
@@ -619,8 +695,10 @@ function warnPattern(row){
   tone(330,.13,'triangle',.035);
 }
 function updateHUD(){
+  document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
+  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||!isRankedMode();
   updateRushHUD();
-  $('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
+  $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
   $('rival-target').hidden=!isRankedMode();$('ghost-status').hidden=roundKind==='tutorial'||roundKind==='sprint';
   const full=shield>=shieldCapacity();
@@ -732,14 +810,16 @@ function shift(direction=0){
   shiftDirection=movement;lane=target;landing=target;landingTime=0;updateGuide();
 }
 function setPaused(paused, moveFocus=true){
+  if(!paused&&$('power-dialog').open)return;
   if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
+    if(roundKind==='tutorial'&&tutorialStage===19)trainingDidPause=true;
     $('section-choices').hidden=true;$('break-reward').textContent='';$('practice-failure').hidden=true;
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;$('comfort-check').hidden=false;$('comfort-response').textContent='';
     window.LoopShiftMusic?.pause();mode='paused';$('overlay').hidden=false;$('overlay-kicker').textContent='TAKE A BREATHER';$('overlay-title').textContent='Round paused.';
     $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;$('result').hidden=true;
-    $('play').innerHTML='Keep going <span aria-hidden="true">↗</span>';$('restart').hidden=false;$('shift').disabled=true;
+    $('play').innerHTML='Tap to resume';$('restart').hidden=false;$('shift').disabled=true;
     $('pause').setAttribute('aria-label','Resume game');$('announcement').textContent='Game paused.';
     $('pause-icon').setAttribute('d','m8 5 10 7-10 7Z');
     if(moveFocus && screen==='game')$('play').focus({preventScroll:true});
@@ -764,6 +844,15 @@ function burst(a,r,color,n=14){
   for(let i=0;i<n;i++){const d=random(0,TAU),v=random(18,90);particles.push({x:p.x/size,y:p.y/size,vx:Math.cos(d)*v/440,vy:Math.sin(d)*v/440,life:1,color});}
 }
 let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0;
+let pendingPower='';
+function showPowerLesson(kind){
+ if(roundKind==='tutorial'||roundKind==='practice')return;
+ try{if(localStorage.getItem('loop-shift-learned-'+kind)==='true')return;}catch{}
+ pendingPower=kind;setPaused(true,false);
+ $('power-title').textContent=kind==='rush'?'Fire ball · Spark Rush':'Fever unlocked';
+ $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Speed stays steady.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
+ $('power-dialog').showModal();
+}
 function startRush(){
  rushQueued=false;rushChain=0;rushTime=5;rushGlow=1;rushStartAngle=angle;trail=[];
  const speed=speedNow();let route=lane;
@@ -771,7 +860,7 @@ function startRush(){
   if(i&&i%2===0)route=route===0?1:route===ringCount-1?route-1:route+(i%4?-1:1);
   return {angle:angle+speed*(.55+i*.55),lane:route,collected:false};
  });
- window.LoopShiftMusic?.setRush?.(true);tone(180,.22,'triangle',.045,720);showEffect('SPARK RUSH · ×10');
+ window.LoopShiftMusic?.setRush?.(true);tone(180,.22,'triangle',.045,720);showEffect('SPARK RUSH · ×10');showPowerLesson('rush');
 }
 function finishRush(){
  rushTime=0;window.LoopShiftMusic?.setRush?.(false);
@@ -787,7 +876,7 @@ function updateRush(dt){
  if(!rushTime)finishRush();updateHUD();
 }
 function updateRushHUD(){
- $('rush-status').textContent=rushTime>0?`RUSH ×10 · ${Math.ceil(rushTime)}s`:`Special coins · ${rushChain}/3`;
+ $('rush-status').textContent=rushTime>0?`RUSH ×10 · ${Math.ceil(rushTime)}s`:`◆ ${rushChain}/3`;
  $('rush-status').hidden=roundKind==='tutorial'&&rushTime<=0;
 }
 function collect(row){
@@ -797,6 +886,7 @@ function collect(row){
   updateHUD();
 }
 function crash(hitRow=null,completed=false){
+ if(mode==='over')return;
   failedSegment=hitRow&&segmentSnapshot?JSON.parse(JSON.stringify(segmentSnapshot)):null;
   $('practice-failure').hidden=!failedSegment;$('section-choices').hidden=true;$('break-reward').textContent='';
   if(roundKind==='endless'){extras.lastScore=score;dailyPersonal();if(score>=extras.target)extras.dailyDone=true;}
@@ -804,9 +894,10 @@ function crash(hitRow=null,completed=false){
   if(roundKind==='weekly'&&completed&&roundHits===0)extras.weeklyBadge=dailyRun.week||new Date().toISOString().slice(0,10);
   saveExtras();showExtrasHome();
   captureReplay(true);
-  window.LoopShiftResults?.finish({name:window.LoopShiftBoard?.player?.()?.name||'Orbit player',title:window.LoopShiftSocial?.title()||'',score,level,chain:bestCombo,ranked:isRankedMode()&&!!window.LoopShiftBoard?.player?.(),mode:roundKind==='weekly'?`Weekly · ${dailyRun.rule.name}`:roundKind==='daily'?'Daily challenge':roundKind==='endless'?'100-level run':roundKind,url:`${location.origin||''}${location.pathname||'/'}${roundKind==='daily'?'#daily':roundKind==='weekly'?'#weekly':'#home'}`},hitRow?{angle:hitRow.angle,lane:hitReview?.lane??lane,safe:hitRow.sparkLane}:null);
+  window.LoopShiftResults?.finish({name:window.LoopShiftBoard?.player?.()?.name||'Orbit player',avatar:window.LoopShiftBoard?.player?.()?.avatar||'',title:window.LoopShiftSocial?.title()||'',score,level,chain:bestCombo,ranked:isRankedMode()&&!!window.LoopShiftBoard?.player?.(),mode:roundKind==='weekly'?`Weekly · ${dailyRun.rule.name}`:roundKind==='daily'?'Daily challenge':roundKind==='endless'?'100-level run':roundKind,url:`${location.origin||''}${location.pathname||'/'}${roundKind==='daily'?'#daily':roundKind==='weekly'?'#weekly':'#home'}`},hitRow?{angle:hitRow.angle,lane:hitReview?.lane??lane,safe:hitRow.sparkLane}:null);
   window.LoopShiftSocial?.finish(socialAttempt,{kind:roundKind,sparks,chain:bestCombo,clean:runCleanBest,cleared:Math.floor(passes/12),bosses:runBosses,duration:gameTime});
   const previousBest=timedRun()?dailyBest:personalBest();
+  const resultPlayer=window.LoopShiftBoard?.player?.();if(window.LoopShiftAvatar)$('result-avatar').replaceChildren(...(resultPlayer?[window.LoopShiftAvatar.make(resultPlayer.name,resultPlayer.avatar)]:[]));
   const champion=completed&&roundKind==='endless';
   if(roundKind==='endless')journey.chain=Math.max(journey.chain||0,bestCombo);
   if(roundKind==='endless'){journey.distance=Math.max(journey.distance,passes);saveJourney();}
@@ -829,7 +920,7 @@ function crash(hitRow=null,completed=false){
   $('overlay-title').textContent=roundKind==='journey'?(completed?`🏅 ${extras.journeyMedal} journey medal!`:'Try another journey?'):roundKind==='tutorial'?'Ready for the orbit!':roundKind==='sprint'?(completed?'Sprint complete!':'One more sprint?'):roundKind==='practice'?(completed?'Practice complete!':'Try this level again'):champion?'🏆 Loop Champion!':completed?(roundKind==='weekly'?'Weekly complete!':'Daily complete!'):isBest?'A new best!':'One more loop?';
   updateExtras();$('overlay-copy').textContent=resultFact();
   $('share-daily').hidden=roundKind!=='daily';
-  $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result').hidden=false;
+  $('result-score').textContent=score;$('result-sparks').textContent=sparks;$('result-best').textContent=Math.max(score,previousBest).toLocaleString();$('result').hidden=false;
   $('play').innerHTML='Try again <span aria-hidden="true">↗</span>';$('restart').hidden=true;
   $('comfort-check').hidden=true;$('overlay').hidden=false;$('shift').disabled=true;$('pause').disabled=true;$('pause').setAttribute('aria-label','Pause game');
   clearTimeout(toastTimer);$('toast').classList.remove('show');updateHUD();
@@ -983,7 +1074,7 @@ function draw(time,dt){
       const ahead=row.angle-angle;
       if(ahead>TAU-.45)continue;
       const opacity=fade*Math.min(1,Math.max(0,(ahead+.45)/.3),Math.max(0,(TAU-.45-ahead)/.3));
-      ctx.globalAlpha=opacity;
+      ctx.globalAlpha=opacity*(row===nearest?1:.5);
       if(!row.hit){
         for(const hazard of blockedLanes(row)){
         const r=rowRadius(hazard);
@@ -1082,9 +1173,19 @@ $('tutorial-start').addEventListener('click',startTutorial);
 $('skip-tutorial').addEventListener('click',exitTraining);
 $('training-skip').addEventListener('click',exitTraining);
 $('training-go').addEventListener('click',beginTrainingStep);
+$('training-repeat').addEventListener('click',()=>showTrainingStep(tutorialStage));
+$('training-next').addEventListener('click',()=>showTrainingStep(Math.min(TRAINING.length-1,tutorialStage+1)));
+for(let i=0;i<TRAINING.length;i++)$('lesson-'+i).addEventListener('click',()=>showTrainingStep(i));
 $('training-dialog').addEventListener('cancel',event=>{event.preventDefault();exitTraining();});
+$('power-go').addEventListener('click',()=>{try{localStorage.setItem('loop-shift-learned-'+pendingPower,'true');}catch{}pendingPower='';$('power-dialog').close();setPaused(false);});
+$('power-dialog').addEventListener('cancel',event=>event.preventDefault());
+$('finish-save').addEventListener('click',()=>finishAndSave());
+$('exit-resume').addEventListener('click',()=>{$('exit-dialog').close();setPaused(false);});
+$('exit-confirm').addEventListener('click',()=>{$('exit-dialog').close();if(roundKind==='tutorial')exitTraining();else finishAndSave(true);});
+$('exit-dialog').addEventListener('cancel',()=>{setPaused(false);});
+$('pause-settings').addEventListener('click',()=>{$('settings-dialog').showModal();$('settings-close').focus();});
 $('settings-open').addEventListener('click',()=>{$('settings-dialog').showModal();$('settings-close').focus();});
-$('settings-close').addEventListener('click',()=>{$('settings-dialog').close();$('settings-open').focus();});
+$('settings-close').addEventListener('click',()=>{$('settings-dialog').close();$(screen==='game'?'play':'settings-open').focus();});
 $('share-daily').addEventListener('click',shareDaily);
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
 $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
@@ -1094,11 +1195,11 @@ $('weekly-play').addEventListener('click',startWeekly);
 $('community-reward').addEventListener('click',()=>{if(!window.LoopShiftSocial?.unlockedTheme())return;selectedTheme='convergence';try{localStorage.setItem('loop-shift-theme-v2',selectedTheme);}catch{}updateAdventureUI();$('community-reward').textContent='Convergence theme · Selected';});
 $('home-play').addEventListener('click',homePlay);
 $('home-new').addEventListener('click',startEndless);
-$('back-home').addEventListener('click',goHome);
+$('back-home').addEventListener('click',requestExit);
 $('result-home').addEventListener('click',goHome);
-$('brand-home').addEventListener('click',event=>{event.preventDefault();goHome();});
+$('brand-home').addEventListener('click',event=>{event.preventDefault();requestExit();});
 window.addEventListener('loopshift:pause',()=>{if(mode==='playing')setPaused(true,false);});
-window.addEventListener('loopshift:back',()=>{if(screen==='game')goHome();else window.LoopShiftNative?.minimize();});
+window.addEventListener('loopshift:back',()=>{if(screen==='game')requestExit();else window.LoopShiftNative?.minimize();});
 window.addEventListener('popstate',syncRoute);
 window.addEventListener('hashchange',syncRoute);
 $('play').addEventListener('click',()=>{if(mode==='paused')setPaused(false);else start();});
@@ -1137,7 +1238,7 @@ $('game-screen').addEventListener('pointercancel',()=>{gesture=null;});
 $('shift').addEventListener('click',event=>{if(event.detail===0)shift();});
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
-  if($('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
+  if($('power-dialog').open || $('exit-dialog').open || $('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
   if(screen==='game'&&mode==='playing'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();shift(event.code==='ArrowUp'?-1:1);return;}
   if(event.code==='Space'){

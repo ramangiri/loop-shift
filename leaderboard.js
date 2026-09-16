@@ -1,6 +1,7 @@
 (() => {
   const el = id => document.getElementById(id);
   let latestEntries=[], activeBoard='endless', activeChallenge=null, canPlayOffline=true, startingDaily=false;
+  let avatar='', selectedAvatar='avatar-1';
   let nickname = '', ranked = false, nextAction, busy = false, offlineReady=false, connection='connecting';
   let playerKey='',scoreQueue=[],scoreJob=null,retryTimer=null,bestListener=null,savedBest=null;
   const queueStorage=()=>`loop-shift-score-queue-v3:${playerKey}`;
@@ -8,7 +9,7 @@
   function clearScoreStatus(){for(const id of ['score-save-status','board-save-status','retry-score','retry-board-score','retry-home-score'])el(id).hidden=true;}
   function clearPlayer(){
     persistQueue();playerKey='';scoreQueue=[];savedBest=null;ranked=false;
-    if(!offlineReady)nickname='';
+    if(!offlineReady){nickname='';avatar='';}
     clearTimeout(retryTimer);retryTimer=null;clearScoreStatus();
     playerLabel();window.LoopShiftSocial?.identity(null);
   }
@@ -47,7 +48,7 @@
   }
   function playerLabel() {
     el('player-label').textContent = nickname || 'Ready to play?';
-    if(window.LoopShiftAvatar)el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname)]:[]));
+    if(window.LoopShiftAvatar)el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
     el('edit-name').textContent = nickname ? 'Edit name' : 'Add name';
   }
   function render(data) {
@@ -69,8 +70,8 @@
       rank.textContent = entry.rank===1?'🏆':entry.rank===2?'🥈':entry.rank===3?'🥉':String(entry.rank).padStart(2, '0');
       rank.setAttribute('aria-label',`Rank ${entry.rank}`);
       name.textContent = entry.name + (entry.isYou ? ' · You' : '');
-      if(window.LoopShiftAvatar)name.append(window.LoopShiftAvatar.make(entry.name));
-      if(entry.rank<=3){const card=document.createElement('article');card.className='podium-card place-'+entry.rank;const medal=document.createElement('span');medal.textContent=entry.rank===1?'🏆':entry.rank===2?'🥈':'🥉';const title=document.createElement('strong');title.textContent=entry.name;const points=document.createElement('span');points.textContent=entry.score.toLocaleString();card.append(medal);if(window.LoopShiftAvatar)card.append(window.LoopShiftAvatar.make(entry.name));card.append(title,points);el('board-podium').append(card);}
+      if(window.LoopShiftAvatar)name.append(window.LoopShiftAvatar.make(entry.name,entry.avatar));
+      if(entry.rank<=3){const card=document.createElement('article');card.className='podium-card place-'+entry.rank;const medal=document.createElement('span');medal.textContent=entry.rank===1?'🏆':entry.rank===2?'🥈':'🥉';const title=document.createElement('strong');title.textContent=entry.name;const points=document.createElement('span');points.textContent=entry.score.toLocaleString();card.append(medal);if(window.LoopShiftAvatar)card.append(window.LoopShiftAvatar.make(entry.name,entry.avatar));card.append(title,points);el('board-podium').append(card);}
       if(entry.title){const title=document.createElement('small');title.className='player-title';title.textContent=({'perfect-pilot':'Perfect Pilot','shield-survivor':'Shield Survivor','six-ring-master':'Six-Ring Master'})[entry.title]||'';name.append(title);}
       score.textContent = entry.score.toLocaleString();
       tr.append(rank, name, score);el('board-rows').append(tr);
@@ -81,10 +82,10 @@
     el('board-you').textContent=data.me?(data.me.rank?`${data.me.name} · Your rank: #${data.me.rank} · Best: ${data.me.best.toLocaleString()}`:`${data.me.name} · Finish a ranked round to set your first score.`):'Add a name to see your online best and rank.';
     el('board-add-name').hidden=!!data.me;
     el('personal-standing').hidden=!data.me;
-    if(data.me){el('standing-name').textContent=data.me.name;el('standing-rank').textContent=data.me.rank?'#'+data.me.rank:'—';el('standing-score').textContent=data.me.best.toLocaleString();el('standing-medal').textContent=data.me.rank===1?'🏆':data.me.rank===2?'🥈':data.me.rank===3?'🥉':'';if(window.LoopShiftAvatar)el('standing-avatar').replaceChildren(window.LoopShiftAvatar.make(data.me.name));}
+    if(data.me){el('standing-name').textContent=data.me.name;el('standing-rank').textContent=data.me.rank?'#'+data.me.rank:'—';el('standing-score').textContent=data.me.best.toLocaleString();el('standing-medal').textContent=data.me.rank===1?'🏆':data.me.rank===2?'🥈':data.me.rank===3?'🥉':'';if(window.LoopShiftAvatar)el('standing-avatar').replaceChildren(window.LoopShiftAvatar.make(data.me.name,data.me.avatar));}
     }
     if (data.me) {
-      nickname = data.me.name;ranked = true;offlineReady=false;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
+      avatar=data.me.avatar||'';nickname = data.me.name;ranked = true;offlineReady=false;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
       if(data.me.progress){el('home-player-level').textContent=`Level ${data.me.progress.highest} / 100`;el('home-level-meter').value=data.me.progress.highest;serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
     } else { el('home-player-level').textContent='';el('home-level-meter').value=0;clearPlayer(); }
     notifyBest();
@@ -110,32 +111,38 @@
     el('name-error').textContent = '';el('play-offline').hidden = true;
     let saved = '';try { saved = localStorage.getItem('loop-shift-nickname-v2') || ''; } catch {}
     el('player-name').value = nickname || saved;
-    el('save-name').textContent = action ? 'Save & play ↗' : 'Save nickname ↗';
+    selectedAvatar=avatar||'avatar-1';if(!avatar)try{const savedAvatar=localStorage.getItem('loop-shift-avatar');if(window.LoopShiftAvatar?.choices.includes(savedAvatar))selectedAvatar=savedAvatar;}catch{}renderAvatarPicker();
+    el('save-name').textContent = action ? 'Save & play ↗' : 'Save profile';
     if (!el('name-dialog').open) el('name-dialog').showModal();
     el('player-name').focus();
   }
   function finishName(name, online) {
     offlineReady=!online;if(!online)clearPlayer();
     nickname = name;ranked = online;playerLabel();notifyBest();
-    try { localStorage.setItem('loop-shift-nickname-v2', name); } catch {}
+    try { localStorage.setItem('loop-shift-nickname-v2', name);localStorage.setItem('loop-shift-avatar',avatar||selectedAvatar); } catch {}
     const action = nextAction;nextAction = null;
     el('name-dialog').close();
     if(progressPending)saveProgress();
     if(scoreQueue.length)saveScore();
     if (action) action();
   }
+  function renderAvatarPicker(){
+    const list=el('avatar-choices');list.replaceChildren();
+    for(const id of window.LoopShiftAvatar?.choices||[]){const button=document.createElement('button');button.type='button';button.setAttribute('aria-label','Avatar '+id.split('-')[1]);button.setAttribute('aria-pressed',String(id===selectedAvatar));button.append(window.LoopShiftAvatar.make('',id));button.addEventListener('click',()=>{if(busy)return;selectedAvatar=id;for(const option of list.children)option.setAttribute('aria-pressed',String(option===button));});list.append(button);}
+  }
+  el('profile-settings').addEventListener('click',()=>{el('settings-dialog').close();askName();});
   el('name-form').addEventListener('submit', async event => {
     event.preventDefault();if (busy) return;
     const name = validName(el('player-name').value);
     if (!name) { el('name-error').textContent = 'Enter 1–16 letters or numbers. Spaces, dots, apostrophes, hyphens and underscores are OK.';el('player-name').focus();return; }
     busy = true;el('save-name').disabled = true;el('player-name').disabled = true;el('cancel-name').disabled = true;el('play-offline').hidden = true;el('name-error').textContent = 'Saving your nickname…';
-    try { if (refreshJob) await refreshJob;if(scoreJob)await scoreJob;const data = await request('player', {name});render(data);finishName(data.me.name, true); }
+    try { if (refreshJob) await refreshJob;if(scoreJob)await scoreJob;const data = await request('player', {name,avatar:selectedAvatar});render(data);finishName(data.me.name, true); }
     catch (error) { el('name-error').textContent = error.message;el('play-offline').hidden = !nextAction || !canPlayOffline; }
     finally { busy = false;el('save-name').disabled = false;el('player-name').disabled = false;el('cancel-name').disabled = false; }
   });
   el('play-offline').addEventListener('click', () => {
     const name = validName(el('player-name').value);
-    if (name) finishName(name, false);
+    if (name) {avatar=selectedAvatar;finishName(name, false);}
   });
   el('cancel-name').addEventListener('click', () => { nextAction = null;el('name-dialog').close(); });
   el('name-dialog').addEventListener('cancel', event => { if (busy) event.preventDefault();else nextAction = null; });
@@ -198,7 +205,7 @@
   }
   el('retry-progress').addEventListener('click',saveProgress);
   window.LoopShiftBoard = {
-    request,player:()=>ranked?{key:playerKey,name:nickname}:null,
+    request,player:()=>ranked?{key:playerKey,name:nickname,avatar}:null,
     best:()=>ranked?savedBest:null,
     record:()=>({connection,ranked,pending:ranked?scoreQueue.filter(item=>!item.challenge&&item.owner===playerKey).reduce((top,item)=>Math.max(top,item.score),0):0}),
     onBest(listener){bestListener=listener;notifyBest();},

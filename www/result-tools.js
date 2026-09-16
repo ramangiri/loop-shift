@@ -62,7 +62,8 @@
       ctx.fillStyle='#d6ff62';ctx.fillRect(56,62,8,80);
       const text=(value,x,y,max,size,color='#eff8e8',arcade=true)=>{ctx.fillStyle=color;do{ctx.font=`${arcade?'800':'600'} ${size--}px ${arcade?'LoopArcade,':''}Arial,sans-serif`;}while(size>14&&ctx.measureText(value).width>max);ctx.fillText(value,x,y);};
       text('LOOP SHIFT',86,120,780,56);text('CAN YOU BEAT MY RUN?',64,215,820,29,'#aabfaf');
-      text(data.name,64,335,830,46,'#eff8e8',false);if(data.title)text(data.title.toUpperCase(),64,383,830,23,'#d6ff62');
+      if(window.LoopShiftAvatar&&typeof Image!=='undefined'){const avatar=window.LoopShiftAvatar.make(data.name,data.avatar);try{await avatar.decode();if(version!==generation)return;ctx.drawImage(avatar,64,276,82,82);}catch{}}
+      text(data.name,164,335,730,46,'#eff8e8',false);if(data.title)text(data.title.toUpperCase(),64,383,830,23,'#d6ff62');
       text(data.mode.toUpperCase(),64,465,830,23,'#b5cbbd');text(data.score.toLocaleString(),58,615,840,130,'#d6ff62');text('POINTS',66,665,820,26);
       ctx.fillStyle='#203b2d';ctx.fillRect(64,717,832,2);
       text('LEVEL REACHED',64,785,360,23,'#aabfaf');text(String(data.level),64,868,360,68);

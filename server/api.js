@@ -26,14 +26,14 @@ async function identity(request, create = false) {
   return { id: Array.from(new Uint8Array(bytes), n => n.toString(16).padStart(2, '0')).join(''), cookie };
 }
 async function board(db, id) {
-  const { results } = await db.prepare('SELECT id, name, selected_title, best FROM players WHERE best > 0 AND id NOT IN (SELECT player_id FROM board_removals) ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
-  const me = id ? await db.prepare('SELECT name, selected_title, best, achieved_at, highest_level, furthest_pass, achievements, best_chain, best_clean FROM players WHERE id = ?').bind(id).first() : null;
+  const { results } = await db.prepare('SELECT id, name, avatar, selected_title, best FROM players WHERE best > 0 AND id NOT IN (SELECT player_id FROM board_removals) ORDER BY best DESC, achieved_at ASC, id ASC LIMIT 10').all();
+  const me = id ? await db.prepare('SELECT name, avatar, selected_title, best, achieved_at, highest_level, furthest_pass, achievements, best_chain, best_clean FROM players WHERE id = ?').bind(id).first() : null;
   let rank = null;
   if (me?.best > 0 && !(await db.prepare('SELECT player_id FROM board_removals WHERE player_id = ?').bind(id).first())) {
     const row = await db.prepare('SELECT COUNT(*) + 1 AS rank FROM players WHERE id NOT IN (SELECT player_id FROM board_removals) AND (best > ? OR (best = ? AND (achieved_at < ? OR (achieved_at = ? AND id < ?))))').bind(me.best, me.best, me.achieved_at, me.achieved_at, id).first();
     rank = row.rank;
   }
-  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, title:me.selected_title, best: me.best, mainBest:me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
+  return { entries: results.map((p, i) => ({ rank: i + 1, name: p.name, avatar:p.avatar, title:p.selected_title, score: p.best, isYou: p.id === id })), me: me ? { key:id, name: me.name, avatar:me.avatar, title:me.selected_title, best: me.best, mainBest:me.best, rank, progress:{highest:me.highest_level,distance:me.furthest_pass,badges:me.achievements,chain:me.best_chain,clean:me.best_clean} } : null };
 }
 export async function api(request, env) {
   const path = new URL(request.url).pathname;
@@ -74,7 +74,8 @@ export async function api(request, env) {
     if (path === '/api/player') {
       const name = cleanName(data.name);
       if (!name) return json({ error: 'Use 1–16 letters or numbers. Spaces, dots, apostrophes, hyphens and underscores are OK.' }, 400);
-      await db.prepare('INSERT INTO players (id, name, best, achieved_at, last_submit_at) VALUES (?, ?, 0, ?, 0) ON CONFLICT(id) DO UPDATE SET name = excluded.name').bind(who.id, name, now).run();
+      if(data.avatar!==undefined && (typeof data.avatar!=='string'||!/^avatar-(?:[1-9]|1[0-2])$/.test(data.avatar)))return json({error:'Choose an avatar from the list.'},400);
+      await db.prepare("INSERT INTO players (id, name, avatar, best, achieved_at, last_submit_at) VALUES (?, ?, ?, 0, ?, 0) ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar = CASE WHEN excluded.avatar='' THEN players.avatar ELSE excluded.avatar END").bind(who.id, name, data.avatar||'', now).run();
       return json(await board(db, who.id), 200, who.cookie ? { 'Set-Cookie': who.cookie } : {});
     }
     if (!who.id) return json({ error: 'Enter your nickname to join the board.' }, 401);

@@ -241,3 +241,15 @@ test('cleanup refuses ambiguous matches or scores that changed since the screens
   assert.equal(DB.sqlite.prepare('SELECT COUNT(*) n FROM board_removals').get().n,0);
  }finally{DB.close();}
 });
+
+test('avatar choice persists independently of names and scores and appears on every board',async()=>{
+ const {DB,call}=fixture();try{
+  let r=await call('player',{name:'Giri',avatar:'avatar-8'});assert.equal(r.data.me.avatar,'avatar-8');
+  await call('scores',{score:5044,duration:90});
+  r=await call('player',{name:'Giri',avatar:'avatar-3'});assert.equal(r.data.me.best,5044);assert.equal(r.data.me.avatar,'avatar-3');assert.equal(r.data.entries[0].avatar,'avatar-3');
+  r=await call('player',{name:'New name'});assert.equal(r.data.me.avatar,'avatar-3','Old clients keep the selected avatar');
+  assert.equal((await call('daily')).data.me.avatar,'avatar-3');assert.equal((await call('weekly')).data.me.avatar,'avatar-3');
+  for(const avatar of ['avatar-0','avatar-13','<svg>',{},null])assert.equal((await call('player',{name:'Other',avatar})).response.status,400);
+  r=await call('leaderboard');assert.equal(r.data.me.name,'New name');assert.equal(r.data.me.best,5044);
+ }finally{DB.close();}
+});

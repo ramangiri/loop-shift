@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, index, primaryKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 export const players = sqliteTable('players', {
+  avatar: text('avatar').notNull().default(''),
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   bossTrophies: integer('boss_trophies').notNull().default(0),

@@ -6,11 +6,11 @@ export function dailyInfo(now=Date.now()){
   return {day,seed,duration:120,resetsAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString()};
 }
 export async function dailyBoard(db,id,day=dailyInfo().day){
-  const {results}=await db.prepare('SELECT s.player_id, p.name, p.selected_title, s.best FROM daily_scores s JOIN players p ON p.id=s.player_id WHERE s.day=? AND s.best>0 ORDER BY s.best DESC, s.achieved_at, s.player_id LIMIT 10').bind(day).all();
-  const profile=id?await db.prepare('SELECT name,best,selected_title,highest_level,furthest_pass,achievements,best_chain,best_clean FROM players WHERE id=?').bind(id).first():null;
+  const {results}=await db.prepare('SELECT s.player_id, p.name, p.avatar, p.selected_title, s.best FROM daily_scores s JOIN players p ON p.id=s.player_id WHERE s.day=? AND s.best>0 ORDER BY s.best DESC, s.achieved_at, s.player_id LIMIT 10').bind(day).all();
+  const profile=id?await db.prepare('SELECT name,avatar,best,selected_title,highest_level,furthest_pass,achievements,best_chain,best_clean FROM players WHERE id=?').bind(id).first():null;
   const mine=id?await db.prepare('SELECT best,achieved_at FROM daily_scores WHERE day=? AND player_id=?').bind(day,id).first():null;
   const rank=mine?.best>0?(await db.prepare('SELECT COUNT(*)+1 AS rank FROM daily_scores WHERE day=? AND (best>? OR (best=? AND (achieved_at<? OR (achieved_at=? AND player_id<?))))').bind(day,mine.best,mine.best,mine.achieved_at,mine.achieved_at,id).first()).rank:null;
-  return {challenge:dailyInfo(Date.parse(day+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,title:p.selected_title,score:p.best,isYou:p.player_id===id})),me:profile?{key:id,name:profile.name,title:profile.selected_title,best:mine?.best||0,mainBest:profile.best,rank,progress:{highest:profile.highest_level,distance:profile.furthest_pass,badges:profile.achievements,chain:profile.best_chain,clean:profile.best_clean}}:null};
+  return {challenge:dailyInfo(Date.parse(day+'T12:00:00Z')),entries:results.map((p,i)=>({rank:i+1,name:p.name,avatar:p.avatar,title:p.selected_title,score:p.best,isYou:p.player_id===id})),me:profile?{key:id,name:profile.name,avatar:profile.avatar,title:profile.selected_title,best:mine?.best||0,mainBest:profile.best,rank,progress:{highest:profile.highest_level,distance:profile.furthest_pass,badges:profile.achievements,chain:profile.best_chain,clean:profile.best_clean}}:null};
 }
 export async function dailyAction(path,db,id,data,now){
   if(path==='/api/daily/start'){

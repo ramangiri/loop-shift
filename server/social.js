@@ -52,8 +52,8 @@ export async function friendGroups(db,id){
   const {results}=await db.prepare('SELECT g.id,g.name,g.invite FROM friend_groups g JOIN friend_members m ON m.group_id=g.id WHERE m.player_id=? ORDER BY g.created_at,g.id').bind(id).all();
   const groups=[];
   for(const group of results){
-    const {results:members}=await db.prepare('SELECT p.id,p.name,p.best,p.selected_title,p.achieved_at FROM players p JOIN friend_members m ON m.player_id=p.id WHERE m.group_id=? ORDER BY p.best DESC,p.achieved_at,p.id').bind(group.id).all();
-    let rank=0;groups.push({...group,members:members.length,entries:members.map(p=>({name:p.name,title:p.selected_title,score:p.best,rank:p.best>0?++rank:null,isYou:p.id===id}))});
+    const {results:members}=await db.prepare('SELECT p.id,p.name,p.avatar,p.best,p.selected_title,p.achieved_at FROM players p JOIN friend_members m ON m.player_id=p.id WHERE m.group_id=? ORDER BY p.best DESC,p.achieved_at,p.id').bind(group.id).all();
+    let rank=0;groups.push({...group,members:members.length,entries:members.map(p=>({name:p.name,avatar:p.avatar,title:p.selected_title,score:p.best,rank:p.best>0?++rank:null,isYou:p.id===id}))});
   }
   return reply({groups});
 }

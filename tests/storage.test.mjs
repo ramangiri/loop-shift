@@ -83,7 +83,7 @@ test('overlapping starts commit each migration only once',async()=>{
   const client=createClient({url:'file::memory:'});
   try{
     await Promise.all([migrateDatabase(client,migrations),migrateDatabase(client,migrations)]);
-    assert.equal((await client.execute('SELECT COUNT(*) AS n FROM _loopshift_migrations')).rows[0].n,7);
+    assert.equal((await client.execute('SELECT COUNT(*) AS n FROM _loopshift_migrations')).rows[0].n,8);
     await client.execute("INSERT INTO players(id,name,best,achieved_at) VALUES('giri','Giri',612,1)");
     await Promise.all([migrateDatabase(client,migrations),migrateDatabase(client,migrations)]);
     assert.equal((await client.execute('SELECT best FROM players')).rows[0].best,612);
