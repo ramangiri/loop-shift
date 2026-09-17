@@ -4,7 +4,6 @@
   const GREEN='#cfff4a',BLUE='#72e6ff',RED='#ff806e',GOLD='#f5dc88',LINE='#71877c';
   const reduced=()=>{try{return !!reducedMotion;}catch{return matchMedia('(prefers-reduced-motion: reduce)').matches;}};
 
-  // Keep one primary How to Play entry on Home. The expandable reference is Rules & tips.
   const guideTitle=$id('guide-title');
   if(guideTitle)guideTitle.textContent='Rules & tips';
   const guide=document.querySelector('.game-guide .guide-intro');
@@ -46,7 +45,7 @@
   const title=$id('howto-film-title'),copy=$id('howto-film-copy');
   const phases=[
     {name:'GREEN = YOU',cls:'film-green',copy:'The green ball moves around the loop automatically.'},
-    {name:'TAP = MOVE ONE RING',cls:'',copy:'One tap moves exactly one ring. Two rings means two quick taps.'},
+    {name:'TAP = MOVE ONE RING',cls:'',copy:'One tap moves exactly one ring. BLUE is always one reachable ring away.'},
     {name:'BLUE = GUIDE',cls:'film-blue',copy:'Move toward the blue safe ring before the barrier reaches you.'},
     {name:'RED = AVOID',cls:'film-red',copy:'Red barriers are danger. Keep your green ball away from them.'},
     {name:'GOLD = COLLECT',cls:'film-gold',copy:'Gold sparks are rewards. Collect them when they are safely on your route.'}
@@ -87,7 +86,6 @@
   function closeAnimation(){stop();if(dialog.open)dialog.close();}
   window.LoopShiftHowTo={open:openAnimation,close:closeAnimation,replay:play};
 
-  // Replace the two old tutorial entry buttons so no earlier click handler can skip the animation.
   for(const id of ['tutorial-play','tutorial-start']){
     const old=$id(id);if(!old)continue;
     const button=old.cloneNode(true);old.replaceWith(button);
