@@ -1,3 +1,10 @@
+## Version 2.3.2 · Readable mobile play and essential help
+
+- Gameplay uses larger score labels, a thicker level-progress bar, and readable 14–16px status/instruction text. The warning row now grows naturally instead of inheriting a clipped fixed-height mobile layout.
+- How to Play has five essential steps: tap, sparks, barriers, shields, and pause/save. The 22-lesson menu and advanced tutorial engine are removed. Finishing returns Home.
+- Tutorial dialogs have a single-column layout, readable body text, scrollable content, and full-width actions. The written guide is shortened to the same essentials.
+- Portrait and short-landscape layouts reserve space for the header, instructions, and controls. Phone browser verification remains necessary.
+
 ## Version 2.3.1 · Mobile website flow
 
 - Home has Play, Progress, and Friends destinations; Classic goals are separated from distinct modes. Focus Play has a direct entry.

@@ -292,12 +292,10 @@ training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update
 training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt retries');
 training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
 training.click('training-go');training.run('for(let i=0;i<150;i++)update(1/60)');assert.equal(training.run('shield'),0);assert.equal(training.run('tutorialStage'),4);
-training.click('training-go');training.run('for(let i=0;i<120;i++)update(1/60);shift();for(let i=0;i<50;i++)update(1/60)');assert.equal(training.run('tutorialStage'),5);assert.equal(training.run('score'),25);
-training.click('training-go');training.run('shift(-1);update(.2);shift(1);update(.01)');assert.equal(training.run('ringCount'),3);assert.equal(training.run('tutorialStage'),6);
-for(const stage of [6,7]){training.click('training-go');training.run('shift();for(let i=0;i<210;i++)update(1/60)');assert.equal(training.run('tutorialStage'),stage+1);}
-training.click('training-go');training.run('for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),9);
-training.click('training-go');training.run('for(let i=0;i<610;i++)update(1/120)');assert.equal(training.run('tutorialStage'),10);training.click('lesson-21');training.click('training-go');assert.equal(training.run('mode'),'over');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
-training.click('play');assert.equal(training.nodes.get('training-dialog').open,true);training.click('training-skip');assert.equal(training.run('screen'),'home');assert.notEqual(training.run('mode'),'playing');
+assert.equal(training.run('TRAINING.length'),5);assert.match(training.nodes.get('training-copy').textContent,/Save & Exit/);
+training.click('training-go');assert.equal(training.run('screen'),'home');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
+training.click('tutorial-play');assert.equal(training.nodes.get('training-dialog').open,true);training.click('training-skip');assert.equal(training.run('screen'),'home');assert.notEqual(training.run('mode'),'playing');
+
 
 
 const closeCall=game();closeCall.click('home-play');closeCall.run(timing(.18));assert.equal(closeCall.run('target.closeAwarded'),true);assert.equal(closeCall.run('score'),16);assert.equal(closeCall.run('perfects'),0);closeCall.run('update(.01)');assert.equal(closeCall.run('score'),16);
@@ -620,18 +618,6 @@ const soft=game();soft.click('appearance-soft');assert.equal(soft.store.get('loo
 console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and Soft theme persistence.');
 
 // New lessons are playable directly; mistakes stay unranked and retryable.
-const expanded=game();expanded.run('globalThis.saved=0;window.LoopShiftBoard={refresh(){},submit(){saved++},beginRound(){},saveProgress(){saved++}};startTutorial();');
-function selectLesson(n){expanded.click('lesson-'+n);expanded.click('training-go');}
-function practiseUntil(next,setup){for(let i=0;i<1600&&expanded.run('tutorialStage')!==next;i++){if(setup)expanded.run(setup);expanded.run('update(1/120)');}assert.equal(expanded.run('tutorialStage'),next);}
-selectLesson(10);practiseUntil(11,'{const r=rows[0];if(r&&(r.angle-angle)/.6<.19&&lane!==r.sparkLane)shift();}');
-selectLesson(11);practiseUntil(12);assert.equal(expanded.run('shield'),0);
-selectLesson(12);practiseUntil(13,'{const r=rows[0];if(r&&lane!==r.sparkLane)shift();}');assert.equal(expanded.run('shield'),1);
-selectLesson(13);practiseUntil(14,'{const r=rows[0];if(!rushTime&&r&&lane!==r.sparkLane)shift();}');
-selectLesson(14);practiseUntil(15,'{const r=rows[0];if(r){const target=trainingWins===1?r.bonusLane:r.sparkLane;if(lane!==target)shift();}}');
-for(const n of [15,16,17]){selectLesson(n);practiseUntil(n+1,'{const r=rows[0];if(r&&lane!==r.sparkLane)shift(Math.sign(r.sparkLane-lane));}');}
-selectLesson(18);practiseUntil(19,'if(trainingElapsed>2&&!tutorialShift)shift();');assert.equal(expanded.run('ringCount'),3);
-selectLesson(19);expanded.click('pause');assert.equal(expanded.run('mode'),'paused');expanded.click('play');expanded.run('startDelay=0;update(.01)');assert.equal(expanded.run('tutorialStage'),20);
-selectLesson(20);practiseUntil(21,'{const r=rows[0];if(r&&lane!==r.sparkLane)shift();}');expanded.click('training-go');assert.equal(expanded.run('mode'),'over');assert.equal(expanded.run('saved'),0);
 const stop=game();stop.run('globalThis.submits=0;window.LoopShiftBoard={ready:()=>true,refresh(){},submit(){submits++},beginRound(){},saveProgress(){}};start();score=120;showRest(5);');
 // This helper auto-continues normal break simulations; explicitly pause for the action.
 stop.run('setPaused(true);globalThis.beforeFinishSubmits=submits;');stop.click('finish-save');stop.click('finish-save');assert.equal(stop.run('submits-beforeFinishSubmits'),1);assert.equal(stop.run('mode'),'over');assert.equal(stop.nodes.get('result-score').textContent,'120');

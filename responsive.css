@@ -130,3 +130,74 @@ body[data-screen=game] #game-screen .arena-messages:has(#tap-anywhere-hint:not(.
 body[data-screen=game][data-training=true] #compact-hud,body[data-screen=game][data-training=true] #tap-anywhere-hint{display:none}
 body[data-screen=game][data-training=true] #game-screen .arena-messages{top:calc(50% + var(--orbit-diameter)/2 + 12px)}
 @media(max-height:540px) and (orientation:landscape){body[data-screen=game][data-training=true] #game-screen .arena-messages{top:35%}}
+
+/* Readable play header: reserve room instead of cropping inherited notice rows. */
+body[data-screen=game][data-playstate=playing] #game-screen .game-nav{height:72px;padding:8px 0;box-sizing:border-box;overflow:visible;align-items:center}
+body[data-screen=game] #game-screen .stat>span{display:block;font:600 14px/20px Arial,sans-serif;margin:0 0 3px;letter-spacing:.02em}
+body[data-screen=game] #game-screen .stat strong{display:block;font-size:26px;line-height:32px;white-space:nowrap}
+body[data-screen=game][data-playstate=playing] #game-screen .level-progress-track{top:calc(80px + env(safe-area-inset-top,0px));height:6px;border-radius:6px;overflow:hidden}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-status{top:calc(96px + env(safe-area-inset-top,0px));height:auto;min-height:44px;overflow:visible}
+body[data-screen=game] #game-screen .arena-status .arena-notices{position:relative;height:auto;min-height:44px;overflow:visible}
+body[data-screen=game] #game-screen .arena-status .arena-notices .pattern-notice{position:relative;inset:auto;display:block;width:100%;height:auto;min-height:44px;max-height:none;box-sizing:border-box;padding:0 6px;margin:0;font:600 16px/22px Arial,sans-serif;white-space:normal;overflow:visible;overflow-wrap:anywhere;border:0;background:none}
+body[data-screen=game] #game-screen .arena-status .arena-notices .pattern-notice.warning{visibility:visible}
+body[data-screen=game] #compact-hud{font:600 14px/22px Arial,sans-serif;gap:4px 14px;min-height:48px;top:calc(50% + var(--orbit-diameter)/2 + 12px)}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:calc(50% + var(--orbit-diameter)/2 + 72px);height:66px;min-height:66px}
+body[data-screen=game] #game-screen #tap-anywhere-hint strong{font-size:16px;line-height:22px;letter-spacing:.015em}
+body[data-screen=game] #game-screen #tap-anywhere-hint span{font:15px/22px Arial,sans-serif}
+body[data-screen=game] #game-screen :is(#section-goal,#practice-pace,#focus-goal){font:600 15px/22px Arial,sans-serif;white-space:normal}
+body[data-screen=game] #game-screen .daily-timer{font:600 14px/20px Arial,sans-serif}
+body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 32px),calc(var(--play-height,100dvh) - 360px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),540px))}
+body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 64px),calc(var(--play-height,100dvh) - 380px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),440px))}
+#training-dialog{box-sizing:border-box;width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));padding:20px;text-align:left;overflow-y:auto}
+#training-step{font:600 13px/20px Arial,sans-serif;color:var(--muted);margin:0 0 8px}
+#training-title{font-size:clamp(21px,5.5vw,27px);line-height:1.3;margin:0 0 12px;overflow-wrap:anywhere}
+#training-picture{display:block;width:100%;height:clamp(100px,22dvh,170px);margin:0 auto 12px}
+#training-copy{font:16px/1.55 Arial,sans-serif;margin:0 0 18px}
+#training-go,#training-skip{width:100%;min-height:48px;margin:8px 0;padding:12px;font-size:15px}
+#lesson-menu>summary{font:15px/22px Arial,sans-serif;padding:12px 0;cursor:pointer}
+#lesson-choices{display:grid;grid-template-columns:1fr;gap:8px}
+#lesson-choices button{width:100%;min-height:48px;text-align:left;font:15px/22px Arial,sans-serif;padding:10px 12px}
+.essential-rules{padding-left:22px;font:16px/1.55 Arial,sans-serif}.essential-rules li{margin:0 0 14px}
+body[data-screen=game] #game-screen .arena-messages #tutorial-instruction{font:600 16px/24px Arial,sans-serif;max-height:none;padding:4px 8px}
+body[data-screen=game] #training-controls{display:flex;justify-content:center;gap:10px}
+body[data-screen=game] #training-controls button{min-height:48px;font:600 14px/20px Arial,sans-serif;padding:10px 14px}
+body[data-screen=game][data-training=true] #game-screen .arena-messages{top:calc(50% + var(--orbit-diameter)/2 + 16px)}
+@media(max-height:540px) and (orientation:landscape){
+ body[data-screen=game][data-playstate=playing] #game-screen,body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(80px,min(calc(var(--play-height,100dvh) - 170px),calc(100vw - 320px),430px))}
+ body[data-screen=game][data-playstate=playing] #arena{top:calc(50% + 56px)}
+ body[data-screen=game] #compact-hud{top:36%;left:72%;right:12px;font-size:14px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:62%;left:72%;right:12px;height:auto;min-height:48px}
+ body[data-screen=game][data-training=true] #game-screen .arena-messages{top:40%}
+ #training-picture{height:90px}
+}
+
+/* Open mobile HUD layout: separate score, progress, and status areas. */
+body[data-screen=game][data-playstate=playing] #game-screen .game-nav{top:calc(8px + env(safe-area-inset-top,0px));height:76px;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--surface);grid-template-columns:40px minmax(0,1.2fr) minmax(0,1fr) 40px;gap:8px}
+body[data-screen=game] #game-screen .stat{min-width:0;text-align:left}
+body[data-screen=game] #game-screen .main-score{padding-left:4px}
+body[data-screen=game] #game-screen .stat>span{font:600 12px/18px Arial,sans-serif;letter-spacing:.06em;color:var(--muted)}
+body[data-screen=game] #game-screen .stat strong{font:700 clamp(20px,6vw,28px)/32px Arial,sans-serif;color:var(--ink)}
+body[data-screen=game] #game-screen .right-stat strong{font-size:20px}
+body[data-screen=game] #back-home{width:40px;min-height:48px;padding:0;display:grid;place-items:center;font-size:24px}
+body[data-screen=game] #pause{top:calc(var(--play-top,0px) + 22px + env(safe-area-inset-top,0px));right:calc(var(--screen-gutter) + 8px);width:40px;height:48px;min-height:48px;border:0;border-radius:10px;background:transparent}
+body[data-screen=game][data-pause-side=left] #pause{left:calc(var(--screen-gutter) + 8px);right:auto}
+body[data-screen=game][data-playstate=playing] #game-screen .level-progress-track{top:calc(94px + env(safe-area-inset-top,0px));left:calc(var(--screen-gutter) + 8px);right:calc(var(--screen-gutter) + 8px);height:7px}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-status{top:calc(113px + env(safe-area-inset-top,0px))}
+body[data-screen=game] #compact-hud{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:440px;margin-inline:auto;min-height:70px;text-align:center}
+body[data-screen=game] #compact-hud>span{min-width:0;padding:8px 10px;white-space:normal;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;font:600 14px/21px Arial,sans-serif}
+body[data-screen=game] #compact-hud #compact-combo{grid-column:1/-1;background:transparent;border:0;padding:0;color:var(--muted)}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:calc(50% + var(--orbit-diameter)/2 + 108px)}
+body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 32px),calc(var(--play-height,100dvh) - 420px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),540px))}
+body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 64px),calc(var(--play-height,100dvh) - 440px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),440px))}
+body[data-screen=game][data-playstate=paused] #pause{display:none}
+body[data-screen=game][data-training=true] #game-screen .arena-messages{top:calc(50% + var(--orbit-diameter)/2 + 16px)}
+@media(max-height:540px) and (orientation:landscape){
+ body[data-screen=game][data-playstate=playing] #game-screen,body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(80px,min(calc(var(--play-height,100dvh) - 210px),calc(100vw - 320px),430px))}
+ body[data-screen=game][data-playstate=playing] #arena{top:calc(50% + 70px)}
+ body[data-screen=game] #compact-hud{left:70%;right:12px;top:39%;grid-template-columns:1fr;gap:6px;min-height:0}
+ body[data-screen=game] #compact-hud>span{padding:5px 8px;font-size:13px;line-height:18px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:76%;left:70%;right:12px}
+ body[data-screen=game] #game-screen #tap-anywhere-hint strong{font-size:13px;line-height:18px}
+ body[data-screen=game] #game-screen #tap-anywhere-hint span{font-size:13px;line-height:18px}
+ body[data-screen=game][data-training=true] #game-screen .arena-messages{top:45%}
+}

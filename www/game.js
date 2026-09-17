@@ -244,50 +244,30 @@ function updateExtras(){
   $('run-goal').textContent=`${runFocus==='sparks'?'Sparks':runFocus==='perfects'?'Perfects':'Survive'} · ${Math.min(displayGoal,displayCurrent)}/${displayGoal}${runFocus==='survive'?(levelGoal?' levels':' sec'):''}${focusDone?' ✓':''}`;
 }
 const TRAINING = [
- ['You control the ball','The ball moves by itself. Tap the play area or press Space to switch to the blue arc. Try one switch.'],
- ['Collect a spark','The gold spark marks a safe ring. Switch to its ring and collect it. Six sparks earn one shield charge.'],
- ['Avoid a barrier','Coral arcs are dangerous. Switch to the open ring before the barrier reaches you. You can retry safely here.'],
- ['Feel a shield','This practice gives you one shield. Let the coral barrier touch you: the shield ring breaks, but you keep playing. Two circles mean two charges.'],
- ['Make a perfect shift','Wait until the approaching barrier is close, then switch away. The gold timing cue marks the window. A perfect dodge earns +25.'],
- ['Choose either direction','A third ring is added. Swipe toward the centre to move inward; swipe away to move outward. Try both. On a keyboard use Arrow Up for inward and Arrow Down for outward. Taps and Space still follow the blue arc.'],
- ['Moving barriers','Watch the coral arc drift along its ring. Move to the safe ring before it arrives. The warning stays above the arena.'],
- ['Pulse gates','This barrier opens and closes. Watch its rhythm, then switch to the safe ring. You never need to gamble on a closing gap.'],
- ['Try Fever','Consecutive perfects build multipliers. Six activate five seconds of invincibility and double points. This demo gives you Fever: let the barrier touch you.'],
- ['Try Spark Rush','Three outlined amber coins in succession earn five seconds of safe coin collecting. Each Rush coin gives 100 points, without combo stacking. This practice activates it for you. Follow the blue arc: Fire Ball lasts five seconds. Speed stays normal unless the optional 3× boost is enabled in Settings.'],
- ["Near-miss bonus", "A late but safe switch can earn CLOSE +5. It is optional: safe early moves are always valid. Try switching just after the gold perfect window."],
- ["Two shield charges", "From five rings you can hold two shields. Two outlines surround your ball. Let two separated barriers touch you and watch each outline disappear."],
- ["Earn a shield", "Six sparks fill one shield charge. You start with five here. Collect the next gold diamond to earn a shield."],
- ["Special coin chain", "Outlined amber coins are special. Collect three in succession to earn Spark Rush. Missing one resets this chain; ordinary sparks do not. Try three here."],
- ["Optional bonus route", "Pink diamonds give extra points. An outlined bonus also adds one shield-charge step, not a whole shield. Follow the safe gold ring first, then choose the bonus ring."],
- ["Boss: alternating gaps", "This boss alternates its safe gap between neighbouring rings. Practise three deliberate switches. Learn the order; speed does not jump."],
- ["Boss: sweeping gaps", "The safe route travels inward and then outward. Watch each next gap early. Practise following three moving barriers."],
- ["Boss: timing gates", "This boss opens and closes its barriers. A safe ring always remains. Practise three gates; you do not need to risk a closing barrier."],
- ["Smooth level changes", "Your ball keeps its position while the new ring fades in. Follow the blue arc after the safe stretch. Try a switch once the third ring appears."],
- ["Five-level breaks", "Every five levels play pauses. Continue when ready or Finish & save. In this unranked demo, try the pause button and resume. Nothing is submitted."],
- ["Daily and weekly runs", "Daily players share a two-minute course. Weekly adds a rule such as No Fever, double spark points or one shield maximum. Each has a separate board. Practise one safe dodge."],
- ["Ready to play", "Practice never changes your ranking. You can repeat any lesson, pause anytime, or finish a ranked run at a break without losing its score."]
+ ['Tap to shift','The ball moves by itself. Tap anywhere in the play area to move to the blue arc. Try one tap.'],
+ ['Collect gold sparks','Move to the gold spark. Six sparks give you a shield. Purple bonus coins are optional.'],
+ ['Avoid coral barriers','Tap before the barrier reaches you. Blue shows where your next tap goes. Move early enough to land safely.'],
+ ['Your shield protects you','A circle around the ball absorbs one hit. Try it here: let the barrier touch your shield.'],
+ ['Pause and save','Use Pause whenever you need a break. Classic saves a checkpoint every five levels. Choose Save & Exit there, then Resume on Home.']
 ];
-let trainingWaiting=false,trainingElapsed=0,trainingDirections=0,trainingWins=0,trainingDidPause=false;
+let trainingWaiting=false,trainingElapsed=0;
 function showTrainingStep(step){
- tutorialStage=step;trainingWaiting=true;trainingElapsed=0;trainingWins=0;trainingDidPause=false;levelTransition=null;rows=[];rushTime=0;rushCoins=[];feverTime=0;window.LoopShiftMusic?.setRush?.(false);
+ step=Math.max(0,Math.min(TRAINING.length-1,step));tutorialStage=step;trainingWaiting=true;trainingElapsed=0;levelTransition=null;rows=[];rushTime=0;rushCoins=[];feverTime=0;window.LoopShiftMusic?.setRush?.(false);
  $('lesson-menu').open=false;
  $('training-step').textContent=`GUIDED PRACTICE · ${step+1} / ${TRAINING.length}`;
  $('training-title').textContent=TRAINING[step][0];$('training-copy').textContent=TRAINING[step][1];
- $('training-go').textContent=step===TRAINING.length-1?'Finish tutorial':'Try it';
+ $('training-go').textContent=step===TRAINING.length-1?'Done — back to Home':'Try it';
+ $('training-picture').dataset.lesson=['tap','spark','barrier','shield','save'][step];
  $('training-dialog').showModal();$('training-go').focus();
 }
 function beginTrainingStep(){
  $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;ringCount=2;lane=1;radius=laneRadius(lane);shield=0;charge=0;rushChain=0;
  $('tutorial-instruction').textContent=TRAINING_HINTS[tutorialStage];
- if(tutorialStage===TRAINING.length-1){crash(null,true);return;}
- if(tutorialStage>=10){beginExtraLesson();return;}
- if(tutorialStage===9){startRush();return;}
- if(tutorialStage===8){feverTime=5;}
- if(tutorialStage===5){ringCount=3;lane=1;radius=laneRadius(lane);trainingDirections=0;}
+ if(tutorialStage===TRAINING.length-1){exitTraining();return;}
  if(tutorialStage===3){shield=1;shieldSound('gain1');}
- if((tutorialStage>=1&&tutorialStage<=4)||tutorialStage>=6){
+ if(tutorialStage>=1&&tutorialStage<=3){
  const sparkLane=tutorialStage===1?(lane+1)%ringCount:(lane+1)%ringCount;
- rows=[{angle:angle+1.4,sparkLane,hazardLanes:tutorialStage===1?[]:[lane],hit:tutorialStage===1,collected:tutorialStage!==1,passed:false,open:tutorialStage===1,pattern:tutorialStage===6?'moving':tutorialStage===7?'pulse':'classic',locked:true}];
+ rows=[{angle:angle+1.4,sparkLane,hazardLanes:tutorialStage===1?[]:[lane],hit:tutorialStage===1,collected:tutorialStage!==1,passed:false,open:tutorialStage===1,pattern:'classic',locked:true}];
  }
  $('tutorial-instruction').textContent=TRAINING_HINTS[tutorialStage];$('shift').focus();
 }
@@ -295,71 +275,23 @@ function exitTraining(){trainingWaiting=false;$('training-dialog').close();mode=
 function completeTrainingLesson(step){showTrainingStep(step);$('training-step').textContent='✓ Lesson complete · '+(step+1)+' / '+TRAINING.length;$('announcement').textContent='Lesson complete. '+TRAINING[step][0];}
 function updateTutorial(dt){
  if(trainingWaiting)return;
- if(tutorialStage>=10){updateExtraLesson(dt);return;}
- if(tutorialStage===9){gameTime+=dt;updateRush(dt);if(rushTime===0)completeTrainingLesson(10);return;}
  gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
- if((tutorialStage===0&&tutorialShift)||(tutorialStage===5&&trainingDirections===3)){completeTrainingLesson(tutorialStage+1);return;}
+ if(tutorialStage===0&&tutorialShift){completeTrainingLesson(tutorialStage+1);return;}
  for(const row of rows){
- if(tutorialStage===6)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
- if(tutorialStage===7)row.open=Math.sin(trainingElapsed*3)>0;
  const delta=row.angle-angle;
- if(tutorialStage===8&&delta<.08){feverTime=0;completeTrainingLesson(9);return;}
  if(tutorialStage===1&&!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);completeTrainingLesson(2);return;}
  if(delta<=.08&&tutorialStage===3){shield=0;shieldSound('break');shatterShield();completeTrainingLesson(4);return;}
- if(delta<-.12&&(tutorialStage===2||tutorialStage===4||tutorialStage===6||tutorialStage===7)){
+ if(delta<-.12&&tutorialStage===2){
  const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
- const perfect=tutorialStage!==4||row.perfectCandidate;
- if(safe&&perfect){if(tutorialStage===4){score+=25;tone(880,.12);}completeTrainingLesson(tutorialStage+1);return;}
- $('tutorial-instruction').textContent=tutorialStage===4?'Try again: switch just before the coral arc arrives.':'Try again: switch away from the coral barrier.';
+ if(safe){completeTrainingLesson(tutorialStage+1);return;}
+ $('tutorial-instruction').textContent='Try again: tap before the coral barrier reaches you.';
  row.hazardLanes=[lane];row.sparkLane=(lane+1)%ringCount;row.angle=angle+1.4;
  }
  if(delta<-.2&&tutorialStage===1){row.angle=angle+1.4;}
  }
  updateHUD();
 }
-const TRAINING_HINTS=['Tap once to follow the blue arc.','Switch to the gold diamond.','Switch away from the coral barrier.','Let one barrier use your shield.','Switch during the gold timing cue.','Try an inward and an outward swipe.','Dodge the drifting coral arc.','Follow the safe gap beside the gate.','Fever is active: try touching the barrier.','Fire ball: collect coins for 100 points each.','Try a late safe switch for CLOSE +5.','Let two hits use your two shields.','Collect one spark to complete your charge.','Collect three outlined amber coins.','Gold first; the outlined pink bonus is optional.','Follow three alternating gaps.','Follow three sweeping gaps.','Dodge three timing gates.','Wait for the new ring, then switch.','Pause, then tap Resume.','Try one safe dodge.','Practice complete.'];
-function trainingRow(){
- let safe=(lane+1)%ringCount;
- if(tutorialStage===16)safe=Math.max(0,Math.min(ringCount-1,lane+(trainingWins<2?-1:1)));
- if(safe===lane)safe=lane===0?1:lane-1;
- const collectible=[12,13].includes(tutorialStage);
- rows=[{angle:angle+1.4,baseAngle:angle+1.4,sparkLane:safe,hazardLane:lane,hazardLanes:collectible?[]:[lane],hit:collectible,collected:!collectible&&tutorialStage!==14,passed:false,open:collectible,pattern:[16].includes(tutorialStage)?'moving':tutorialStage===17?'pulse':'classic',locked:true,special:tutorialStage===13,bonusLane:tutorialStage===14?lane:null,shieldBonus:tutorialStage===14,bonusCollected:false}];
-}
-function beginExtraLesson(){
- ringCount=[11].includes(tutorialStage)?5:tutorialStage===16?3:2;lane=ringCount-1;radius=laneRadius(lane);shield=tutorialStage===11?2:0;charge=tutorialStage===12?5:0;trainingWins=0;
- if(tutorialStage!==18&&tutorialStage!==19)trainingRow();
- updateHUD();$('shift').focus({preventScroll:true});
-}
-function updateExtraLesson(dt){
- if(tutorialStage===13&&rushTime>0){gameTime+=dt;updateRush(dt);if(!rushTime)completeTrainingLesson(14);return;}
- gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
- if(tutorialStage===18){if(trainingElapsed>=1&&ringCount===2){const fromRadii=[laneRadius(0),laneRadius(1)],fromColor=levelColor();ringCount=3;levelTransition={elapsed:0,oldRings:2,fromRadii,fromColor};}updateLevelTransition(dt);if(trainingElapsed>=2&&tutorialShift){levelTransition=null;completeTrainingLesson(19);}updateHUD();return;}
- if(tutorialStage===19){if(trainingDidPause)completeTrainingLesson(20);return;}
- for(const row of rows){
-  if(tutorialStage===16)row.angle+=Math.sin(trainingElapsed*2)*dt*.18;
-  if(tutorialStage===17)row.open=Math.sin(trainingElapsed*3)>0;
-  const delta=row.angle-angle,atSpark=Math.abs(radius-laneRadius(row.sparkLane))<.032;
-  if([12,13].includes(tutorialStage)&&!row.collected&&Math.abs(delta)<.1&&atSpark){row.collected=true;sparks++;trainingWins++;tone(800,.12);if(tutorialStage===12){charge=0;shield=1;shieldSound('gain1');}else rushChain=trainingWins;}
-  if(tutorialStage===11&&delta<=.08&&!row.hit&&row.hazardLanes.includes(lane)){row.hit=true;shield--;trainingWins++;shieldSound('break');shatterShield();}
-  if(tutorialStage===14&&delta<-.16&&!row.passed){row.passed=true;if(atSpark){trainingWins=1;$('tutorial-instruction').textContent='Safe! Now switch to the outlined pink bonus.';}else{trainingRow();return;}}
-  if(tutorialStage===14&&trainingWins===1&&!row.bonusCollected&&Math.abs(delta+.4)<.07&&Math.abs(radius-laneRadius(row.bonusLane))<.032){row.bonusCollected=true;score+=40;charge++;trainingWins=2;feedback('bonus');}
-  const end=tutorialStage===14?-.6:-.18;
-  if(delta<end){
-   const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
-   let success=false;
-   if(tutorialStage===10){success=safe&&row.closeCandidate;if(success){score+=5;showEffect('CLOSE! +5');}}
-   else if(tutorialStage===11)success=trainingWins>=2;
-   else if(tutorialStage===12)success=shield===1;
-   else if(tutorialStage===13)success=trainingWins>=3;
-   else if(tutorialStage===14)success=trainingWins===2;
-   else{if(safe)trainingWins++;success=trainingWins>=([15,16,17].includes(tutorialStage)?3:1);}
-   if(success){if(tutorialStage===13){startRush();return;}completeTrainingLesson(tutorialStage+1);return;}
-   if(tutorialStage===13&&!row.collected){trainingWins=0;rushChain=0;}
-   $('tutorial-instruction').textContent=tutorialStage===10?'Try again: switch just after the gold timing cue.':TRAINING_HINTS[tutorialStage];trainingRow();return;
-  }
- }
- updateHUD();
-}
+const TRAINING_HINTS=['Tap once to follow the blue arc.','Tap to collect the gold spark.','Tap away from the coral barrier.','Let the barrier touch your shield.','Pause anytime. Save at five-level checkpoints.'];
 function dailyShareText(){
   const current=new Date().toISOString().slice(0,10)===dailyRun.day;
   return `Can you beat my score? I scored ${score} in Loop Shift’s daily challenge (${dailyRun.day}). ${current?'Play the same course before 00:00 UTC':'That course has ended; today has a new challenge'}: ${location.origin||''}${location.pathname||'/'}#daily`;
@@ -919,7 +851,7 @@ function shift(direction=0){
     const seconds=(next.angle-angle)/(roundKind==='tutorial'?.6:speedNow());
     if(seconds<.65){next.attempted=true;next.perfectCandidate=seconds>=.20&&seconds<=.38;next.closeCandidate=seconds>=.14&&seconds<.20;}
   }
-  if(roundKind==='tutorial'){tutorialShift=true;if(tutorialStage===5&&direction)trainingDirections|=direction<0?1:2;}
+  if(roundKind==='tutorial')tutorialShift=true;
   shiftDirection=movement;lane=target;landing=target;landingTime=0;updateGuide();
 }
 function setPaused(paused, moveFocus=true){
@@ -927,7 +859,6 @@ function setPaused(paused, moveFocus=true){
   if(!paused&&ringLessonPending){showRingLesson();return;}
   if(paused && mode==='playing'){
     autoSaveScore(true);
-    if(roundKind==='tutorial'&&tutorialStage===19)trainingDidPause=true;
     $('section-choices').hidden=true;$('break-reward').textContent='';$('practice-failure').hidden=true;
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;$('result-progress').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;$('comfort-check').hidden=false;$('comfort-response').textContent='';
@@ -1383,7 +1314,7 @@ function beginGesture(event){
  if(event.isPrimary===false||(event.button!==undefined&&event.button!==0)||screen!=='game'||mode!=='playing'||trainingWaiting)return;
  if(event.target.id!=='shift'&&event.target.closest?.('button,a,input,textarea,select,details,dialog'))return;
  event.preventDefault();
- if(!swipeControls&&!(roundKind==='tutorial'&&tutorialStage===5)){gesture=null;tapShift(event);return;}
+ if(!swipeControls||roundKind==='tutorial'){gesture=null;tapShift(event);return;}
  const box=$('arena').getBoundingClientRect(),cx=(box.left??0)+box.width/2,cy=(box.top??0)+(box.height??box.width)/2;
  gesture={id:event.pointerId,x:event.clientX,y:event.clientY,cx,cy,moved:false};
  $('game-screen').setPointerCapture?.(event.pointerId);
