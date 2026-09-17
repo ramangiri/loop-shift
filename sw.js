@@ -1,4 +1,4 @@
-const CACHE = 'loop-shift-safe-guide-feedback-54';
+const CACHE = 'loop-shift-safe-guide-feedback-55';
 const FILES = ['./','./index.html','./style.css','./mobile.css','./arcade.woff','./avatars.js','./challenge-picker.js','./home-navigation.js','./player-feedback.js','./events.css','./responsive.css','./social.js','./result-tools.js','./game.js','./leaderboard.js','./music.js','./native-bridge.js','./apple-touch-icon.png','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 const ASSET_URLS = new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
