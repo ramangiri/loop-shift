@@ -59,3 +59,25 @@
  function addGuide(){const list=document.querySelector('.essential-rules');if(!list||document.getElementById('special-coin-guide'))return;const li=document.createElement('li');li.id='special-coin-guide';li.innerHTML='<strong>Choose special collectibles.</strong> Purple gem <b>+100</b>, cyan star <b>+250</b>, golden crown <b>+500</b>. They are optional: missing one costs nothing, and the blue guide always prioritises survival.';list.appendChild(li);const legend=document.createElement('div');legend.className='special-coin-legend';legend.innerHTML='<strong>SPECIAL COLLECTIBLES</strong><span>◆ Purple Gem +100</span> · <span>★ Cyan Star +250</span> · <span>♛ Golden Crown +500</span><br><small>Gem from Level 1 · Star from Level 11 · Crown from Level 21</small>';list.parentElement.appendChild(legend);}
  addGuide();function frame(){try{assignSpecials();resolveSpecials();zoneMoment();checkpointPulse();renderSpecials();}catch(error){console.warn('Loop Shift engagement layer:',error);}requestAnimationFrame(frame);}requestAnimationFrame(frame);
 })();
+
+/* Tap-anywhere responsiveness hotfix.
+   A deliberate tap should always produce a ring change. The original guide can
+   legitimately return the current lane (HOLD), which previously made the tap
+   look lost. Keep guided movement when it has a destination; otherwise choose
+   the next adjacent ring. Also shorten the anti-double-tap guard for fast play. */
+(() => {
+ const originalShift=shift;
+ shift=function(direction=0){
+  if(trainingWaiting||screen!=='game'||mode!=='playing'||startDelay>0)return;
+  if(gameTime-lastShift<.055)return;
+  if(direction)return originalShift(direction);
+  const guided=guidedTarget();
+  if(guided!==lane){
+   if(gameTime-lastShift<.095)lastShift=gameTime-.096;
+   return originalShift();
+  }
+  const fallback=lane<=0?1:lane>=ringCount-1?-1:(shiftDirection<0?-1:1);
+  if(gameTime-lastShift<.095)lastShift=gameTime-.096;
+  return originalShift(fallback);
+ };
+})();
