@@ -1220,7 +1220,6 @@ $('clear-friend-target').addEventListener('click',()=>window.LoopShiftFriendTarg
 syncFocus();
 syncPauseSide();
 $('pause-side').addEventListener('click',()=>{pauseLeft=!pauseLeft;try{localStorage.setItem('loop-shift-pause-left',String(pauseLeft));}catch{}syncPauseSide();});
-$('minute-play').addEventListener('click',startMinute);
 $('focus-toggle').addEventListener('click',()=>{focusEnabled=!focusEnabled;try{localStorage.setItem('loop-shift-focus',String(focusEnabled));}catch{}syncFocus();});
 $('arena-size-toggle').addEventListener('click',()=>{smallArena=!smallArena;try{localStorage.setItem('loop-shift-small-arena',String(smallArena));}catch{}syncFocus();resize();});
 for(const seconds of [60,120,180])$('break-'+seconds).addEventListener('click',()=>{breakSeconds=seconds;try{localStorage.setItem('loop-shift-break-seconds',String(seconds));}catch{}syncFocus();});
@@ -1277,7 +1276,6 @@ $('settings-close').addEventListener('click',()=>{$('settings-dialog').close();$
 $('share-daily').addEventListener('click',shareDaily);
 syncControls();
 $('control-mode').addEventListener('click',()=>{swipeControls=!swipeControls;gesture=null;try{localStorage.setItem('loop-shift-swipe-controls',String(swipeControls));}catch{}syncControls();});
-$('focus-play').addEventListener('click',()=>{focusEnabled=true;try{localStorage.setItem('loop-shift-focus','true');}catch{}syncFocus();startEndless();});
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
 $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
 $('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';});

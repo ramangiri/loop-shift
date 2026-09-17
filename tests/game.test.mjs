@@ -655,7 +655,7 @@ autoCheckpoint.run('finishAndSave()');assert.equal(autoCheckpoint.run('readCheck
 const liveSave=game();liveSave.click('home-play');liveSave.run('globalThis.savedScores=[];window.LoopShiftBoard={submit:(s,t)=>savedScores.push([s,t])};startDelay=0;score=123;gameTime=15;updateHUD();updateHUD()');assert.equal(liveSave.run('savedScores.length'),1);liveSave.run('score=200;gameTime=20;setPaused(true)');assert.equal(liveSave.run('savedScores.length'),2);liveSave.run('roundKind="daily";score=300;gameTime=40;autoSaveScore(true)');assert.equal(liveSave.run('savedScores.length'),2);
 
 // New short mode freezes on pause and keeps ranked scores/checkpoints separate.
-const minute=game(false,null,false,false,false);minute.click('minute-play');
+const minute=game(false,null,false,false,false);minute.run('startMinute()');
 assert.equal(minute.run('roundKind'),'minute');assert.equal(minute.run('isRankedMode()'),false);
 minute.run('startDelay=0;rows=[];gameTime=20;setPaused(true);update(5)');assert.equal(minute.run('gameTime'),20);
 minute.run('setPaused(false);startDelay=0;rows=[];gameTime=59.99;score=321;update(.02)');
@@ -665,7 +665,7 @@ minute.click('play');assert.equal(minute.run('startDelay'),.45);assert.equal(min
 const keptCheckpoint=game(false,null,false,false,false);keptCheckpoint.click('home-play');keptCheckpoint.run('startDelay=0;level=5;passes=60;score=500;levelUp(6)');keptCheckpoint.click('save-checkpoint');
 const savedCheckpoint=keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest');
 keptCheckpoint.run("roundKind='practice';practiceLevel=1;start({fresh:true})");assert.equal(keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest'),savedCheckpoint);
-keptCheckpoint.click('minute-play');assert.equal(keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest'),savedCheckpoint);
+keptCheckpoint.run('startMinute()');assert.equal(keptCheckpoint.store.get('loop-shift-checkpoint-v1-guest'),savedCheckpoint);
 const waitingResume=game(false,keptCheckpoint.store,false,false,false);
 waitingResume.run('globalThis.resumeReady=false;globalThis.resumeAction=null;window.LoopShiftBoard={ready:()=>resumeReady,askName:fn=>resumeAction=fn,player:()=>null,beginRound(){},submit(){},saveProgress(){}}');
 waitingResume.click('resume-checkpoint');assert.equal(waitingResume.run('mode'),'ready');assert.ok(waitingResume.run('readCheckpoint()'));
@@ -685,7 +685,7 @@ const localSave=game();localSave.click('home-play');localSave.run('score=987;gam
 console.log('PASS: minute mode, checkpoint preservation/setup, Rush/rest recovery, slower practice, pause placement, local saves and visible personal progress.');
 
 // Mobile input: touch-down must move once; finger release must not move again.
-const mobileInput=game();mobileInput.click('minute-play');mobileInput.run('startDelay=0;lastShift=-1');
+const mobileInput=game();mobileInput.run('startMinute()');mobileInput.run('startDelay=0;lastShift=-1');
 const inputLane=mobileInput.run('lane');
 mobileInput.run("globalThis.mobileTouch={pointerId:1,button:0,isPrimary:true,target:{id:'shift',closest:()=>null},clientX:190,clientY:250,preventDefault(){}};beginGesture(mobileTouch)");
 assert.notEqual(mobileInput.run('lane'),inputLane,'Instant tap shifts on touch-down');
@@ -697,13 +697,13 @@ assert.equal(game(false,mobileInput.store).run('swipeControls'),true,'Control pr
 mobileInput.run('shield=1;charge=2;rushTime=1.2;updateHUD()');assert.match(mobileInput.nodes.get('compact-power').textContent,/ending/);assert.match(mobileInput.nodes.get('compact-shield').textContent,/Shields 1/);
 
 // Back closes dialogs before leaving; it never resumes a run underneath a dialog.
-const modalBack=game(true);modalBack.click('minute-play');modalBack.click('pause');modalBack.click('pause-settings');
+const modalBack=game(true);modalBack.run('startMinute()');modalBack.click('pause');modalBack.click('pause-settings');
 modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('settings-dialog').open,false);assert.equal(modalBack.run('mode'),'paused');assert.equal(modalBack.run('screen'),'game');
 modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('exit-dialog').open,true);
 modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('exit-dialog').open,false);assert.equal(modalBack.run('mode'),'paused');
 
 // A 20fps phone advances by real elapsed time; long interruptions pause safely.
-const slowPhone=game();slowPhone.click('minute-play');slowPhone.run('startDelay=0;rows=[];lastTime=0;frameCarry=0;frame(50)');
+const slowPhone=game();slowPhone.run('startMinute()');slowPhone.run('startDelay=0;rows=[];lastTime=0;frameCarry=0;frame(50)');
 assert.ok(Math.abs(slowPhone.run('gameTime')-.05)<.009,'A slow frame must not silently shorten elapsed time');
 const beforeStall=slowPhone.run('gameTime');slowPhone.run('frame(900)');assert.equal(slowPhone.run('mode'),'paused');assert.equal(slowPhone.run('gameTime'),beforeStall,'A long interruption pauses rather than playing unseen');
 console.log('PASS: instant touch, gesture preference, compact HUD, dialog Back and frame timing.');
