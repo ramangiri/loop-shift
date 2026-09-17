@@ -119,7 +119,7 @@
     }catch{blocked=true;label();}
   }
   function play(value){
-    setScene(value||document.body?.dataset?.screen==='home'?'home':'game');
+    setScene(value||(document.body?.dataset?.screen==='home'?'home':'game'));
     active=true;begin();
   }
   function pause(){active=false;hiddenScene='';stop();}
