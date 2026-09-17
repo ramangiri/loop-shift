@@ -75,6 +75,8 @@ export async function api(request, env) {
       const name = cleanName(data.name);
       if (!name) return json({ error: 'Use 1–16 letters or numbers. Spaces, dots, apostrophes, hyphens and underscores are OK.' }, 400);
       if(data.avatar!==undefined && (typeof data.avatar!=='string'||!/^avatar-(?:[1-9]|1[0-2])$/.test(data.avatar)))return json({error:'Choose an avatar from the list.'},400);
+      const duplicate = await db.prepare('SELECT id FROM players WHERE id <> ? AND lower(trim(name)) = lower(trim(?)) AND id NOT IN (SELECT player_id FROM board_removals) LIMIT 1').bind(who.id, name).first();
+      if (duplicate) return json({ error: 'This nickname is already taken. Try another.' }, 409);
       await db.prepare("INSERT INTO players (id, name, avatar, best, achieved_at, last_submit_at) VALUES (?, ?, ?, 0, ?, 0) ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar = CASE WHEN excluded.avatar='' THEN players.avatar ELSE excluded.avatar END").bind(who.id, name, data.avatar||'', now).run();
       return json(await board(db, who.id), 200, who.cookie ? { 'Set-Cookie': who.cookie } : {});
     }
