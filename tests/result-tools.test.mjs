@@ -42,3 +42,11 @@ test('opening Share prepares a card and the share action works before PNG genera
   h.nodes.get('card-panel').open=true;h.nodes.get('card-panel').events.toggle();await settle();
   assert.equal(scrolled,true);assert.equal(h.nodes.get('card-preview').hidden,false);
 });
+
+test('Copy link has a selectable fallback and canceled sharing keeps the result',async()=>{
+ const h=uiHarness({navigator:{share:async()=>{const e=new Error();e.name='AbortError';throw e}}});h.load('result-tools.js');
+ h.scope.window.LoopShiftResults.finish(result,null);
+ await h.click('card-copy');assert.equal(h.nodes.get('card-copy-fallback').hidden,false);assert.equal(h.nodes.get('card-copy-fallback').value,result.url);
+ await h.click('card-share');assert.match(h.nodes.get('card-status').textContent,/canceled/);
+ h.scope.window.LoopShiftResults.reset();assert.equal(h.nodes.get('card-copy-fallback').hidden,true);
+});

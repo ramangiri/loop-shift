@@ -7,6 +7,7 @@
     generation++;stop();frames=[];result=null;loss=null;card=null;
     if(cardUrl)URL.revokeObjectURL(cardUrl);cardUrl=null;
     for(const id of ['result-extras','replay-panel','card-preview','card-share','card-download'])el(id).hidden=true;
+    el('card-copy-fallback').hidden=true;el('card-copy-fallback').value='';
     el('replay-panel').open=false;el('card-panel').open=false;el('card-status').textContent='';el('card-create').disabled=false;
   }
   const wantsFrame=time=>!frames.length||time-frames.at(-1).time>=1/30-1e-6;
@@ -37,7 +38,7 @@
     for(let i=0;i<frame.shield;i++){ctx.strokeStyle='#d6ff62';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,15+i*6,0,TAU);ctx.stroke();}
     if(highlight&&loss){
       const safe=frame.radii[loss.safe],hit=frame.radii[loss.lane];
-      if(safe!==undefined){arc(safe,0,TAU,'#83f5c0',4);ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillStyle='#83f5c0';ctx.fillText(`SAFE: RING ${loss.safe+1}`,320,300);}
+      if(safe!==undefined){arc(safe,0,TAU,'#72e6ff',4);ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillStyle='#72e6ff';ctx.fillText(`SAFE: RING ${loss.safe+1}`,320,300);}
       if(hit!==undefined){arc(hit,loss.angle-.11,loss.angle+.11,'#fff8ef',22);arc(hit,loss.angle-.07,loss.angle+.07,'#ff776d',14);}
       ctx.font='18px Arial';ctx.fillStyle='#d9e6dc';ctx.textAlign='center';ctx.fillText('Count rings from the centre',320,335);
     }
@@ -49,7 +50,7 @@
       const time=Math.min(end,from+(now-beginning)/2000);let index=frames.findIndex(f=>f.time>=time);if(index<0)index=frames.length-1;
       const b=frames[index],a=frames[Math.max(0,index-1)],mix=b.time===a.time?1:Math.max(0,Math.min(1,(time-a.time)/(b.time-a.time)));
       paint({...b,angle:a.angle+(b.angle-a.angle)*mix,radius:a.radius+(b.radius-a.radius)*mix},time>=end-.3);
-      if(time<end)raf=requestAnimationFrame(tick);else{raf=null;el('replay-caption').textContent='White/coral: collision · Mint: safe ring';}
+      if(time<end)raf=requestAnimationFrame(tick);else{raf=null;el('replay-caption').textContent='White/coral: collision · Blue: safe ring';}
     };raf=requestAnimationFrame(tick);
   }
   async function createCard(){
@@ -82,10 +83,10 @@
     if(!result)return;
     const text=`Can you beat my score? ${result.score} points in Loop Shift · Level ${result.level} · Best chain ${result.chain}.`;
     try{
-      if(card&&navigator.share&&navigator.canShare?.({files:[card]})){await navigator.share({files:[card],title:'Loop Shift result',text,url:result.url});return;}
+      if(card&&navigator.share&&navigator.canShare?.({files:[card]})){await navigator.share({files:[card],title:'Loop Shift result',text,url:result.url});el('card-status').textContent='Share sheet completed.';return;}
       if(navigator.share){await navigator.share({title:'Loop Shift result',text,url:result.url});el('card-status').textContent='Game link shared. Use Save image for your card.';return;}
       if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text+' '+result.url);el('card-status').textContent='Result and game link copied. Use Save image for the card.';return;}
-    }catch(error){if(error.name==='AbortError')return;}
+    }catch(error){if(error.name==='AbortError'){el('card-status').textContent='Sharing canceled. Your result is still here.';return;}}
     el('card-status').textContent='Use Save image, or press and hold the card to save it. The game link is below.';
   }
   el('replay-play').addEventListener('click',playReplay);el('replay-stop').addEventListener('click',()=>{stop();if(frames.length)paint(frames.at(-1),true);});
@@ -94,6 +95,11 @@
     if(!el(id).open){if(id==='replay-panel')stop();return;}
     el(id).scrollIntoView?.({block:'start',behavior:'auto'});
     if(id==='card-panel'&&!card)createCard();
+  });
+  el('card-copy').addEventListener('click',async()=>{
+    if(!result)return;
+    try{if(!navigator.clipboard?.writeText)throw new Error();await navigator.clipboard.writeText(result.url);el('card-status').textContent='Game link copied.';}
+    catch{el('card-copy-fallback').value=result.url;el('card-copy-fallback').hidden=false;el('card-copy-fallback').focus();el('card-copy-fallback').select?.();el('card-status').textContent='Select and copy the link below.';}
   });
   el('card-create').addEventListener('click',createCard);el('card-share').addEventListener('click',shareCard);
   window.LoopShiftResults={capture,finish,reset,stop,wantsFrame};

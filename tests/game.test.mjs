@@ -26,7 +26,7 @@ function game(native = false, saved = null, reduced = false, firstLesson = false
     id, hidden: false, disabled: false, textContent: '', innerHTML: '', attrs: {}, handlers: {}, style: {}, dataset: {},
     children: Array.from({ length: 6 }, () => ({ classList: { toggle: noop } })),
     classList: { toggle: noop, add: noop, remove: noop },
-    setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, fn) { this.handlers[k] = fn; },
+    click() { this.handlers.click?.({preventDefault:()=>{}}); }, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, fn) { this.handlers[k] = fn; },
     showModal() { this.open = true; }, close() { this.open = false; },
     focus() { focus = id; }, getBoundingClientRect: () => ({ width: nodes.get('game-screen').hidden ? 0 : 390 }), getContext: () => paint
   });
@@ -141,7 +141,7 @@ assert.equal(reduced.run('shatters.length'),0);assert.equal(reduced.run('particl
 
 const n = game(true);
 n.click('home-play'); n.listeners['loopshift:pause'](); assert.equal(n.run('mode'), 'paused');
-n.click('play'); n.listeners['loopshift:back'](); assert.equal(n.run('mode'),'paused');assert.equal(n.nodes.get('exit-dialog').open,true);n.click('exit-confirm');assert.equal(n.run('screen'),'home');assert.equal(n.run('mode'),'over');
+n.click('play'); n.listeners['loopshift:back'](); assert.equal(n.run('mode'),'paused');n.listeners['loopshift:back']();assert.equal(n.nodes.get('exit-dialog').open,true);n.click('exit-confirm');assert.equal(n.run('screen'),'home');assert.equal(n.run('mode'),'over');
 n.listeners['loopshift:back'](); assert.ok(n.minimized());
 n.run('vibrate(65)'); assert.equal(n.vibration(), 65);
 
@@ -598,7 +598,7 @@ const weeklyMaster=game();weeklyMaster.click('home-play');weeklyMaster.run('roun
 console.log('PASS: journeys, exact-section practice, milestone choices, clean patterns, shield gamble, friend targets and weekly mastery.');
 
 // Radial gestures move once, cancellation never taps, boundaries never wrap.
-const gestures=game();gestures.click('home-play');gestures.run('startDelay=0;ringCount=6;lane=3;radius=laneRadius(lane);gameTime=5;lastShift=-1;');
+const gestures=game();gestures.click('control-mode');gestures.click('home-play');gestures.run('startDelay=0;ringCount=6;lane=3;radius=laneRadius(lane);gameTime=5;lastShift=-1;');
 gestures.nodes.get('arena').getBoundingClientRect=()=>({left:0,top:0,width:440,height:440});
 const gestureEvent=(x,id=1)=>({pointerId:id,clientX:x,clientY:220,isPrimary:true,button:0,target:{id:'shift',closest:()=>null},preventDefault(){}});
 const gh=gestures.nodes.get('game-screen').handlers;
@@ -697,3 +697,27 @@ slower.click('pause-side');assert.equal(slower.run('pauseLeft'),true);assert.equ
 const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,false);
 const localSave=game();localSave.click('home-play');localSave.run('score=987;gameTime=15;updateHUD()');assert.equal(localSave.store.get('loop-shift-best-v2'),'987');assert.equal(localSave.run('deviceScoreSaved'),true);
 console.log('PASS: minute mode, checkpoint preservation/setup, Rush/rest recovery, slower practice, pause placement, local saves and visible personal progress.');
+
+// Mobile input: touch-down must move once; finger release must not move again.
+const mobileInput=game();mobileInput.click('minute-play');mobileInput.run('startDelay=0;lastShift=-1');
+const inputLane=mobileInput.run('lane');
+mobileInput.run("globalThis.mobileTouch={pointerId:1,button:0,isPrimary:true,target:{id:'shift',closest:()=>null},clientX:190,clientY:250,preventDefault(){}};beginGesture(mobileTouch)");
+assert.notEqual(mobileInput.run('lane'),inputLane,'Instant tap shifts on touch-down');
+const movedLane=mobileInput.run('lane');mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
+mobileInput.click('control-mode');assert.equal(mobileInput.store.get('loop-shift-swipe-controls'),'true');
+mobileInput.run('gameTime+=.2;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
+mobileInput.run('endGesture(mobileTouch)');assert.notEqual(mobileInput.run('lane'),movedLane);
+assert.equal(game(false,mobileInput.store).run('swipeControls'),true,'Control preference persists');
+mobileInput.run('shield=1;charge=2;rushTime=1.2;updateHUD()');assert.match(mobileInput.nodes.get('compact-power').textContent,/ending/);assert.match(mobileInput.nodes.get('compact-shield').textContent,/Shields 1/);
+
+// Back closes dialogs before leaving; it never resumes a run underneath a dialog.
+const modalBack=game(true);modalBack.click('minute-play');modalBack.click('pause');modalBack.click('pause-settings');
+modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('settings-dialog').open,false);assert.equal(modalBack.run('mode'),'paused');assert.equal(modalBack.run('screen'),'game');
+modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('exit-dialog').open,true);
+modalBack.listeners['loopshift:back']();assert.equal(modalBack.nodes.get('exit-dialog').open,false);assert.equal(modalBack.run('mode'),'paused');
+
+// A 20fps phone advances by real elapsed time; long interruptions pause safely.
+const slowPhone=game();slowPhone.click('minute-play');slowPhone.run('startDelay=0;rows=[];lastTime=0;frameCarry=0;frame(50)');
+assert.ok(Math.abs(slowPhone.run('gameTime')-.05)<.009,'A slow frame must not silently shorten elapsed time');
+const beforeStall=slowPhone.run('gameTime');slowPhone.run('frame(900)');assert.equal(slowPhone.run('mode'),'paused');assert.equal(slowPhone.run('gameTime'),beforeStall,'A long interruption pauses rather than playing unseen');
+console.log('PASS: instant touch, gesture preference, compact HUD, dialog Back and frame timing.');

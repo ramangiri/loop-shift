@@ -1,3 +1,16 @@
+## Version 2.3.1 · Mobile website flow
+
+- Home has Play, Progress, and Friends destinations; Classic goals are separated from distinct modes. Focus Play has a direct entry.
+- A compact in-game strip restores shields, charge, multiplier, and the power-up countdown. Instructions and celebrations share one message area.
+- Instant tap is the default. Optional Tap + swipe persists in Settings; the directional tutorial still supports gestures.
+- Result actions stack on narrow screens; menus and expanded result panels scroll, with safe-area spacing. Landscape places status alongside the circle.
+- The first-run guide is reduced to three illustrated steps. The full interactive lesson library remains available.
+- Back closes dialogs before leaving; an active run pauses first. Paused checkpoint status states what can be restored.
+- Share supports explicit Copy link, a selectable fallback, and cancel feedback. Replay uses blue for the safe ring.
+- Cached website assets open without waiting for the hosting service. Ordinary slow frames retain elapsed time; long interruptions pause safely.
+
+Validation: automated regressions cover touch-down/release, swipe preference, Home destinations, modal Back, power-up visibility, low-frame-rate timing, cached startup and share fallback. Physical phone browser testing remains necessary. This release changes the website; it does not create an Android package.
+
 ## Version 2.3.0 · Responsive play and clearer progress
 
 - `responsive.css` owns game-screen geometry for portrait, compact landscape, desktop, and scrollable results/settings. Browser viewport changes and safe areas are respected.

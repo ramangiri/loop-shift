@@ -23,6 +23,9 @@ function updateFocusGoal(){
 let comfortRun=false,breakPending=false,activeSinceBreak=0;
 let runPreviousBest=0,minuteBest=0,deviceScoreSaved=false;
 try{minuteBest=Number(localStorage.getItem('loop-shift-minute-best'))||0;}catch{}
+let swipeControls=false;
+try{swipeControls=localStorage.getItem('loop-shift-swipe-controls')==='true';}catch{}
+function syncControls(){$('control-mode').textContent=swipeControls?'Controls: Tap + swipe':'Controls: Instant tap';$('control-mode').setAttribute('aria-pressed',String(swipeControls));}
 let slowPracticeTime=0,sectionStartSparks=0,sectionStartPerfects=0,sectionStartPasses=0,pauseLeft=false;
 try{pauseLeft=localStorage.getItem('loop-shift-pause-left')==='true';}catch{}
 function syncPauseSide(){document.body.dataset.pauseSide=pauseLeft?'left':'right';$('pause-side').textContent='Pause button: '+(pauseLeft?'Left':'Right');$('pause-side').setAttribute('aria-pressed',String(pauseLeft));}
@@ -221,7 +224,7 @@ function resultFact(){
   if(roundKind==='endless'&&journey.clean>previousRecords.clean)return `New record: ${journey.clean} levels without losing a shield!`;
   if(roundKind==='endless'&&Math.floor(passes/12)>Math.floor(previousRecords.distance/12))return `You cleared ${Math.floor(passes/12)-Math.floor(previousRecords.distance/12)} more levels than your previous best run!`;
   if(focusDone)return 'Your chosen challenge is complete. Nicely played.';
-  return perfects?`${perfects} perfect shifts this run. Build on that next time.`:`${sparks} sparks collected. Keep following the golden gap.`;
+  return perfects?`${perfects} perfect shifts this run. Build on that next time.`:`${sparks} sparks collected. Keep timing your shifts to the blue arc.`;
 }
 function updateExtras(){
   for(const id of ['run-goal','level-objective','pattern-notice','mission-line'])$(id).hidden=roundKind==='tutorial';
@@ -592,7 +595,7 @@ function updateHome(){
   if(!record?.pending)$('retry-home-score').hidden=true;
   $('device-best').textContent=best.toLocaleString();
   $('device-record').hidden=best<=0||(hasOnlineBest&&best===onlineBest);
-  $('home-play-label').textContent=mode==='paused'?'Continue game':'Play now';
+  $('home-play-label').textContent=mode==='paused'?'Continue game':focusEnabled&&!['daily','weekly'].includes($('challenge-choice').value)?'Play Focus':'Play now';
   $('home-new').hidden=mode!=='paused';
   $('home-status').hidden=mode!=='paused';
   $('home-status').textContent=mode==='paused'?`Paused · ${score} points`:'';
@@ -601,7 +604,7 @@ function showScreen(next, moveFocus=true){
   if(next==='home'&&$('ring-lesson').open)$('ring-lesson').close();
   if(next==='home' && mode==='playing')setPaused(true,false);
   screen=next;
-  if(next==='home'){window.LoopShiftResults?.stop();window.LoopShiftBoard?.refresh();window.LoopShiftSocial?.refresh();}
+  if(next==='home'){window.LoopShiftHome?.show('play');window.LoopShiftResults?.stop();window.LoopShiftBoard?.refresh();window.LoopShiftSocial?.refresh();}
   $('home-screen').hidden=next!=='home';$('game-screen').hidden=next!=='game';
   document.body.dataset.screen=next;$('pause').hidden=next!=='game';
   document.title=next==='home'?'Loop Shift — One-tap arcade':'Play — Loop Shift';
@@ -778,6 +781,10 @@ function autoSaveScore(force=false){
 function updateHUD(){
  autoSaveScore();
  $('pause-progress').hidden=mode!=='paused';
+ $('compact-hud').hidden=mode!=='playing';
+ $('compact-shield').textContent=`Shields ${shield}/${shieldCapacity()} · ${shield>=shieldCapacity()?'charged':charge+'/6 sparks'}`;
+ $('compact-power').textContent=rushTime>0?`Fire Ball ${rushTime.toFixed(1)}s${rushTime<=1.5?' · ending':''}`:feverTime>0?`Fever ${feverTime.toFixed(1)}s`:`Special coins ${rushChain}/3`;
+ $('compact-combo').textContent=`×${scoreFactor()} score`;
  const section=sectionGoal();$('section-goal').hidden=roundKind!=='endless'||focusRun||mode!=='playing';$('section-goal').textContent=`${section.name} · ${section.label} · ${Math.min(section.target,Math.max(0,section.count))}/${section.target}`;
  const syncState=window.LoopShiftBoard?.record?.();
  $('result-storage').hidden=mode!=='over'||(roundKind!=='endless'&&roundKind!=='minute')||focusRun;$('result-storage').textContent=(deviceScoreSaved?'Score saved on this device. ':'Device score could not be saved. ')+(roundKind==='minute'?'Unranked · Your one-minute best stays here.':syncState?.pending>0?'Online sync pending.':syncState?.ranked&&syncState?.connection==='online'&&Number.isSafeInteger(window.LoopShiftBoard?.best?.())&&window.LoopShiftBoard.best()>=score?'Best synced online.':syncState?.ranked?'Online save status is shown below.':'Connect and save a nickname to join the online board.');
@@ -788,7 +795,7 @@ function updateHUD(){
  if(!$('save-checkpoint').hidden)$('comfort-finish').hidden=true;
  if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
-  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=mode!=='paused'||checkpointEligible||(!isRankedMode()&&!focusRun);
+  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=true;
   updateFocusGoal();updateRushHUD();
   $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
@@ -925,7 +932,8 @@ function setPaused(paused, moveFocus=true){
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;$('result-progress').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;$('comfort-check').hidden=false;$('comfort-response').textContent='';
     window.LoopShiftMusic?.pause();mode='paused';$('overlay').hidden=false;$('overlay-kicker').textContent='TAKE A BREATHER';$('overlay-title').textContent='Round paused.';
-    $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;$('result').hidden=true;
+    $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;
+    const checkpoint=readCheckpoint();$('checkpoint-status').textContent=roundKind==='endless'?(checkpoint?`Saved checkpoint: level ${checkpoint.state.level}. This paused position lasts while the app stays open.`:'No checkpoint yet. Your first checkpoint is after level 5.'):'';$('result').hidden=true;
     $('play').innerHTML='Tap to resume';$('restart').hidden=false;$('shift').disabled=true;
     $('pause').setAttribute('aria-label','Resume game');$('announcement').textContent='Game paused.';
     $('pause-icon').setAttribute('d','m8 5 10 7-10 7Z');
@@ -1269,7 +1277,7 @@ function drawOrb(a,r,safe){
   ctx.shadowColor=ballColor();ctx.shadowBlur=(reducedMotion||softTheme)?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
-function frame(time){const dt=Math.min((time-lastTime)/1000 || 0,.035);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
+function frame(time){const elapsed=Math.max(0,(time-lastTime)/1000 || 0);if(screen==='game'&&mode==='playing'&&elapsed>.25){setPaused(true,false);$('overlay-copy').textContent='Paused after an interruption. Resume when ready.';}const dt=Math.min(elapsed,.25);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
 showExtrasHome();
 $('practice-failure').addEventListener('click',practiseFailure);
 $('section-sparks').addEventListener('click',()=>chooseSection('sparks'));
@@ -1304,11 +1312,9 @@ $('ring-lesson-play').addEventListener('click',finishRingLesson);
 $('ring-lesson').addEventListener('cancel',event=>event.preventDefault());
 let preplaySlide=0;
 const PREPLAY_SLIDES=[
- ['You are the lime ball','Tap anywhere or press Space. Move to the blue arc.','player'],
- ['Dodge the coral barriers','Switch rings before the barrier reaches you. Swipe inward or outward for an adjacent ring.','barrier'],
- ['Collect the coins','Gold sparks charge shields. Purple diamonds are optional bonuses after a barrier.','coins'],
- ['Shields and Fire Ball','Six sparks earn a shield. Three outlined special coins give a five-second bonus.','power'],
- ['Take a break and save','Ranked scores save online during play. Checkpoints save on this device at five-level breaks. Finish Run ends the run.','save']];
+ ['Tap to shift','Your ball moves by itself. Tap the play area to move to the blue arc.','player'],
+ ['Time your move','Shift before the coral barrier reaches you. Blue shows your next destination, not when to tap.','barrier'],
+ ['Collect and progress','Gold sparks charge shields. Purple bonuses are optional. Classic checkpoints save every five levels.','coins']];
 function showPreplaySlide(){const [title,copy,kind]=PREPLAY_SLIDES[preplaySlide];$('preplay-title').textContent=title;$('preplay-copy').textContent=copy;$('preplay-step').textContent=`${preplaySlide+1} / ${PREPLAY_SLIDES.length}`;$('preplay-picture').dataset.lesson=kind;$('preplay-go').textContent=preplaySlide===PREPLAY_SLIDES.length-1?'GOT IT — PLAY':'NEXT';}
 function finishPreplay(){preplaySeen=true;try{localStorage.setItem('loop-shift-preplay-v2','true');}catch{}$('preplay-dialog').close();const options=preplayOptions;preplayOptions=null;start(options);}
 $('preplay-go').addEventListener('click',()=>{if(preplaySlide<PREPLAY_SLIDES.length-1){preplaySlide++;showPreplaySlide();return;}finishPreplay();});
@@ -1336,6 +1342,9 @@ $('pause-settings').addEventListener('click',()=>{$('settings-dialog').showModal
 $('settings-open').addEventListener('click',()=>{$('settings-dialog').showModal();$('settings-close').focus();});
 $('settings-close').addEventListener('click',()=>{$('settings-dialog').close();$(screen==='game'?'play':'settings-open').focus();});
 $('share-daily').addEventListener('click',shareDaily);
+syncControls();
+$('control-mode').addEventListener('click',()=>{swipeControls=!swipeControls;gesture=null;try{localStorage.setItem('loop-shift-swipe-controls',String(swipeControls));}catch{}syncControls();});
+$('focus-play').addEventListener('click',()=>{focusEnabled=true;try{localStorage.setItem('loop-shift-focus','true');}catch{}syncFocus();startEndless();});
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
 $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
 $('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';});
@@ -1348,7 +1357,18 @@ $('back-home').addEventListener('click',requestExit);
 $('result-home').addEventListener('click',goHome);
 $('brand-home').addEventListener('click',event=>{event.preventDefault();requestExit();});
 window.addEventListener('loopshift:pause',()=>{if(mode==='playing')setPaused(true,false);});
-window.addEventListener('loopshift:back',()=>{if(screen==='game')requestExit();else window.LoopShiftNative?.minimize();});
+function handleBack(){
+ if($('name-dialog').open){$('cancel-name').click();return;}
+ if($('settings-dialog').open){$('settings-close').click();return;}
+ if($('exit-dialog').open){$('exit-dialog').close();$('play').focus();return;}
+ if($('preplay-dialog').open){$('preplay-dialog').close();preplayOptions=null;return;}
+ if($('training-dialog').open){exitTraining();return;}
+ if($('power-dialog').open||$('ring-lesson').open)return;
+ if(screen==='game'){if(mode==='playing'){setPaused(true);return;}if(mode==='paused'){requestExit();return;}goHome();return;}
+ if(window.LoopShiftHome?.back?.())return;
+ window.LoopShiftNative?.minimize();
+}
+window.addEventListener('loopshift:back',handleBack);
 window.addEventListener('popstate',syncRoute);
 window.addEventListener('hashchange',syncRoute);
 $('play').addEventListener('click',()=>{if(mode==='paused')setPaused(false);else start();});
@@ -1363,6 +1383,7 @@ function beginGesture(event){
  if(event.isPrimary===false||(event.button!==undefined&&event.button!==0)||screen!=='game'||mode!=='playing'||trainingWaiting)return;
  if(event.target.id!=='shift'&&event.target.closest?.('button,a,input,textarea,select,details,dialog'))return;
  event.preventDefault();
+ if(!swipeControls&&!(roundKind==='tutorial'&&tutorialStage===5)){gesture=null;tapShift(event);return;}
  const box=$('arena').getBoundingClientRect(),cx=(box.left??0)+box.width/2,cy=(box.top??0)+(box.height??box.width)/2;
  gesture={id:event.pointerId,x:event.clientX,y:event.clientY,cx,cy,moved:false};
  $('game-screen').setPointerCapture?.(event.pointerId);
@@ -1398,7 +1419,8 @@ document.addEventListener('keydown',(event)=>{
     if(event.target.closest?.('button, a') && event.target.id!=='shift')return;
     event.preventDefault();if(screen==='home')homePlay();else if(mode==='playing')shift();else if(mode==='ready'||mode==='over')start();else setPaused(false);
   }
-  if(screen==='game' && (event.code==='KeyP'||event.code==='Escape')){if(mode==='playing')setPaused(true);else if(mode==='paused')setPaused(false);}
+  if(event.code==='Escape'){handleBack();return;}
+  if(screen==='game' && event.code==='KeyP'){if(mode==='playing')setPaused(true);else if(mode==='paused')setPaused(false);}
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden && mode==='playing')setPaused(true,false);});
 window.addEventListener('blur',()=>{if(mode==='playing')setPaused(true,false);});
