@@ -198,7 +198,8 @@ let vibrationOn=true,shareText='',lastGuideTarget=-1;
 let landing=null,landingTime=0,landingLane=1;
 try{vibrationOn=localStorage.getItem('loop-shift-vibration')!=='false';}catch{}
 const isRankedMode=()=>!focusRun&&(roundKind==='endless'||timedRun());
-const targetSpeed=()=>(focusRun?.78:Math.min(.78+(level-1)*.035,.92))*(comfortRun?.75:1)*(slowPracticeTime>0?.65:1);
+const classicSpeed=(n)=>n<=5?.78+(n-1)*.035:.92+(Math.min(100,n)-5)*.0048;
+const targetSpeed=()=>(focusRun?.78:timedRun()?Math.min(.78+(level-1)*.035,.92):classicSpeed(level))*(comfortRun?.75:1)*(slowPracticeTime>0?.65:1);
 function startSprint(){dailyRequestId++;roundKind='sprint';dailyRun=null;start({fresh:true});}
 function startTutorial(){dailyRequestId++;roundKind='tutorial';dailyRun=null;start({fresh:true});}
 function feedback(kind){
@@ -335,29 +336,26 @@ function startPractice(){
 
 const blockedLanes=row=>row.hazardLanes || [row.hazardLane];
 const blocks=(row,n)=>blockedLanes(row).includes(n);
-// The nearest wall owns the route until it has passed. Moving early never
-// advances the guide to a later wall; another tap returns toward its entry ring.
+// The nearest uncleared hazard always owns the guide. A reached safe ring is
+// a HOLD destination, never a request to move back into that wall.
 function guidedTarget(){
-  if(rushTime>0){const coin=rushCoins.find(c=>!c.collected&&c.angle>angle);if(coin&&coin.lane!==lane)return lane+Math.sign(coin.lane-lane);}
+  if(rushTime>0){const coin=rushCoins.find(c=>!c.collected&&c.angle>angle);return coin?lane+Math.sign(coin.lane-lane):lane;}
+  const next=rows.find(row=>!row.passed&&row.angle-angle>-.108);
+  if(next&&Number.isInteger(next.sparkLane))return lane+Math.sign(next.sparkLane-lane);
+  // Bonuses can guide only after the last hazard has cleared, never before one.
   const bonus=rows.find(row=>row.bonusLane!=null&&!row.bonusCollected&&row.angle-angle<-.12&&row.angle+.4-angle>-.04);
-  if(bonus&&bonus.bonusLane!==lane)return lane+Math.sign(bonus.bonusLane-lane);
-  if(ringCount===2)return 1-lane;
-  const next=rows.find(row=>!row.passed);
-  let destination=next?.sparkLane;
-  if(comeback&&comeback.angle>angle&&comeback.lane!==lane&&(!next||next.angle-angle<-.108))destination=comeback.lane;
-  if(Number.isInteger(destination)&&destination!==lane)return lane+Math.sign(destination-lane);
-  if(next&&Number.isInteger(next.entryLane)&&Math.abs(next.entryLane-lane)===1)return next.entryLane;
-  const following=rows.find(row=>row!==next&&!row.passed&&Number.isInteger(row.sparkLane)&&Math.abs(row.sparkLane-lane)===1);
-  if(following)return following.sparkLane;
-  let step=shiftDirection;
-  if(lane+step<0||lane+step>=ringCount)step=-step;
-  return lane+step;
+  if(bonus)return lane+Math.sign(bonus.bonusLane-lane);
+  if(comeback&&comeback.angle>angle)return lane+Math.sign(comeback.lane-lane);
+  if(roundKind==='tutorial'&&tutorialStage===0)return 1-lane;
+  return lane;
 }
 function updateGuide(){
   const target=guidedTarget();
-  if(target===lastGuideTarget)return;
-  lastGuideTarget=target;
-  $('shift').setAttribute('aria-label',ringCount===2?'Switch to the other ring':`Shift to highlighted ring ${target+1}`);
+  const guideKey=lane+':'+target;
+  if(guideKey===lastGuideTarget)return;
+  lastGuideTarget=guideKey;
+  $('shift').setAttribute('aria-label',target===lane?'Stay on this ring until the barrier passes':`Shift to highlighted ring ${target+1}`);
+ $('guide-status').textContent=target===lane?'HOLD · Stay on this ring':'TAP · Move to the blue arc';
 }
 function applyTheme(){
   const [color,name]=THEMES[(level-1)%THEMES.length];
@@ -382,7 +380,7 @@ function levelUp(next){
   levelSparks=0;levelPerfects=0;levelHits=0;levelShieldLost=false;objectiveAwarded=false;
 
   $('level-banner').textContent=`LEVEL ${completed} COMPLETE! ✓`;
-  $('level-detail').textContent=bossLevel()?`BOSS ${level} · ${BOSS_TYPES[bossType()][0]}: ${BOSS_TYPES[bossType()][1]}`:ringCount>oldRings?`${ringCount} rings unlocked${ringCount===5?' · 2 shield slots':''}`:`Level ${level} · ${targetSpeed()<1.45?'Build your rhythm':'Master the pattern'}`;
+  $('level-detail').textContent=bossLevel()?`BOSS ${level} · ${BOSS_TYPES[bossType()][0]}: ${BOSS_TYPES[bossType()][1]}`:ringCount>oldRings?`${ringCount} rings unlocked${ringCount===5?' · 2 shield slots':''}`:`Level ${level} · ${level<=10?'Find your rhythm':level<=25?'Faster transitions':level<=50?'Precision timing':level<=75?'Expert patterns':'Master the orbit'}`;
   document.body.style.setProperty('--completed-sector',THEMES[(completed-1)%THEMES.length][0]);
   const banner=$('level-banner-wrap');
   banner.classList.remove('show');
@@ -398,7 +396,11 @@ function levelUp(next){
 const RHYTHM_GAPS=[1,2,1];
 let rhythmOrigin=0,rhythmUnit=.6552,rhythmEpoch=0,rhythmPhaseOffset=0;
 const rhythmPhase=()=>rhythmPhaseOffset+4*(angle-rhythmOrigin+speedNow()*.29)/rhythmUnit;
-const rhythmDistance=()=>level===1?targetSpeed()*.84:Math.max(targetSpeed()*(bossLevel()?1.05:.9),targetSpeed()*.68+.26);
+const rhythmDistance=()=>{
+ if(focusRun||timedRun())return level===1?targetSpeed()*.84:Math.max(targetSpeed()*(bossLevel()?1.05:.9),targetSpeed()*.68+.26);
+ const seconds=level===1?.84:Math.max(.74,1.04-(level-2)*.003)+(bossLevel()?.10:0);
+ return targetSpeed()*seconds;
+};
 const rowSpacing=(index=nextRowIndex)=>rhythmDistance()*RHYTHM_GAPS[((index-1)%3+3)%3];
 function prepareRhythm(lead,continuous=false){
   const phase=continuous?rhythmPhase():0;
@@ -716,7 +718,7 @@ function updateHUD(){
  $('compact-hud').hidden=mode!=='playing';
  $('compact-shield').textContent=`Shields ${shield}/${shieldCapacity()} · ${shield>=shieldCapacity()?'charged':charge+'/6 sparks'}`;
  $('compact-power').textContent=rushTime>0?`Fire Ball ${rushTime.toFixed(1)}s${rushTime<=1.5?' · ending':''}`:feverTime>0?`Fever ${feverTime.toFixed(1)}s`:`Special coins ${rushChain}/3`;
- $('compact-combo').textContent=`×${scoreFactor()} score`;
+ $('compact-combo').textContent=`×${scoreFactor()}`;
  const section=sectionGoal();$('section-goal').hidden=roundKind!=='endless'||focusRun||mode!=='playing';$('section-goal').textContent=`${section.name} · ${section.label} · ${Math.min(section.target,Math.max(0,section.count))}/${section.target}`;
  const syncState=window.LoopShiftBoard?.record?.();
  $('result-storage').hidden=mode!=='over'||(roundKind!=='endless'&&roundKind!=='minute')||focusRun;$('result-storage').textContent=(deviceScoreSaved?'Score saved on this device. ':'Device score could not be saved. ')+(roundKind==='minute'?'Unranked · Your one-minute best stays here.':syncState?.pending>0?'Online sync pending.':syncState?.ranked&&syncState?.connection==='online'&&Number.isSafeInteger(window.LoopShiftBoard?.best?.())&&window.LoopShiftBoard.best()>=score?'Best synced online.':syncState?.ranked?'Online save status is shown below.':'Connect and save a nickname to join the online board.');
@@ -761,7 +763,7 @@ function addRow(a,index=nextRowIndex++){
   const previous=rows.at(-1);
   const previousSafe=Math.max(0,Math.min(ringCount-1,previous?.sparkLane??pathLane));
   const safeOptions=[previousSafe-1,previousSafe+1].filter(n=>n>=0&&n<ringCount);
-  const recovery=(focusRun&&index%6>=4)||level>1&&!bossLevel()&&(level%10===1?index%12<3:level%3===1&&index%12<2)||(!timedRun()&&level>1&&!bossLevel()&&level%5!==0&&index%12>=9);
+  const recovery=(focusRun&&index%6>=4)||level>1&&!bossLevel()&&(level%10===1?index%12<3:level%3===1&&index%12<2)||(!timedRun()&&level>1&&!bossLevel()&&level%5!==0&&index%12>=(focusRun||level<25?9:level<60?10:11));
   const direction=previous?.sweepDirection||1;
   const sweepDirection=previousSafe<=0?1:previousSafe>=ringCount-1?-1:direction;
   let safeLane=safeOptions[Math.floor(courseRandom()*safeOptions.length)];
@@ -1287,8 +1289,10 @@ $('home-new').addEventListener('click',startEndless);
 $('back-home').addEventListener('click',requestExit);
 $('result-home').addEventListener('click',goHome);
 $('brand-home').addEventListener('click',event=>{event.preventDefault();requestExit();});
+window.LoopShiftFeedbackContext=()=>({level,mode:focusRun?'Focus Play':roundKind});
 window.addEventListener('loopshift:pause',()=>{if(mode==='playing')setPaused(true,false);});
 function handleBack(){
+ if($('feedback-dialog').open){$('feedback-close').click();return;}
  if($('name-dialog').open){$('cancel-name').click();return;}
  if($('settings-dialog').open){$('settings-close').click();return;}
  if($('exit-dialog').open){$('exit-dialog').close();$('play').focus();return;}
@@ -1343,7 +1347,7 @@ document.addEventListener('pointercancel',()=>{gesture=null;});
 $('shift').addEventListener('click',event=>{if(event.detail===0)shift();});
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
-  if($('power-dialog').open || $('exit-dialog').open || $('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
+  if($('feedback-dialog').open || $('power-dialog').open || $('exit-dialog').open || $('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
   if(screen==='game'&&mode==='playing'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();shift(event.code==='ArrowUp'?-1:1);return;}
   if(event.code==='Space'){

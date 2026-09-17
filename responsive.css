@@ -201,3 +201,25 @@ body[data-screen=game][data-training=true] #game-screen .arena-messages{top:calc
  body[data-screen=game] #game-screen #tap-anywhere-hint span{font-size:13px;line-height:18px}
  body[data-screen=game][data-training=true] #game-screen .arena-messages{top:45%}
 }
+/* Status above the ring; the lower play area stays open for the player's thumb. */
+body[data-screen=game] #compact-hud{top:calc(112px + env(safe-area-inset-top,0px));left:var(--screen-gutter);right:var(--screen-gutter);grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;max-width:620px;min-height:44px;gap:8px;align-items:center}
+body[data-screen=game] #compact-hud>span{background:transparent;border:0;padding:0;font:600 14px/21px Arial,sans-serif}
+body[data-screen=game] #compact-hud #compact-combo{grid-column:auto;padding:0;color:var(--muted)}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-status{top:calc(172px + env(safe-area-inset-top,0px))}
+body[data-screen=game][data-playstate=playing] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 32px),calc(var(--play-height,100dvh) - 350px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),540px))}
+body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(96px,min(calc(100vw - 64px),calc(var(--play-height,100dvh) - 390px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),440px))}
+body[data-screen=game][data-playstate=playing] #arena{top:calc(50% + 50px)}
+body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:calc(50% + 50px + var(--orbit-diameter)/2 + 14px);height:48px;min-height:48px}
+#guide-status{margin:0;text-align:center;font:600 15px/22px Arial,sans-serif;color:var(--muted)}
+.arena-messages:has(#tap-anywhere-hint:not(.faded),#level-banner-wrap.show,#skill-effect.visible,#toast.show) #guide-status{visibility:hidden}
+body[data-screen=game] #game-screen :is(#section-goal,#practice-pace,#focus-goal){display:none}
+#feedback-home{min-height:48px;font:600 14px/20px Arial,sans-serif;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
+#feedback-form{display:grid;gap:10px;font:16px/1.5 Arial,sans-serif}#feedback-form :is(select,textarea){width:100%;min-width:0;font:16px/1.5 Arial,sans-serif;padding:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-sizing:border-box}#feedback-form .feedback-note{font-size:13px;color:var(--muted)}#feedback-fallback{width:100%;min-height:120px}#feedback-result{width:100%;margin:12px 0;font:600 14px/21px Arial,sans-serif}
+body[data-screen=game][data-training=true] #guide-status{display:none}
+@media(max-height:540px) and (orientation:landscape){
+ body[data-screen=game][data-playstate=playing] #game-screen,body[data-screen=game][data-playstate=playing][data-small-arena=true] #game-screen{--orbit-diameter:max(80px,min(calc(var(--play-height,100dvh) - 210px),calc(100vw - 320px),430px))}
+ body[data-screen=game][data-playstate=playing] #arena{top:calc(50% + 70px);left:35%}
+ body[data-screen=game] #compact-hud{top:calc(112px + env(safe-area-inset-top,0px));left:16px;right:16px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-status{top:42%;left:70%;right:12px}
+ body[data-screen=game][data-playstate=playing] #game-screen .arena-messages{top:68%;left:70%;right:12px}
+}

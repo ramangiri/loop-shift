@@ -87,7 +87,7 @@ function timing(seconds=.29, doubleTap=false){
   return `startDelay=0;lastShift=-1;rows=[];addRow(angle+speedNow()*${seconds},0);
     rows[0].hazardLane=lane;rows[0].hazardLanes=[lane];rows[0].sparkLane=1-lane;radius=laneRadius(lane);
     globalThis.target=rows[0];shift();
-    ${doubleTap?'for(let i=0;i<7;i++)update(1/60);shift();':''}
+    ${doubleTap?'for(let i=0;i<7;i++)update(1/60);shift(-shiftDirection);':''}
     for(let i=0;i<90&&!target.passed&&mode==='playing';i++)update(1/60);`;
 }
 const p=game();p.click('home-play');
@@ -195,7 +195,7 @@ for(let lv=1;lv<=100;lv++){
     keys.run('gameTime+=.1');const before=keys.run('lane'),expected=keys.run('guidedTarget()');
     assert.equal(key('Space'),true);
     assert.equal(keys.run('lane'),expected,`Space follows the preview at level ${lv}`);
-    assert.equal(Math.abs(expected-before),1);
+    assert.ok(Math.abs(expected-before)<=1,'Guide either holds or moves one adjacent ring');
     assert.ok(expected>=0&&expected<keys.run('ringCount'));
     keys.run(`lane=${before};gameTime+=.1`);
     tap(i%2?'game-screen':'shift',{clientX:i%2?0:999});
@@ -214,8 +214,8 @@ console.log('PASS: identical Space/touch targets at all 100 levels, countdown, p
 const guide=game();guide.click('home-play');
 guide.run('ringCount=6;level=13;lane=1;radius=laneRadius(1);startDelay=0;gameTime=2;rows=[{entryLane:1,sparkLane:2,angle:angle+1,passed:false},{entryLane:2,sparkLane:3,angle:angle+2,passed:false}];updateGuide();');
 assert.match(guide.nodes.get('shift').attrs['aria-label'],/ring 3/);
-guide.run('shift()');assert.equal(guide.run('lane'),2);assert.equal(guide.run('guidedTarget()'),1,'Extra taps return before the current wall clears');
-guide.run('gameTime+=.1;shift()');assert.equal(guide.run('lane'),1);
+guide.run('shift()');assert.equal(guide.run('lane'),2);assert.equal(guide.run('guidedTarget()'),2,'Guide holds the safe ring until the current wall clears');
+guide.run('gameTime+=.1;shift()');assert.equal(guide.run('lane'),2);
 guide.run('gameTime+=.1;shift();rows[0].passed=true');assert.equal(guide.run('guidedTarget()'),3,'Passing the wall advances the route');
 
 // Identical daily seeds produce identical courses even when visual RNG and player position differ.
@@ -311,7 +311,7 @@ for(const [lv,pattern] of [[10,'classic'],[20,'moving'],[30,'pulse']]){
  varieties.run(`level=${lv};ringCount=6;rows=[];for(let i=0;i<30;i++)addRow(angle+2+i*rowSpacing(),i)`);
  assert.equal(varieties.run(`rows.every(r=>r.pattern==='${pattern}')`),true);
  assert.equal(varieties.run('rows.every((r,i)=>!i||Math.abs(r.sparkLane-rows[i-1].sparkLane)<=1)'),true);
- assert.ok(varieties.run('rowSpacing()-.26>=targetSpeed()*.68'));
+ assert.ok(varieties.run('rowSpacing()/targetSpeed()>=.74'),'Every normal interval leaves a playable reaction window');
 }
 varieties.run('level=11;rows=[];for(let i=0;i<4;i++)addRow(angle+2+i*rowSpacing(),120+i)');assert.equal(varieties.run('rows.slice(0,3).every(r=>r.recovery&&r.pattern==="classic")'),true);
 const gradual=game();gradual.click('home-play');gradual.run('startDelay=0;level=18;rows=[];update(.02)');assert.ok(gradual.run('speedNow()')<.81,'No sudden jump to maximum speed');
@@ -403,7 +403,7 @@ replay.run('crash()');replay.click('home-play');
 assert.notEqual(replay.run('retryCourse.seed'),firstSeed,'Home → Play now chooses a fresh course');
 
 const intro=game();intro.click('home-play');
-assert.equal(intro.run('ringCount'),2);assert.match(intro.nodes.get('shift').attrs['aria-label'],/other ring/);
+assert.equal(intro.run('ringCount'),2);assert.match(intro.nodes.get('shift').attrs['aria-label'],/highlighted ring/);
 intro.run('globalThis.guidePaints=0;arc=()=>{guidePaints++};drawGuide();');
 assert.equal(intro.run('guidePaints'),1,'The two-ring intro shows one short destination arc, matching the tap hint');
 intro.run('passes=12;levelUp(2);updateGuide();drawGuide();');
@@ -563,7 +563,7 @@ rest.run('startDelay=0;activeSinceBreak=300;update(1/120)');assert.equal(rest.ru
 const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('reducedMotion'),true);assert.equal(comfort.store.get('loop-shift-reduced-motion'),'true');
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
-const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.equal(pacing.run('targetSpeed()'),.92);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
+const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.ok(pacing.run('targetSpeed()')>1.3);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
 const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
@@ -644,7 +644,7 @@ focusPlay.run('fireSpeedEnabled=true;startRush()');assert.equal(focusPlay.run('r
 
 const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');for(let i=0;i<5;i++)preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v2'),'true');
 const bonusCatch=game();bonusCatch.click('home-play');bonusCatch.run('startDelay=0;level=4;ringCount=4;rows=[];lane=1;radius=laneRadius(lane);globalThis.beforeBonus=score;rows=[{angle:angle-.35,baseAngle:angle-.35,bonusLane:1,bonusCollected:false,sparkLane:0,collected:true,hit:true,passed:true,locked:true,hazardLanes:[],pattern:"classic"}];update(.01)');assert.equal(bonusCatch.run('rows[0].bonusCollected'),true);assert.ok(bonusCatch.run('score-beforeBonus')>=40);bonusCatch.run('update(.01)');assert.equal(bonusCatch.run('score-beforeBonus'),40);
-bonusCatch.run('rows[0].bonusCollected=false;rows[0].angle=angle-.2;rows[0].bonusLane=2');assert.equal(bonusCatch.run('guidedTarget()'),2);
+bonusCatch.run('rows[0].bonusCollected=false;rows[0].angle=angle-.2;rows[0].bonusLane=2');assert.equal(bonusCatch.run('guidedTarget()'),1,'Upcoming safe ring takes priority over a tempting bonus');
 
 const checkpoint=game(false,null,false,false,false);checkpoint.click('home-play');checkpoint.run('startDelay=0;level=5;passes=60;score=2468;shield=1;sparks=12;levelUp(6)');checkpoint.click('save-checkpoint');assert.equal(checkpoint.run('screen'),'home');assert.equal(checkpoint.nodes.get('resume-checkpoint').hidden,false);const reopened=game(false,checkpoint.store,false,false,false);reopened.click('resume-checkpoint');assert.equal(reopened.run('mode'),'playing');assert.equal(reopened.run('level'),6);assert.equal(reopened.run('score'),2468);assert.equal(reopened.run('shield'),1);assert.equal(reopened.run('sparks'),12);assert.equal(reopened.run('readCheckpoint()'),null);assert.equal(reopened.run('startDelay'),1.5);reopened.run('setPaused(true);saveCheckpoint()');assert.equal(reopened.run('readCheckpoint()'),null);
 
@@ -691,7 +691,7 @@ mobileInput.run("globalThis.mobileTouch={pointerId:1,button:0,isPrimary:true,tar
 assert.notEqual(mobileInput.run('lane'),inputLane,'Instant tap shifts on touch-down');
 const movedLane=mobileInput.run('lane');mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
 mobileInput.click('control-mode');assert.equal(mobileInput.store.get('loop-shift-swipe-controls'),'true');
-mobileInput.run('gameTime+=.2;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
+mobileInput.run('gameTime+=.2;rows[0].sparkLane=1-lane;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
 mobileInput.run('endGesture(mobileTouch)');assert.notEqual(mobileInput.run('lane'),movedLane);
 assert.equal(game(false,mobileInput.store).run('swipeControls'),true,'Control preference persists');
 mobileInput.run('shield=1;charge=2;rushTime=1.2;updateHUD()');assert.match(mobileInput.nodes.get('compact-power').textContent,/ending/);assert.match(mobileInput.nodes.get('compact-shield').textContent,/Shields 1/);
@@ -707,3 +707,21 @@ const slowPhone=game();slowPhone.click('minute-play');slowPhone.run('startDelay=
 assert.ok(Math.abs(slowPhone.run('gameTime')-.05)<.009,'A slow frame must not silently shorten elapsed time');
 const beforeStall=slowPhone.run('gameTime');slowPhone.run('frame(900)');assert.equal(slowPhone.run('mode'),'paused');assert.equal(slowPhone.run('gameTime'),beforeStall,'A long interruption pauses rather than playing unseen');
 console.log('PASS: instant touch, gesture preference, compact HUD, dialog Back and frame timing.');
+
+// A bonus must never divert the blue guide away from an incoming wall.
+const safeGuide=game();safeGuide.click('home-play');
+for(let lv=1;lv<=100;lv++){
+ safeGuide.run(`level=${lv};ringCount=ringLimit(level);lane=0;radius=laneRadius(lane);rows=[{angle:angle-.2,passed:true,bonusLane:0,bonusCollected:false},{angle:angle+.5,passed:false,sparkLane:1,entryLane:0,hazardLanes:[0]}];lastGuideTarget=-1;updateGuide()`);
+ assert.equal(safeGuide.run('guidedTarget()'),1,`Level ${lv}: barrier takes priority over a bonus`);
+ safeGuide.run('lane=1;updateGuide()');assert.equal(safeGuide.run('guidedTarget()'),1);
+ assert.match(safeGuide.nodes.get('guide-status').textContent,/HOLD/);
+ safeGuide.run('rows[1].angle=angle-.109;updateGuide()');assert.equal(safeGuide.run('guidedTarget()'),0,'Guide can advance only after collision window clears');
+}
+const difficulty=game();difficulty.click('home-play');
+let prior=0;
+for(let lv=1;lv<=100;lv++){
+ const speed=difficulty.run(`level=${lv};targetSpeed()`);assert.ok(speed>prior,`Classic speed increases at level ${lv}`);prior=speed;
+ assert.ok(difficulty.run('rhythmDistance()/targetSpeed()')>=.74,'The harder course retains a safe minimum interval');
+}
+difficulty.run('focusRun=true;level=100');assert.equal(difficulty.run('targetSpeed()'),.78);
+console.log('PASS: safe guide holds and bonus priority verified for all 100 levels; Classic speed increases through level 100.');
