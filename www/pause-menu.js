@@ -89,6 +89,11 @@
   start=function(options){const result=previousStart(options);requestAnimationFrame(()=>{if(typeof mode!=='undefined'&&mode==='playing'&&roundKind!=='tutorial')captureLevelStart();});return result;};
   const previousLevelUp=levelUp;
   levelUp=function(next){const result=previousLevelUp(next);requestAnimationFrame(()=>{if(roundKind!=='tutorial')captureLevelStart();});return result;};
+  function watchLevel(){
+    if(typeof mode!=='undefined'&&mode==='playing'&&typeof level!=='undefined'&&roundKind!=='tutorial'&&(!levelStart||levelStart.level!==level))captureLevelStart();
+    requestAnimationFrame(watchLevel);
+  }
+  requestAnimationFrame(watchLevel);
 
   function refresh(){
     byId('pause-menu-level').textContent=String(typeof level==='number'?level:1);
