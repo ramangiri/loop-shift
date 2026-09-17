@@ -44,6 +44,20 @@
   // Remove the stale colour-specific fallback before any tutorial code replaces it.
   const preplayTitle=$id('preplay-title');if(preplayTitle&&/lime/i.test(preplayTitle.textContent))preplayTitle.textContent='YOUR BALL = YOU';
 
+  // Normal tap is destination-based: once BLUE is reached, extra taps do nothing.
+  // This prevents a fast double tap from bouncing the ball back off an edge ring.
+  if(typeof shift==='function'&&typeof guidedTarget==='function'){
+    const previousShift=shift;
+    shift=function(direction=0){
+      if(!direction&&typeof screen!=='undefined'&&screen==='game'&&typeof mode!=='undefined'&&mode==='playing'&&typeof startDelay!=='undefined'&&startDelay<=0&&typeof roundKind!=='undefined'&&roundKind!=='tutorial'){
+        let target=lane;
+        try{target=guidedTarget();}catch{}
+        if(target===lane)return;
+      }
+      return previousShift(direction);
+    };
+  }
+
   // Explain the new reaction-first course in the quick rules reference.
   const adv=document.querySelector('.game-guide .advanced-howto');
   if(adv)adv.innerHTML='<strong>Read and react from Level 1</strong>Pattern order changes each run · BLUE is always one tap away · Later levels add speed, moving gates, switch gates and optional close-call gold.';
