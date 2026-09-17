@@ -3,7 +3,7 @@
   const $id=id=>document.getElementById(id);
   const pause=$id('pause');
   if(!pause)return;
-  const COACH_KEY='loop-shift-pause-coach-seen-v1';
+  const COACH_KEY='loop-shift-pause-coach-seen-v2';
   let coachSeen=false;
   try{coachSeen=localStorage.getItem(COACH_KEY)==='true';}catch{}
 
@@ -28,7 +28,6 @@
   `;
   document.head.appendChild(style);
 
-  // Keep Pause icon-only, but high contrast and easy to tap.
   pause.classList.add('pause-readable');
   pause.querySelector('.pause-label')?.remove();
 
@@ -41,9 +40,13 @@
     <aside id="level-one-pause-tip" role="status"><strong>Pause any time</strong><span>Need a break? Tap the ⏸ button whenever you want during gameplay.</span><em>TAP ANYWHERE TO CONTINUE</em></aside>`;
   document.body.appendChild(coach);
   const tip=$id('level-one-pause-tip'),spotlight=$id('pause-coach-spotlight'),arrow=$id('pause-coach-arrow'),arrowPath=$id('pause-coach-path');
-  let coachActive=false;
+  let coachActive=false,initialProbeDone=false;
 
   function markSeen(){coachSeen=true;try{localStorage.setItem(COACH_KEY,'true');}catch{}}
+  function eligibleForCoach(){
+    try{return !coachSeen&&!coachActive&&mode==='playing'&&screen==='game'&&level===1&&roundKind==='endless'&&gameTime<.35;}
+    catch{return false;}
+  }
 
   function positionCoach(){
     if(!coachActive)return;
@@ -73,7 +76,6 @@
   function showCoach(){
     if(coachActive||coachSeen)return;
     coachActive=true;
-    // Freeze normal 3-2-1 until the player acknowledges this first-time coach mark.
     startDelay=1.5;
     const center=$id('orbit-center');center?.classList.remove('counting');
     if($id('center-top'))$id('center-top').textContent='';
@@ -87,29 +89,38 @@
     if(!coachActive)return;
     event?.preventDefault?.();event?.stopPropagation?.();
     coachActive=false;coach.hidden=true;markSeen();
-    // Resume the existing countdown: 3 -> 2 -> 1 -> gameplay.
     startDelay=1.5;updateCountdown?.();lastTime=performance.now();
     window.LoopShiftMusic?.play?.();
   }
   coach.addEventListener('click',dismissCoach);
-  // Tapping the highlighted Pause icon should acknowledge the coach, not open Pause yet.
   pause.addEventListener('click',event=>{if(coachActive){event.preventDefault();event.stopImmediatePropagation();dismissCoach(event);}},true);
   window.addEventListener('resize',positionCoach);
   window.visualViewport?.addEventListener('resize',positionCoach);
 
-  // Show only once, before the very first Level 1 Classic gameplay on this device.
+  // Catch normal starts that happen after this module has loaded.
   if(typeof start==='function'){
     const previousStart=start;
     start=function(options){
       const result=previousStart(options);
-      try{
-        if(!coachSeen&&mode==='playing'&&screen==='game'&&level===1&&roundKind==='endless'&&!options?.resumeCheckpoint)showCoach();
-      }catch{}
+      try{if(!options?.resumeCheckpoint&&eligibleForCoach())showCoach();}catch{}
       return result;
     };
   }
 
-  // Neither gameplay nor the 3-2-1 countdown advances behind the coach mark.
+  // Catch the very first run when start() fired before this late-loaded module attached.
+  function initialProbe(){
+    if(initialProbeDone||coachSeen)return;
+    if(eligibleForCoach()){
+      initialProbeDone=true;showCoach();return;
+    }
+    // Keep probing only during initial page startup / first countdown window.
+    try{
+      if(screen==='game'&&level===1&&roundKind==='endless'&&gameTime>=.35){initialProbeDone=true;return;}
+    }catch{}
+    requestAnimationFrame(initialProbe);
+  }
+  requestAnimationFrame(initialProbe);
+
   if(typeof update==='function'){
     const previousUpdate=update;
     update=function(dt){if(coachActive)return;return previousUpdate(dt);};
