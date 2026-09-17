@@ -2,7 +2,9 @@
 (() => {
  const el=id=>document.getElementById(id),recipient='giriraman160@gmail.com';
  let opener=null,draft='';
- function open(event){opener=event.currentTarget;el('feedback-dialog').showModal();el('feedback-message').focus();}
+ function fitViewport(){if(window.visualViewport)el('feedback-dialog').style.setProperty('--feedback-viewport',window.visualViewport.height+'px');}
+ window.visualViewport?.addEventListener('resize',fitViewport);
+ function open(event){opener=event.currentTarget;fitViewport();el('feedback-dialog').showModal();el('feedback-close').focus();}
  for(const id of ['feedback-home','feedback-settings','feedback-result','feedback-progress','feedback-friends','feedback-help'])el(id).addEventListener('click',open);
  function close(){el('feedback-dialog').close();opener?.focus();}
  el('feedback-close').addEventListener('click',close);
