@@ -286,3 +286,6 @@ body:not([data-reduced-motion=true]):not([data-appearance=soft]) :is(.level-bann
 body:not([data-reduced-motion=true]):not([data-appearance=soft]) :is(.primary-button,.secondary-button,.home-navigation button,.feedback-entry){transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,scale .12s ease}
 body:not([data-reduced-motion=true]):not([data-appearance=soft]) :is(.primary-button,.secondary-button,.home-navigation button,.feedback-entry):active{scale:.98}
 @media(prefers-reduced-motion:reduce){body :is([data-home-panel],dialog,.overlay-card,.level-banner-wrap,.skill-effect,.primary-button,.secondary-button,.home-navigation button,.feedback-entry){animation:none!important;transition:none!important;scale:none!important}}
+
+body[data-screen=home] .quick-modes{width:100%;max-width:none}
+@media(max-width:360px){body[data-screen=home] .quick-modes{grid-template-columns:1fr}}
