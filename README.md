@@ -3,7 +3,7 @@
 - The nearest uncleared barrier owns the blue guide. Once its safe ring is reached, HOLD keeps the player there until the collision window passes. Optional bonuses cannot override an incoming barrier; Fire Ball guides toward its coins.
 - Classic speed increases from 0.78 to 1.376 through level 100 instead of stopping at 0.92 at level 5. Normal intervals gradually tighten with a 0.74-second floor; bosses retain additional space and later sections have fewer recovery walls. Focus and Daily/Weekly pacing remain unchanged.
 - Shields, special coins/power countdown, and multiplier sit above the circle. The lower area remains available for tapping, with a compact guide instruction.
-- Feedback buttons appear on Home, in Settings, and on paused/results screens. A private email draft goes to giriram160@gmail.com with the player's message, game version, level/mode and viewport dimensions. The player reviews and sends using their email app; no backend delivery or public feedback feed is claimed. Copy/manual email fallback is included.
+- Feedback buttons appear on Home, in Settings, and on paused/results screens. A private email draft goes to giriraman160@gmail.com with the player's message, game version, level/mode and viewport dimensions. The player reviews and sends using their email app; no backend delivery or public feedback feed is claimed. Copy/manual email fallback is included.
 
 Validation: tests include the full 100-level no-shield/no-invincibility course, guide priority/HOLD at every level, monotonic Classic speed, unranked/online separation, email encoding/fallback, and existing save/navigation regressions. Real-phone playtesting is still required for difficulty feel.
 

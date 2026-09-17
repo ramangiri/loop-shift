@@ -1,6 +1,6 @@
 /* Feedback is user-sent email. No messages are posted to a public endpoint. */
 (() => {
- const el=id=>document.getElementById(id),recipient='giriram160@gmail.com';
+ const el=id=>document.getElementById(id),recipient='giriraman160@gmail.com';
  let opener=null,draft='';
  function open(event){opener=event.currentTarget;el('feedback-dialog').showModal();el('feedback-message').focus();}
  for(const id of ['feedback-home','feedback-settings','feedback-result'])el(id).addEventListener('click',open);
