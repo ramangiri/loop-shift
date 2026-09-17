@@ -1,7 +1,7 @@
 // Original Loop Shift soundtrack, synthesized locally. No external recordings.
 (() => {
   let context,master,timer,enabled=true,active=false,level=1,fever=false,step=0,next=0,blocked=false;
-  let transport=null,nextStep=null,combo=0,bassMix=0,melodyMix=0,duckUntil=0,rush=false,rushMix=0;
+  let transport=null,nextStep=null,combo=0,bassMix=0,melodyMix=0,duckUntil=0,rush=false,rushStep=0,rushNext=0;
   let scene='game',userUnlocked=false,hiddenScene='';
   const voices=new Set();
   try{enabled=localStorage.getItem('loop-shift-music')!=='false';}catch{}
@@ -16,7 +16,7 @@
   }
   function note(hz,time,length,volume,type='sine',endHz=null){
     if(!context||!master)return;
-    volume *= (time < duckUntil ? .38 : 1)*(1-rushMix*.3);
+    volume *= time < duckUntil ? .38 : 1;
     const oscillator=context.createOscillator(),gain=context.createGain();
     oscillator.type=type;oscillator.frequency.setValueAtTime(hz,time);
     if(endHz)oscillator.frequency.exponentialRampToValueAtTime(endHz,time+length);
@@ -26,21 +26,24 @@
   }
   function playHomeStep(position,time,beat){
     const bar=((position%16)+16)%16,root=[110,98,130.81,87.31][Math.floor(position/16)%4];
-    // Quiet, spacious home loop. It begins only after the first user interaction.
     if(bar===0)note(root,time,beat*7,.018,'sine');
     if(bar===4||bar===12)note(root*2,time,beat*2.2,.009,'triangle');
     if([2,6,10,14].includes(bar))note(root*3,time,beat*.75,.0045,'triangle');
     if(bar===8)note(root*1.5,time,beat*4,.007,'sine');
   }
+  function playRushStep(position,time,beat){
+    const bar=((position%16)+16)%16,root=[73.42,82.41,65.41,98][Math.floor(position/16)%4];
+    // Fire Ball is intentionally a different, faster five-second soundtrack.
+    if(bar%4===0)note(150,time,beat*1.5,.060,'sine',48);
+    if(bar%2===0)note(root*[4,5,6,8][Math.floor(bar/2)%4],time,beat*.72,.032,'square');
+    if(bar%2===1)note(bar%4===1?1320:990,time,beat*.34,.016,'triangle');
+    if([0,3,6,9,12,15].includes(bar))note(root*2,time,beat*1.8,.030,'sawtooth');
+    if(bar===0||bar===8){note(root*8,time,beat*.8,.038,'triangle');note(root,time,beat*5,.025,'sine');}
+  }
   function playStep(position,time,beat,accent=false){
     const bar=((position%16)+16)%16,chord=[55,65.406,49,58.27][((Math.floor(position/32)%4)+4)%4];
     const bassTarget=combo>=5?1:combo>=3?.75:combo>=2?.45:0;
-    rushMix+=((rush?1:0)-rushMix)*.3;bassMix+=(bassTarget-bassMix)*.28;melodyMix+=((fever?1:0)-melodyMix)*.25;
-    // Fire Ball gets a clearly faster five-second pulse without changing gameplay speed.
-    if(rushMix>.08){
-      note(bar%2?880:1174,time,beat*.42,.008*rushMix,'triangle');
-      if(bar%2===0)note(chord*[4,6,5,8][Math.floor(bar/2)%4],time,beat*.7,.022*rushMix,'triangle');
-    }
+    bassMix+=(bassTarget-bassMix)*.28;melodyMix+=((fever?1:0)-melodyMix)*.25;
     if(accent)note(chord*8,time,.11,.10,'triangle');
     if(bar%4===0)note(110,time,.14,.042,'sine',42);
     if([0,6,8,14].includes(bar)&&bassMix>.02)note(chord*(bar===14?1.5:1),time,beat*2.1,.055*bassMix,'triangle');
@@ -57,6 +60,12 @@
       const beat=60/68/4;
       if(next<context.currentTime)next=context.currentTime+.03;
       while(next<context.currentTime+.12){playHomeStep(step++,next,beat);next+=beat;}
+      return;
+    }
+    if(rush){
+      const beat=60/168/4;
+      if(rushNext<context.currentTime)rushNext=context.currentTime+.015;
+      while(rushNext<context.currentTime+.12){playRushStep(rushStep++,rushNext,beat);rushNext+=beat;}
       return;
     }
     if(transport){
@@ -80,7 +89,7 @@
     for(const voice of voices){try{voice.stop(context.currentTime);}catch{}}
     voices.clear();
   }
-  function sceneVolume(){return scene==='home'?.48:.70;}
+  function sceneVolume(){return scene==='home'?.48:rush?.78:.70;}
   function setScene(value){
     value=value==='home'?'home':'game';
     if(scene===value)return;
@@ -92,9 +101,12 @@
     if(!Number.isFinite(value?.phase)||!Number.isFinite(value?.rate)||value.rate<=0)return;
     const now=context?.currentTime||0;
     const drift=transport?Math.abs(value.phase-transport.phase-(transport.running?(now-transport.at)*transport.rate:0)):0;
-    if(!transport||transport.epoch!==value.epoch||transport.running!==value.running||drift>.25){cancelVoices();nextStep=null;}
+    if(!transport||transport.epoch!==value.epoch||transport.running!==value.running||drift>.25){
+      if(!rush)cancelVoices();
+      nextStep=null;
+    }
     transport={...value,accents:(value.accents||[]).filter(Number.isFinite),at:context?.currentTime||0};
-    schedule();
+    if(!rush)schedule();
   }
   function stop(){
     bassMix=0;melodyMix=0;clearInterval(timer);timer=null;nextStep=null;cancelVoices();
@@ -114,6 +126,7 @@
         blocked=context.state!=='running';label();if(blocked)return;
         master.gain.setValueAtTime(sceneVolume(),context.currentTime);next=context.currentTime+.03;
         if(transport)transport.at=context.currentTime;
+        if(rush){rushStep=0;rushNext=context.currentTime+.015;}
         if(!timer)timer=setInterval(schedule,60);schedule();
       }).catch(()=>{blocked=true;label();});
     }catch{blocked=true;label();}
@@ -123,6 +136,18 @@
     active=true;begin();
   }
   function pause(){active=false;hiddenScene='';stop();}
+  function setRush(value){
+    const nextRush=!!value;
+    if(rush===nextRush)return;
+    rush=nextRush;
+    cancelVoices();nextStep=null;rushStep=0;
+    if(context){
+      rushNext=context.currentTime+.015;
+      if(transport)transport.at=context.currentTime;
+      if(master&&context.state==='running')master.gain.setValueAtTime(sceneVolume(),context.currentTime);
+    }else rushNext=0;
+    schedule();
+  }
 
   button?.addEventListener('click',()=>{
     userUnlocked=true;
@@ -145,8 +170,6 @@
   document.addEventListener('pointerdown',userGesture,{passive:true});
   document.addEventListener('keydown',userGesture);
 
-  // iOS can suspend AudioContext when the app backgrounds. Home music safely resumes;
-  // gameplay stays silent until the game's own interruption pause is resumed by the player.
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden){hiddenScene=active?scene:'';active=false;stop();return;}
     if(hiddenScene==='home'&&enabled&&userUnlocked){hiddenScene='';setScene('home');active=true;begin();}
@@ -156,7 +179,6 @@
     if(enabled&&userUnlocked&&document.body?.dataset?.screen==='home'&&!active){setScene('home');active=true;begin();}
   });
 
-  // Follow navigation back to Home after the user has unlocked audio once.
   const observer=new MutationObserver(()=>{
     const onHome=document.body?.dataset?.screen==='home';
     if(onHome&&enabled&&userUnlocked){setScene('home');active=true;begin();}
@@ -171,7 +193,7 @@
     pause,
     setScene,
     setLevel(value){level=value;},
-    setRush(value){rush=!!value;},
+    setRush,
     setFever(value){fever=!!value;},
     setCombo(value){combo=Math.max(0,Number(value)||0);},
     duck(seconds=.16){if(context)duckUntil=Math.max(duckUntil,context.currentTime+Math.min(.5,seconds));}
