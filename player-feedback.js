@@ -3,14 +3,14 @@
  const el=id=>document.getElementById(id),recipient='giriraman160@gmail.com';
  let opener=null,draft='';
  function open(event){opener=event.currentTarget;el('feedback-dialog').showModal();el('feedback-message').focus();}
- for(const id of ['feedback-home','feedback-settings','feedback-result'])el(id).addEventListener('click',open);
+ for(const id of ['feedback-home','feedback-settings','feedback-result','feedback-progress','feedback-friends','feedback-help'])el(id).addEventListener('click',open);
  function close(){el('feedback-dialog').close();opener?.focus();}
  el('feedback-close').addEventListener('click',close);
  el('feedback-dialog').addEventListener('cancel',event=>{event.preventDefault();close();});
  el('feedback-form').addEventListener('submit',event=>{
   event.preventDefault();const message=el('feedback-message').value.trim();
   if(message.length<10||message.length>2000){el('feedback-status').textContent='Please enter 10–2,000 characters.';return;}
-  const type=['Bug','Suggestion','Other'].includes(el('feedback-type').value)?el('feedback-type').value:'Other';
+  const type=['Bug','Suggestion','Difficulty','Controls / blue guide','Other'].includes(el('feedback-type').value)?el('feedback-type').value:'Other';
   const context=window.LoopShiftFeedbackContext?.()||{};
   const subject=`Loop Shift ${type} · v2.3.3`;
   draft=`${message}\n\nGame: Loop Shift v2.3.3\nLevel: ${context.level||1}\nMode: ${context.mode||'Home'}\nScreen: ${window.innerWidth} × ${window.innerHeight}`;
