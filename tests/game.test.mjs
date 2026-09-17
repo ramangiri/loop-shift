@@ -725,3 +725,20 @@ for(let lv=1;lv<=100;lv++){
 }
 difficulty.run('focusRun=true;level=100');assert.equal(difficulty.run('targetSpeed()'),.78);
 console.log('PASS: safe guide holds and bonus priority verified for all 100 levels; Classic speed increases through level 100.');
+
+// Home must not replace a saved checkpoint without an explicit decision.
+const protectedSeed=new Map(keptCheckpoint.store);protectedSeed.set('loop-shift-checkpoint-v1-guest',savedCheckpoint);
+const protectedHome=game(false,protectedSeed,false,false,false);
+const protectedKey=protectedHome.run('checkpointKey()');
+const protectedSave=protectedHome.store.get(protectedKey);
+assert.ok(protectedSave);
+protectedHome.click('home-play');
+assert.equal(protectedHome.nodes.get('replace-checkpoint-dialog').open,true);
+assert.equal(protectedHome.store.get(protectedKey),protectedSave);
+assert.match(protectedHome.nodes.get('replace-checkpoint-copy').textContent,/level 6/);
+protectedHome.click('replace-checkpoint-cancel');
+assert.equal(protectedHome.nodes.get('replace-checkpoint-dialog').open,false);
+assert.equal(protectedHome.store.get(protectedKey),protectedSave);
+protectedHome.click('home-play');protectedHome.click('replace-checkpoint-start');
+assert.equal(protectedHome.run('mode'),'playing');
+assert.equal(protectedHome.store.get(protectedKey),undefined);

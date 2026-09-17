@@ -147,7 +147,19 @@ function prepareCourse(fresh=false){
 }
 const courseRange=(min,max)=>min+courseRandom()*(max-min);
 function startDaily(){unlockAudio();window.LoopShiftMusic?.unlock();if(dailyStartPending)return;dailyStartPending=true;const requestId=++dailyRequestId;Promise.resolve(window.LoopShiftBoard?.beginDaily(challenge=>{if(requestId===dailyRequestId)start(challenge);})).finally(()=>{dailyStartPending=false;});}
-function startEndless(){dailyRequestId++;roundKind='endless';dailyRun=null;start({fresh:true});}
+function startEndless(confirmed){
+ const saved=readCheckpoint();
+ if(saved&&confirmed!==true){
+  $('replace-checkpoint-copy').textContent=`Your saved run at level ${saved.state.level} with ${saved.state.score.toLocaleString()} points will be deleted when the new run starts. Your personal best and unlocks will stay safe.`;
+  $('replace-checkpoint-dialog').showModal();$('replace-checkpoint-cancel').focus();return;
+ }
+ dailyRequestId++;roundKind='endless';dailyRun=null;start({fresh:true});
+}
+function closeCheckpointWarning(){ $('replace-checkpoint-dialog').close();$('home-play').focus(); }
+$('replace-checkpoint-cancel').addEventListener('click',closeCheckpointWarning);
+$('replace-checkpoint-dialog').addEventListener('cancel',event=>{event.preventDefault();closeCheckpointWarning();});
+$('replace-checkpoint-start').addEventListener('click',()=>{$('replace-checkpoint-dialog').close();startEndless(true);});
+$('replace-checkpoint-resume').addEventListener('click',()=>{$('replace-checkpoint-dialog').close();$('resume-checkpoint').click();});
 function shieldSound(kind){
   vibrate(kind==='gain1'?[15,45,15]:kind==='gain2'?[15,35,15,35,15]:[45,25,20]);
   if(kind==='gain1')tone(740,.24,'sine',.1);
@@ -1290,6 +1302,7 @@ $('brand-home').addEventListener('click',event=>{event.preventDefault();requestE
 window.LoopShiftFeedbackContext=()=>({level,mode:focusRun?'Focus Play':roundKind});
 window.addEventListener('loopshift:pause',()=>{if(mode==='playing')setPaused(true,false);});
 function handleBack(){
+ if($('replace-checkpoint-dialog').open){closeCheckpointWarning();return;}
  if($('feedback-dialog').open){$('feedback-close').click();return;}
  if($('name-dialog').open){$('cancel-name').click();return;}
  if($('settings-dialog').open){$('settings-close').click();return;}
@@ -1345,7 +1358,7 @@ document.addEventListener('pointercancel',()=>{gesture=null;});
 $('shift').addEventListener('click',event=>{if(event.detail===0)shift();});
 $('sound').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('loop-shift-sound',String(soundOn));}catch{}unlockAudio();updateSound();tone(680,.12);});
 document.addEventListener('keydown',(event)=>{
-  if($('feedback-dialog').open || $('power-dialog').open || $('exit-dialog').open || $('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
+  if($('replace-checkpoint-dialog').open || $('feedback-dialog').open || $('power-dialog').open || $('exit-dialog').open || $('training-dialog').open || $('settings-dialog').open || $('ring-lesson').open || $('name-dialog').open || event.target.closest?.('input,textarea,select,summary,[role="option"],[contenteditable="true"]'))return;
   if(event.repeat)return;
   if(screen==='game'&&mode==='playing'&&['ArrowUp','ArrowDown'].includes(event.code)){event.preventDefault();shift(event.code==='ArrowUp'?-1:1);return;}
   if(event.code==='Space'){
