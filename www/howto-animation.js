@@ -69,11 +69,8 @@
     let playerR=142;
     if(n===1){const move=Math.min(1,Math.max(0,(local-.22)/.45));playerR=142-(142-96)*(move*move*(3-2*move));}
     else if(n>=2)playerR=96;
-    // Blue destination guide.
     if(n>=1){const target=n===1?96:n===2?96:n===3?142:96;arc(target,base-.18,base+.18,BLUE,8);}
-    // Red danger arrives opposite/behind during guide and avoid phases.
     if(n===2||n===3){const redA=base+.66-(n===3?local*.43:local*.18);arc(n===3?96:142,redA-.10,redA+.10,RED,13);}
-    // Tap ripple during the movement phase.
     if(n===1){const pulse=(local*2)%1;ctx.save();ctx.globalAlpha=1-pulse;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(215,215,24+pulse*28,0,Math.PI*2);ctx.stroke();ctx.restore();ctx.fillStyle='#fff';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText('TAP',215,221);}
     if(n===4){spark(base+.48,96);spark(base+1.25,142);}
     orb(base,playerR);
@@ -81,19 +78,25 @@
   }
   function play(){cancelAnimationFrame(raf);lastPhase=-1;startAt=performance.now();active=true;if(reduced()){setPhase(0);ctx.clearRect(0,0,430,430);ring(142);ring(96);arc(96,-1.7,-1.3,BLUE,8);arc(142,.3,.52,RED,13);spark(1.7,96);orb(-1.5,142);}else raf=requestAnimationFrame(frame);}
   function stop(){active=false;cancelAnimationFrame(raf);}
-  function openAnimation(){if(dialog.open)return;dialog.showModal();play();$id('howto-film-practice').focus();}
-  function closeAnimation(){stop();if(dialog.open)dialog.close();}
-
-  // The Home How to Play buttons now use one flow: animation -> guided practice.
-  for(const id of ['tutorial-play','tutorial-start']){
-    const button=$id(id);if(!button)continue;
-    button.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();openAnimation();},true);
+  function openAnimation(){
+    if(dialog.open)return;
+    const other=[...document.querySelectorAll('dialog[open]')].find(d=>d!==dialog);
+    if(other)other.close();
+    dialog.showModal();play();$id('howto-film-practice').focus();
   }
-  $id('howto-film-practice').addEventListener('click',()=>{closeAnimation();startTutorial();});
+  function closeAnimation(){stop();if(dialog.open)dialog.close();}
+  window.LoopShiftHowTo={open:openAnimation,close:closeAnimation,replay:play};
+
+  // Replace the two old tutorial entry buttons so no earlier click handler can skip the animation.
+  for(const id of ['tutorial-play','tutorial-start']){
+    const old=$id(id);if(!old)continue;
+    const button=old.cloneNode(true);old.replaceWith(button);
+    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openAnimation();});
+    if(id==='tutorial-start')button.textContent='Watch tutorial & practise';
+  }
+
+  $id('howto-film-practice').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();closeAnimation();setTimeout(()=>startTutorial(),120);});
   $id('howto-film-replay').addEventListener('click',play);
   $id('howto-film-close').addEventListener('click',closeAnimation);
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeAnimation();});
-
-  // Keep the rules reference useful without looking like a second How to Play entry.
-  const practice=$id('tutorial-start');if(practice)practice.textContent='Watch tutorial & practise';
 })();
