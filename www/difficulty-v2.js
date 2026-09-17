@@ -18,8 +18,6 @@
    return next;
  };
  const localIndex=row=>((row.index%12)+12)%12;
- // BLUE stays visible and always represents one reachable tap. Difficulty now comes
- // from speed, motion, switching gates and optional timing rewards instead of double taps.
  const guideWindow=()=>true;
  const guideVisible=()=>true;
  const speedBoost=()=>level<=5?1:level<=10?1.025:level<=20?1.055:level<=40?1.08:level<=60?1.105:level<=80?1.125:1.14;
@@ -53,12 +51,10 @@
  }
  function configureCloseCall(row){
    if(!closeCallWanted(row))return;
-   // The optional coin sits on the lane the player is already using, shortly before
-   // that lane's red blocker. Grab it, then make one normal tap to BLUE.
    row.closeCallGold=true;row.closeCallGoldLane=row.entryLane;
    row.closeCallGoldSeconds=level<=20?.42:level<=40?.39:level<=60?.36:level<=80?.34:.32;
    row.closeCallGoldCollected=false;row.closeCallGoldResolved=false;
-   row.patternStart=true;
+   row.bonusLane=null;row.shieldBonus=false;row.patternStart=true;
  }
  const closeCallAngle=row=>row.angle-Math.max(.22,targetSpeed()*(row.closeCallGoldSeconds||.36));
  function collectCloseCall(row){
@@ -78,8 +74,6 @@
    const result=originalAddRow(a,index),row=rows.at(-1);if(!row)return result;
    const local=localIndex(row);
    if(level>=6&&level<=10){row.pattern=local%2?'moving':'pulse';row.locked=false;}
-   // Levels 11+ no longer create two-ring destinations. Core generation already
-   // chooses a neighbouring ring, so every BLUE destination stays one tap away.
    if(level>=21&&level<=30&&[3,7,10].includes(local)){
      row.switching=true;row.switchFromLane=row.sparkLane;const c=adjacent(prevSafe);row.switchToLane=c[(row.index+level)%Math.max(1,c.length)]??safeStep(prevSafe,1);row.pattern='moving';row.locked=false;row.patternStart=true;
    }
@@ -93,7 +87,6 @@
      if(perfectStreak>=5&&[4,9].includes(local)){row.switching=true;row.switchFromLane=row.sparkLane;const c=adjacent(prevSafe);row.switchToLane=c[(row.index+perfectStreak)%Math.max(1,c.length)]??safeStep(prevSafe,1);row.pattern='moving';row.locked=false;}
    }
    if(bossLevel())configureBoss(row,prevSafe);
-   // No HOLD and no DOUBLE SHIFT: exactly one neighbouring safe lane per gate.
    if(row.sparkLane===prevSafe||Math.abs(row.sparkLane-prevSafe)>1){const options=adjacent(prevSafe);if(options.length)laneSet(row,options[(row.index+level)%options.length]);}
    row.doubleShift=false;row.riskLane=null;row.riskReward=false;
    configureCloseCall(row);
