@@ -1,0 +1,61 @@
+/* Feature fallbacks for older Android browsers/WebViews. Modern browsers keep the normal design. */
+html.no-dvh .shell{min-height:100vh}
+html.no-dvh body[data-screen="game"] .shell{min-height:var(--compat-vh,100vh)}
+html.no-dvh body[data-screen="game"][data-playstate="playing"]{height:var(--compat-vh,100vh)}
+html.no-dvh body[data-screen="game"][data-playstate="playing"] #game-screen{height:var(--compat-vh,100vh)}
+html.no-dvh .menu-dialog,
+html.no-dvh #name-dialog,
+html.no-dvh #training-dialog,
+html.no-dvh #preplay-dialog,
+html.no-dvh #ring-lesson{max-height:calc(var(--compat-vh,100vh) - 32px)}
+html.no-dvh body[data-rest="true"] #overlay{height:var(--compat-vh,100vh)}
+html.no-dvh .reward-guide-card{max-height:calc(var(--compat-vh,100vh) - 32px)}
+
+html.no-backdrop-filter dialog::backdrop,
+html.no-backdrop-filter #special-reward-guide,
+html.no-backdrop-filter #level-one-pause-coach{background:#020705e8!important}
+
+html.no-css-has .arena.compat-overlay-open .orbit-center{opacity:0}
+html.no-css-has .arena.compat-overlay-open{width:100%;aspect-ratio:auto;min-height:360px;touch-action:pan-y}
+html.no-css-has .arena.compat-overlay-open canvas{position:absolute;inset:0;width:100%;height:auto}
+html.no-css-has .movement-controls.compat-shift-in-visible .shift-arrows{display:none}
+html.no-css-has .arena-notices.compat-level-banner .pattern-notice{visibility:hidden}
+
+html.no-css-has #game-screen .run-targets.compat-route-visible #rival-chip{visibility:hidden}
+html.no-css-has #game-screen .run-targets.compat-milestone-visible #route-cue,
+html.no-css-has #game-screen .run-targets.compat-milestone-visible #rival-chip{visibility:hidden}
+
+html.no-css-has #game-screen .game-feedback:not(.compat-toast-visible) .skill-effect{right:0;text-align:center}
+html.no-css-has #game-screen .game-feedback:not(.compat-skill-visible) .toast{left:0;justify-content:center;text-align:center}
+html.no-css-has #game-screen .game-feedback.compat-skill-visible #toast{visibility:hidden}
+
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-route-visible .run-targets,
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-rival-visible .run-targets,
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-milestone-visible .run-targets{visibility:visible}
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-route-visible .pattern-notice,
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-rival-visible .pattern-notice,
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-milestone-visible .pattern-notice{visibility:hidden}
+html.no-css-has #game-screen .arena-status.compat-pattern-warning .run-targets{visibility:hidden}
+html.no-css-has #game-screen .arena-status:not(.compat-level-banner).compat-pattern-warning .pattern-notice{visibility:visible}
+
+html.no-css-has #game-screen .arena-messages.compat-message-visible #section-goal,
+html.no-css-has #game-screen .arena-messages.compat-message-visible #practice-pace,
+html.no-css-has #game-screen .arena-messages.compat-message-visible #focus-goal,
+html.no-css-has #game-screen .arena-messages.compat-message-visible #guide-status{visibility:hidden}
+html.no-css-has #game-screen .arena-messages.compat-banner-visible #tap-anywhere-hint,
+html.no-css-has #game-screen .arena-messages.compat-skill-visible #tap-anywhere-hint,
+html.no-css-has #game-screen .arena-messages.compat-toast-visible #tap-anywhere-hint{visibility:hidden}
+
+html.no-css-has #game-screen .result-actions.compat-single-action{grid-template-columns:1fr}
+html.no-css-has body[data-screen="game"][data-playstate="over"] .result-comfort:not(.compat-comfort-visible){display:none}
+
+html.no-aspect-ratio .arena{min-height:260px}
+html.no-aspect-ratio .orbit-diagram,
+html.no-aspect-ratio #howto-film{height:auto}
+
+/* Older engines may ignore color-mix(); give the tutorial cards a visible border anyway. */
+.howto-colour-key span{border-color:#40564b}
+.advanced-howto{border-color:#40564b}
+
+/* Dialog/popup readability even without blur or dynamic viewport units. */
+dialog,.menu-dialog,#special-reward-guide .reward-guide-card{background-color:#101916}
