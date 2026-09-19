@@ -653,7 +653,7 @@ fastFire.run('updateRush(3)');assert.equal(fastFire.run('rushTime'),0,'Fire Ball
 assert.ok(Math.abs(fastFire.run('(angle-initialAngle)/base')-14)<1e-8,'Speed ramps preserve frame-independent travel');
 assert.equal(fastFire.run('speedNow()'),fastFire.run('base'),'Normal speed is restored');
 
-const calm=game(false,new Map([['loop-shift-theme','soft'],['loop-shift-focus','true'],['loop-shift-small-arena','true'],['loop-shift-fire-speed','true']]));assert.equal(calm.run('softTheme'),true);
+const calm=game(false,new Map([['loop-shift-theme','soft'],['loop-shift-focus','true'],['loop-shift-small-arena','true'],['loop-shift-fire-speed','true']]),false,false,false);assert.equal(calm.run('softTheme'),true);
 assert.equal(calm.run('focusEnabled'),false,'Retired Focus Play preference cannot silently affect new runs');
 assert.equal(calm.run('smallArena'),false,'Retired compact arena preference cannot silently shrink the game');
 assert.equal(calm.run('fireSpeedEnabled'),false,'Retired Fire Ball speed preference cannot silently change gameplay');
