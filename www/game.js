@@ -391,16 +391,16 @@ function levelUp(next){
   levelBannerTime=1.35;
   levelSparks=0;levelPerfects=0;levelHits=0;levelShieldLost=false;objectiveAwarded=false;
 
-  $('level-banner').textContent=`LEVEL ${completed} COMPLETE! ✓`;
+  $('level-banner').textContent=`LEVEL ${completed} COMPLETE → LEVEL ${level}`;
   $('level-detail').textContent=bossLevel()?`BOSS ${level} · ${BOSS_TYPES[bossType()][0]}: ${BOSS_TYPES[bossType()][1]}`:ringCount>oldRings?`${ringCount} rings unlocked${ringCount===5?' · 2 shield slots':''}`:`Level ${level} · ${level<=10?'Find your rhythm':level<=25?'Faster transitions':level<=50?'Precision timing':level<=75?'Expert patterns':'Master the orbit'}`;
   document.body.style.setProperty('--completed-sector',THEMES[(completed-1)%THEMES.length][0]);
   const banner=$('level-banner-wrap');
   banner.classList.remove('show');
   // Successive levels outlast this animation; no forced layout read is needed.
-  banner.classList.add('show');
+  banner.classList.add('show');$('arena').classList.add('celebrating');
   $('level-reward').textContent=goalResult;
   $('announcement').textContent=$('level-banner').textContent+' '+$('level-detail').textContent;
-  applyTheme();tone(660,.13);setTimeout(()=>tone(880,.16),110);setTimeout(()=>tone(1100,.22),230);
+  applyTheme();tone(660,.13);setTimeout(()=>tone(880,.16),110);setTimeout(()=>tone(1100,.22),230);vibrate([10,28,18]);
   if(oldRings===2&&ringCount===3&&!ringLessonSeen)showRingLesson();
   else if(completed%5===0&&!timedRun()&&roundKind!=='tutorial'&&roundKind!=='minute'){showRest(completed);if(roundKind==='endless')$('break-reward').textContent=`Section complete · ${completedSection.name}${completedSection.count>=completedSection.target?' · Goal achieved ✓':''}`;}
 }
@@ -1004,7 +1004,7 @@ function crash(hitRow=null,completed=false){
 }
 function update(dt){
   if(screen!=='game' || mode!=='playing')return;
-  levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime)$('level-banner-wrap').classList.remove('show');
+  levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime){$('level-banner-wrap').classList.remove('show');$('arena').classList.remove('celebrating');}
   if(startDelay>0){startDelay=Math.max(0,startDelay-dt);updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
   activeSinceBreak+=dt;
   if(activeSinceBreak>=breakSeconds&&roundKind!=='tutorial'&&roundKind!=='minute'){showRest();return;}
@@ -1087,13 +1087,14 @@ function shatterShield(){
 }
 function arc(r,start,end,color,width){ctx.beginPath();ctx.arc(size/2,size/2,r*size,start,end);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
 function drawSpark(a,r,alpha=1,color=C.gold){
-  const p=point(a,r),s=size*.012;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=(reducedMotion||softTheme)?0:10;ctx.fillRect(-s,-s,s*2,s*2);ctx.restore();
+  const p=point(a,r),s=size*.0145;ctx.save();ctx.globalAlpha=alpha;ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=(reducedMotion||softTheme)?0:13;ctx.fillRect(-s,-s,s*2,s*2);ctx.restore();
 }
 function drawGuide(){
   const targetRadius=laneRadius(guidedTarget());
-  ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=(reducedMotion||softTheme)?0:7;
-  // A short track segment is a destination cue, never a second player orb.
-  arc(targetRadius,angle-.13,angle+.13,C.blue,Math.max(3,size*.009));
+  ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=(reducedMotion||softTheme)?0:14;
+  // A bold short track segment stays unmistakably BLUE without becoming another orb.
+  arc(targetRadius,angle-.15,angle+.15,C.blue,Math.max(4.5,size*.012));
+  ctx.globalAlpha=.72;arc(targetRadius,angle-.115,angle+.115,'#e8fbff',Math.max(1.2,size*.0028));
   ctx.restore();
 }
 function drawLanding(){
@@ -1156,9 +1157,9 @@ function draw(time,dt){
         const r=rowRadius(hazard);
         if(row.open){ctx.setLineDash([3,5]);arc(r,row.angle-.075,row.angle+.075,'#93b9a9',2);ctx.setLineDash([]);}
         else{
-          ctx.save();ctx.shadowColor=C.coral;ctx.shadowBlur=6;
-          arc(r,row.angle-.066,row.angle+.066,C.coral,size*.033);ctx.restore();
-          arc(r-.01,row.angle-.05,row.angle+.05,'#ffc4ab',1.5);
+          ctx.save();ctx.shadowColor=C.coral;ctx.shadowBlur=(reducedMotion||softTheme)?0:10;
+          arc(r,row.angle-.074,row.angle+.074,C.coral,size*.041);ctx.restore();
+          arc(r-.01,row.angle-.055,row.angle+.055,'#ffe0d5',2);
         }
         if(row.pattern==='moving'&&!row.locked){
           const p=point(row.angle,r+.047);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(row.angle+Math.PI/2);
@@ -1219,8 +1220,10 @@ function drawOrb(a,r,safe){
   if(rushGlow>0){ctx.save();ctx.globalAlpha=rushGlow;ctx.strokeStyle='#dc7b25';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,size*.028,0,TAU);ctx.stroke();if(!reducedMotion&&!softTheme)for(let i=1;i<=5;i++){const tail=point(a-i*.035,r);ctx.globalAlpha=rushGlow*(1-i/6);ctx.fillStyle=i%2?'#dc7b25':'#efb45c';ctx.beginPath();ctx.arc(tail.x,tail.y,size*(.019-i*.002),0,TAU);ctx.fill();}ctx.restore();}
   if(invulnerable>0)ctx.globalAlpha=.65;
   if(safe){for(let i=0;i<shield;i++){ctx.beginPath();ctx.arc(p.x,p.y,size*(.024+i*.008),0,TAU);ctx.strokeStyle=C.lime;ctx.shadowColor=C.lime;ctx.shadowBlur=(reducedMotion||softTheme)?0:7;ctx.lineWidth=2;ctx.stroke();}}
-  ctx.shadowColor=ballColor();ctx.shadowBlur=(reducedMotion||softTheme)?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
-  ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
+  const orbRadius=size*ringSize(.021,.015);
+  ctx.shadowColor=ballColor();ctx.shadowBlur=(reducedMotion||softTheme)?0:12;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,orbRadius,0,TAU);ctx.fill();
+  ctx.shadowBlur=0;ctx.strokeStyle=lightTheme?'#102014':'#f7fff9';ctx.lineWidth=Math.max(1.5,size*.004);ctx.stroke();
+  ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.0045,p.y-size*.0055,size*.0065,0,TAU);ctx.fill();ctx.restore();
 }
 function frame(time){const elapsed=Math.max(0,(time-lastTime)/1000 || 0);if(screen==='game'&&mode==='playing'&&elapsed>.25){setPaused(true,false);$('overlay-copy').textContent='Paused after an interruption. Resume when ready.';}const dt=Math.min(elapsed,.25);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
 showExtrasHome();
