@@ -160,7 +160,7 @@
   });
 
   function userGesture(event){
-    if(button&&(event?.target===button||button.contains(event?.target)))return;
+    if(button&&(event?.target===button||button.contains?.(event?.target)))return;
     userUnlocked=true;
     if(!enabled)return;
     const onHome=document.body?.dataset?.screen==='home';
