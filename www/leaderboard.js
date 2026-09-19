@@ -53,6 +53,9 @@
       const settingsAvatar=el('settings-profile-avatar');
       if(settingsAvatar)settingsAvatar.replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
     }
+    const settingsName=el('settings-profile-name'),settingsAction=el('settings-profile-action');
+    if(settingsName)settingsName.textContent=nickname||'Player profile';
+    if(settingsAction)settingsAction.textContent=nickname?'Edit name & avatar':'Add name & avatar';
     el('edit-name').textContent = nickname ? 'Edit name' : 'Add name';
   }
   function render(data) {
