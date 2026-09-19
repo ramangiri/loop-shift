@@ -1,0 +1,32 @@
+/* Home competition, Perfect Streak and post-run performance summary. */
+.home-competition{width:100%;margin:10px 0 14px;padding:0;border:1px solid #3b5045;border-radius:16px;background:#101b16;color:var(--ink);text-align:left;overflow:hidden;box-shadow:0 10px 28px #0002}
+.home-competition:active{transform:translateY(1px)}
+.competition-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #283b31;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.1em}
+#competition-status{color:var(--lime);font-size:9px}
+.competition-body{display:grid;grid-template-columns:.8fr 1.4fr;gap:0}
+.competition-stat{min-width:0;padding:11px 12px}
+.competition-stat+.competition-stat{border-left:1px solid #283b31}
+.competition-stat>span{display:block;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:5px}
+.competition-stat strong{display:block;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+.competition-top-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+#competition-top-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+#competition-top-score{flex:0 0 auto;color:var(--gold)}
+#competition-goal{margin:0;padding:9px 12px;border-top:1px solid #283b31;color:#d7e3db;font-size:12px;font-weight:700;text-align:center}
+
+.perfect-streak-hud{color:var(--gold);font-weight:900;letter-spacing:.055em}
+.perfect-streak-hud.hot{color:var(--lime);text-shadow:0 0 12px #d6ff6240}
+
+.run-summary{margin:13px 0 8px;padding:12px;border:1px solid #34483d;border-radius:16px;background:#0f1915}
+.run-summary h3{margin:0 0 10px;color:var(--muted);font:800 10px/1.3 Arial,sans-serif;letter-spacing:.11em;text-transform:uppercase}
+.run-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.run-summary-stat{padding:9px 8px;border-radius:11px;background:#16231d;text-align:center;min-width:0}
+.run-summary-stat span{display:block;color:var(--muted);font-size:10px;line-height:1.25;margin-bottom:4px}
+.run-summary-stat strong{display:block;color:var(--ink);font-size:19px;line-height:1;font-variant-numeric:tabular-nums}
+#summary-streak{color:var(--gold)}
+#summary-note{margin:9px 2px 0;color:#aebdb5;font-size:11px;line-height:1.4;text-align:center}
+
+@media(max-width:360px){
+ .competition-stat{padding:10px 9px}.competition-stat strong{font-size:18px}
+ #competition-top-name{font-size:12px}#competition-goal{font-size:11px}
+ .run-summary{padding:10px}.run-summary-grid{gap:6px}.run-summary-stat{padding:8px 5px}
+}
