@@ -40,7 +40,7 @@ function lossExplanation(row){
  if(lastShift>=0&&gameTime-lastShift<.3)return `Blocked ring — BLUE was ring ${row.sparkLane+1}.`;
  return `${row.pattern==='moving'?'Sweeping barrier':row.pattern==='pulse'?'Pulse gate':'Missed safe gap'} — move to ring ${row.sparkLane+1} earlier.`;
 }
-function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);$('motion-toggle').setAttribute('aria-pressed',String(reducedMotion));$('motion-toggle').textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
+function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);const b=$('motion-toggle');b.setAttribute('aria-pressed',String(reducedMotion));const value=b.querySelector?.('span');if(value)value.textContent=reducedMotion?'On':'Off';else b.textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
 function showRest(completed=0){
  checkpointEligible=completed>0&&completed%5===0&&roundKind==='endless';
   setPaused(true);breakPending=true;document.body.dataset.rest='true';
@@ -600,7 +600,7 @@ function finishAndSave(home=false){
 }
 function requestExit(){
  if($('ring-lesson').open)$('ring-lesson').close();
- if(screen==='game'&&(mode==='playing'||mode==='paused')){if(mode==='playing')setPaused(true,false);$('exit-dialog').showModal();$('exit-resume').focus();}else goHome();
+ if(screen==='game'&&(mode==='playing'||mode==='paused')){if(mode==='playing')setPaused(true,false);$('overlay').hidden=true;$('exit-dialog').showModal();$('exit-resume').focus();}else goHome();
 }
 function homePlay(){
   if(mode==='paused'){enterGame();setPaused(false);}else if($('challenge-choice').value==='daily')startDaily();else if($('challenge-choice').value==='weekly')startWeekly();else startEndless();
@@ -1289,8 +1289,8 @@ $('share-daily').addEventListener('click',shareDaily);
 syncControls();
 $('control-mode').addEventListener('click',()=>{swipeControls=!swipeControls;gesture=null;try{localStorage.setItem('loop-shift-swipe-controls',String(swipeControls));}catch{}syncControls();});
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
-$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
-$('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';});
+{const value=$('vibration-toggle').querySelector?.('span');if(value)value.textContent=vibrationOn?'On':'Off';else $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';}
+$('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));{const value=$('vibration-toggle').querySelector?.('span');if(value)value.textContent=vibrationOn?'On':'Off';else $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';}});
 $('daily-play').addEventListener('click',startDaily);
 $('weekly-play').addEventListener('click',startWeekly);
 $('community-reward').addEventListener('click',()=>{if(!window.LoopShiftSocial?.unlockedTheme())return;selectedTheme='convergence';try{localStorage.setItem('loop-shift-theme-v2',selectedTheme);}catch{}updateAdventureUI();$('community-reward').textContent='Convergence theme · Selected';});
@@ -1306,7 +1306,7 @@ function handleBack(){
  if($('feedback-dialog').open){$('feedback-close').click();return;}
  if($('name-dialog').open){$('cancel-name').click();return;}
  if($('settings-dialog').open){$('settings-close').click();return;}
- if($('exit-dialog').open){$('exit-dialog').close();$('play').focus();return;}
+ if($('exit-dialog').open){$('exit-dialog').close();$('overlay').hidden=false;$('play').focus();return;}
  if($('preplay-dialog').open){$('preplay-dialog').close();preplayOptions=null;return;}
  if($('training-dialog').open){exitTraining();return;}
  if($('power-dialog').open||$('ring-lesson').open)return;

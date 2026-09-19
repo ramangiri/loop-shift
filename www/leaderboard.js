@@ -49,14 +49,23 @@
   }
   function playerLabel() {
     el('player-label').textContent = nickname || 'Ready to play?';
-    if(window.LoopShiftAvatar)el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
+    if(window.LoopShiftAvatar){el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));const a=el('settings-profile-avatar');if(a)a.replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));}
+    const n=el('settings-profile-name'),act=el('settings-profile-action');if(n)n.textContent=nickname||'Player profile';if(act)act.textContent=nickname?'Edit name & avatar':'Add name & avatar';
     el('edit-name').textContent = nickname ? 'Edit name' : 'Add name';
+  }
+  function renderHomeCompetition(data,kind){
+    const card=el('home-competition');if(!card||kind!=='endless')return;
+    const entries=Array.isArray(data?.entries)?data.entries:[],top=entries[0]||null,me=data?.me||null,best=Number.isSafeInteger(me?.mainBest)?me.mainBest:Number.isSafeInteger(me?.best)?me.best:null;
+    el('competition-rank').textContent=Number.isInteger(me?.rank)&&me.rank>0?'#'+me.rank:'—';el('competition-top-name').textContent=top?.name||'No leader yet';el('competition-top-score').textContent=Number.isFinite(top?.score)?Number(top.score).toLocaleString():'—';
+    let goal='Finish a ranked run to set your place.';if(me?.rank===1)goal='You’re #1 · keep the lead.';else if(top&&Number.isFinite(best)){const gap=Math.max(0,Number(top.score)+1-best);goal=gap?gap.toLocaleString()+' points to #1':'You’re level with the top score.';}else if(top)goal='Add your name and set a ranked score.';
+    el('competition-goal').textContent=goal;el('competition-status').textContent='LIVE';
   }
   function render(data) {
     connection='online';
     const weekly=data.challenge?.kind==='weekly',daily=!!data.challenge&&!weekly,kind=weekly?'weekly':daily?'daily':'endless';
     if(daily)activeChallenge=data.challenge;
     const visible=kind===activeBoard;
+    renderHomeCompetition(data,kind);
     if(data.me){restoreQueue(data.me.key);if(Number.isSafeInteger(data.me.mainBest))savedBest=data.me.mainBest;else if(!daily&&!weekly)savedBest=data.me.best;}
     if(visible){
     el('board-endless').setAttribute('aria-pressed',String(kind==='endless'));el('board-daily').setAttribute('aria-pressed',String(daily));el('board-weekly').setAttribute('aria-pressed',String(weekly));
@@ -132,6 +141,7 @@
     for(const id of window.LoopShiftAvatar?.choices||[]){const button=document.createElement('button');button.type='button';button.setAttribute('aria-label','Avatar '+id.split('-')[1]);button.setAttribute('aria-pressed',String(id===selectedAvatar));button.append(window.LoopShiftAvatar.make('',id));button.addEventListener('click',()=>{if(busy)return;selectedAvatar=id;for(const option of list.children)option.setAttribute('aria-pressed',String(option===button));});list.append(button);}
   }
   el('profile-settings').addEventListener('click',()=>{el('settings-dialog').close();askName();});
+  el('home-competition')?.addEventListener('click',()=>window.LoopShiftHome?.show?.('progress',true));
   el('name-form').addEventListener('submit', async event => {
     event.preventDefault();if (busy) return;
     const name = validName(el('player-name').value);

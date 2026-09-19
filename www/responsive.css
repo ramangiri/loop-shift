@@ -451,3 +451,53 @@ body[data-screen=game][data-playstate=over] .result-comfort{
   body[data-screen=game][data-playstate=over] #result-extras:not([hidden]){grid-template-columns:1fr 1fr}
   body[data-screen=game][data-playstate=over] #result-coaching{font-size:15px!important}
 }
+
+
+/* Restored evening Home rankings card — event-driven, never in the gameplay loop. */
+.home-competition{width:100%;margin:10px 0 14px;padding:0;border:1px solid #3b5045;border-radius:16px;background:#101b16;color:var(--ink);text-align:left;overflow:hidden;box-shadow:0 10px 28px #0002}
+.home-competition:active{transform:translateY(1px)}
+.competition-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #283b31;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.1em}
+#competition-status{color:var(--lime);font-size:9px}
+.competition-body{display:grid;grid-template-columns:.8fr 1.4fr}
+.competition-stat{min-width:0;padding:11px 12px}
+.competition-stat+.competition-stat{border-left:1px solid #283b31}
+.competition-stat>span{display:block;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:5px}
+.competition-stat strong{display:block;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+.competition-top-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+#competition-top-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+#competition-top-score{flex:0 0 auto;color:var(--gold)}
+#competition-goal{display:block;margin:0;padding:9px 12px;border-top:1px solid #283b31;color:#d7e3db;font-size:12px;font-weight:700;text-align:center}
+@media(max-width:360px){.competition-stat{padding:10px 9px}.competition-stat strong{font-size:18px}#competition-top-name{font-size:12px}#competition-goal{font-size:11px}}
+
+/* Restored compact evening Settings. */
+#settings-dialog.settings-sheet{box-sizing:border-box;width:min(92vw,440px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));padding:0;overflow:auto;border-radius:24px;background:var(--bg);color:var(--ink)}
+#settings-dialog .settings-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 18px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+#settings-dialog .settings-head h2{margin:0;font-size:clamp(28px,7vw,34px);line-height:1.1}
+#settings-dialog .settings-done{width:auto;min-width:82px;min-height:48px;margin:0;padding:10px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:700 15px/1 Arial,sans-serif;text-align:center}
+#settings-dialog .settings-section{padding:16px 18px;border-bottom:1px solid var(--line)}
+#settings-dialog .settings-section:last-of-type{border-bottom:0}
+#settings-dialog .settings-section h3{margin:0 0 12px;color:var(--lime);font:800 13px/1.3 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+#settings-dialog .settings-stack{display:grid;grid-template-columns:1fr;gap:8px}
+#settings-dialog .settings-row{box-sizing:border-box;width:100%;max-width:none;min-width:0;min-height:54px;margin:0;padding:11px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-align:left}
+#settings-dialog .settings-row strong{min-width:0;font:700 15px/1.25 Arial,sans-serif}
+#settings-dialog .settings-row span{color:var(--muted);font:600 13px/1.25 Arial,sans-serif;text-align:right}
+#settings-dialog .settings-row[aria-pressed=true]{border-color:var(--lime)}
+#settings-dialog #sound.settings-row{grid-template-columns:24px minmax(0,1fr) auto}
+#settings-dialog #sound.settings-row svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+#settings-dialog .music-button::before,#settings-dialog .music-button::after{display:none!important}
+#settings-dialog .settings-retired{display:none!important}
+#settings-dialog .settings-profile-row{grid-template-columns:48px minmax(0,1fr) auto}
+#settings-dialog .settings-profile-avatar{width:42px;height:42px;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:var(--surface)}
+#settings-dialog .settings-profile-avatar:empty::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--muted);opacity:.55}
+#settings-dialog .settings-profile-avatar .arcade-avatar{width:42px;height:42px;margin:0}
+@media(max-width:360px){#settings-dialog.settings-sheet{width:calc(100vw - 20px)}#settings-dialog .settings-head{padding-inline:14px}#settings-dialog .settings-section{padding-inline:14px}#settings-dialog .settings-row{padding-inline:12px}#settings-dialog .settings-profile-row{grid-template-columns:42px minmax(0,1fr) auto}#settings-dialog .settings-profile-avatar,#settings-dialog .settings-profile-avatar .arcade-avatar{width:38px;height:38px}}
+
+/* Evening exit-dialog alignment. */
+#exit-dialog.action-dialog{box-sizing:border-box;width:min(92vw,430px);max-height:calc(100dvh - 28px);padding:0;overflow:auto;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--ink)}
+#exit-dialog.action-dialog::backdrop{background:#020705d9;backdrop-filter:blur(5px)}
+#exit-dialog .action-dialog-head{padding:24px 22px 16px;text-align:center;border-bottom:1px solid var(--line)}
+#exit-dialog .action-dialog-head span{display:block;margin:0 0 7px;color:var(--muted);font:900 11px/1.3 Arial,sans-serif;letter-spacing:.16em}
+#exit-dialog .action-dialog-head h2{margin:0;font-size:clamp(26px,7vw,34px);line-height:1.15}
+#exit-dialog .action-dialog-copy{margin:18px 22px 4px;color:var(--muted);text-align:center;font:15px/1.5 Arial,sans-serif}
+#exit-dialog .action-dialog-actions{display:grid;grid-template-columns:1fr;gap:10px;padding:16px 18px 20px}
+#exit-dialog .action-dialog-actions button{box-sizing:border-box;width:100%;max-width:none;min-width:0;min-height:54px;margin:0;padding:12px 16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.25}
