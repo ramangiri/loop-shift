@@ -206,10 +206,10 @@ keys.run('gameTime+=1');const unchanged=keys.run('lane');
 key('Space','shift',true);assert.equal(keys.run('lane'),unchanged,'Holding Space never repeats');
 tap('shift',{isPrimary:false});tap('shift',{button:2});assert.equal(keys.run('lane'),unchanged,'Secondary touches and right click do not shift');
 tap('game-screen',{target:{closest:()=>({})}});assert.equal(keys.run('lane'),unchanged,'Menus do not trigger shifts');
-keys.run('startDelay=1');key('Space');tap();assert.equal(keys.run('lane'),unchanged,'Countdown blocks both controls');
-keys.run('startDelay=0;setPaused(true)');tap();assert.equal(keys.run('lane'),unchanged,'Paused game does not move');
+keys.run("startDelay=1;lastShift=-1;lastShiftInput=-1;ringCount=2;lane=0;radius=laneRadius(0);rows=[{entryLane:0,sparkLane:1,angle:angle+1,passed:false,open:false,locked:true,hazardLanes:[0]}]");const countdownLane=keys.run('lane'),countdownRadius=keys.run('radius');key('Space');assert.notEqual(keys.run('lane'),countdownLane,'Countdown keeps controls live');keys.run('update(.05)');assert.notEqual(keys.run('radius'),countdownRadius,'Ball starts moving during the countdown instead of waiting for it to end');const countdownMoved=keys.run('lane');tap();assert.equal(keys.run('lane'),countdownMoved,'Countdown input is still debounced');
+keys.run('startDelay=0;setPaused(true)');const pausedLane=keys.run('lane');tap();assert.equal(keys.run('lane'),pausedLane,'Paused game does not move');
 keys.run('setPaused(false);startDelay=0;gameTime+=1;');key('Space');const moved=keys.run('lane');key('Space');tap();assert.equal(keys.run('lane'),moved,'Duplicate input stays debounced');
-console.log('PASS: identical Space/touch targets at all 100 levels, countdown, pause, held keys and multitouch.');
+console.log('PASS: identical Space/touch targets at all 100 levels, live countdown input, pause, held keys and multitouch.');
 
 const guide=game();guide.click('home-play');
 guide.run('ringCount=6;level=13;lane=1;radius=laneRadius(1);startDelay=0;gameTime=2;rows=[{entryLane:1,sparkLane:2,angle:angle+1,passed:false},{entryLane:2,sparkLane:3,angle:angle+2,passed:false}];updateGuide();');
@@ -490,8 +490,9 @@ assert.ok(Math.abs(midShift.run('newOffset-oldOffset'))<1e-12,'Transition keeps 
 assert.equal(midShift.run('landing'),midShift.run('oldLanding'));
 midShift.run('setPaused(true);globalThis.frozenFlow=JSON.stringify([levelTransition,radius,angle,departingRows]);update(.5);');
 assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Pause freezes ring morph');
-midShift.run('setPaused(false);update(.1);');
-assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Resume countdown freezes ring morph');
+midShift.run('setPaused(false);globalThis.resumeRadius=radius;globalThis.resumeTarget=laneRadius(lane);globalThis.frozenWorld=JSON.stringify([levelTransition,angle,departingRows]);update(.1);');
+assert.equal(midShift.run('JSON.stringify([levelTransition,angle,departingRows])'),midShift.run('frozenWorld'),'Resume countdown keeps the world and ring morph frozen');
+assert.ok(Math.abs(midShift.run('radius-resumeTarget'))<Math.abs(midShift.run('resumeRadius-resumeTarget')),'Resume countdown lets the ball finish its in-flight shift');
 midShift.run('startDelay=0;update(.2);');assert.ok(midShift.run('levelTransition.elapsed')>0,'Morph resumes after countdown');
 
 const previews=game();previews.click('home-play');
