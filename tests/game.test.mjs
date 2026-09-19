@@ -581,7 +581,7 @@ const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('re
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
 const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.ok(pacing.run('targetSpeed()')>1.3);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
-const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
+const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#256987');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
 // Short journeys finish cleanly and keep their medal separate from ranked progress.
@@ -707,7 +707,12 @@ const mobileInput=game();mobileInput.run('startMinute()');mobileInput.run('start
 const inputLane=mobileInput.run('lane');
 mobileInput.run("globalThis.mobileTouch={pointerId:1,button:0,isPrimary:true,target:{id:'shift',closest:()=>null},clientX:190,clientY:250,preventDefault(){}};beginGesture(mobileTouch)");
 assert.notEqual(mobileInput.run('lane'),inputLane,'Instant tap shifts on touch-down');
-const movedLane=mobileInput.run('lane');mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
+const movedLane=mobileInput.run('lane');
+const beforeRadius=mobileInput.run('radius'),targetRadius=mobileInput.run('laneRadius(lane)');
+mobileInput.run('update(1/120)');
+const afterRadius=mobileInput.run('radius');
+assert.ok(Math.abs(afterRadius-targetRadius)<Math.abs(beforeRadius-targetRadius)*.72,'Ball visibly reacts within one 120Hz frame');
+mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
 mobileInput.click('control-mode');assert.equal(mobileInput.store.get('loop-shift-swipe-controls'),'true');
 mobileInput.run('gameTime+=.2;rows[0].sparkLane=1-lane;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
 mobileInput.run('endGesture(mobileTouch)');assert.notEqual(mobileInput.run('lane'),movedLane);

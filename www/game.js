@@ -62,7 +62,7 @@ let lightTheme=false,softTheme=true;
 try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';softTheme=!localStorage.getItem('loop-shift-theme')||localStorage.getItem('loop-shift-theme')==='soft';}catch{}
 function syncAppearance(){
  document.body.dataset.appearance=lightTheme?'light':softTheme?'soft':'dark';
- Object.assign(C,lightTheme?{lime:'#286500',coral:'#b43221',gold:'#875700',line:'#7b897d',blue:'#0056a6'}:softTheme?{lime:'#b8d68f',coral:'#e39a83',gold:'#e4bf83',line:'#61747a',blue:'#8ac5d1'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
+ Object.assign(C,lightTheme?{lime:'#4f6f2f',coral:'#a95140',gold:'#886426',line:'#918674',blue:'#256987'}:softTheme?{lime:'#b7d989',coral:'#d78d7f',gold:'#d8bd7b',line:'#4c5b5e',blue:'#78b9cb'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
  $('theme-toggle').textContent=lightTheme?'Theme: Light':softTheme?'Theme: Comfort':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));for(const name of ['dark','soft','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':softTheme?'soft':'dark')));
 }
 function comfortAnswer(answer){
@@ -75,6 +75,7 @@ function comfortAnswer(answer){
  $('comfort-response').textContent=answer==='comfortable'?'Thanks for your feedback.':answer==='eyes'?'Rest your eyes and look away from the screen. Take a break before another round.':'Stop playing and rest. Take a break before another round.';
 }
 
+const SHIFT_RESPONSE=42;
 let size = 440, mode = 'ready', screen = 'home', lastTime = 0, totalTime = 0;
 let angle = -Math.PI / 2, lane = 1, radius = .385, rows = [], particles = [], trail = [];
 let score = 0, passes = 0, level = 1, sparks = 0, charge = 0, shield = 0, invulnerable = 0;
@@ -303,7 +304,7 @@ function showTutorialDodgeRetry(row){
 }
 function updateTutorial(dt){
  if(trainingWaiting)return;
- gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
+ gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*SHIFT_RESPONSE));updateLanding(dt);
  if(tutorialStage===0&&tutorialShift){completeTrainingLesson(tutorialStage+1);return;}
  for(const row of rows){
  const delta=row.angle-angle;
@@ -991,7 +992,7 @@ function finishRush(){
 function updateRush(dt){
  const elapsed=Math.min(dt,rushTime),before=5-rushTime;const oldAngle=angle;
  rushTime=Math.max(0,rushTime-elapsed);
- angle+=rushDistance(5-rushTime)-rushDistance(before);radius+=(laneRadius(lane)-radius)*(1-Math.exp(-elapsed*24));updateLanding(elapsed);
+ angle+=rushDistance(5-rushTime)-rushDistance(before);radius+=(laneRadius(lane)-radius)*(1-Math.exp(-elapsed*SHIFT_RESPONSE));updateLanding(elapsed);
  for(const coin of rushCoins){if(!coin.collected&&coin.angle>=oldAngle-.1&&coin.angle<=angle+.1&&Math.abs(radius-laneRadius(coin.lane))<.032){coin.collected=true;score+=100;sparks++;advanceMission('sparks');tone(800,.06,'sine',.025);}}
  if(!rushTime)finishRush();updateHUD();
 }
@@ -1075,7 +1076,7 @@ function update(dt){
   const previousAngles=rows.map(row=>row.angle);
   for(const row of rows)updateRow(row);
   angle+=dt*speed;
-  radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
+  radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*SHIFT_RESPONSE));updateLanding(dt);
   invulnerable=Math.max(0,invulnerable-dt);
   if(!reducedMotion&&!softTheme){trail.push({a:angle,r:radius});if(trail.length>(progress.trail==='comet'?9:6))trail.shift();}
   for(let i=0;i<rows.length;i++){

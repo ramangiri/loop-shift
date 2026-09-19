@@ -76,8 +76,8 @@ body[data-theme=convergence]{--surface:#172d29;background:#081a18}body[data-them
 #challenge-choice[type="hidden"]{display:none!important}
 
 /* Quiet backgrounds and explicit appearance choices. */
-body[data-appearance="light"]{--bg:#d6dcd8;--surface:#c7d0ca!important;--ink:#18271f;--muted:#415348;--line:#82968a}
-body[data-appearance="soft"]{color-scheme:dark;--bg:#29363d;--surface:#34434a!important;--ink:#edf1f0;--muted:#bdcbc9;--line:#61747a;--lime:#b8d68f;--gold:#e4bf83;--coral:#e39a83;--sector:#b8d68f!important;--completed-sector:#b8d68f!important}
+body[data-appearance="light"]{--bg:#cfc3ad;--surface:#ded2bd!important;--ink:#332f28;--muted:#655f55;--line:#a59b89;--lime:#4f6f2f;--gold:#886426;--coral:#a95140;--sector:#4f6f2f!important;--completed-sector:#4f6f2f!important}
+body[data-appearance="soft"]{color-scheme:dark;--bg:#1b2327;--surface:#273137!important;--ink:#edf1ef;--muted:#aeb9b5;--line:#49585a;--lime:#b7d989;--gold:#d8bd7b;--coral:#d78d7f;--sector:#b7d989!important;--completed-sector:#b7d989!important}
 body[data-appearance="soft"] :is(.console,.player-summary,.event-card,.community-card,.leaderboard,.menu-dialog){background:var(--surface);color:var(--ink)}
 .appearance-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .appearance-choices button{color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
@@ -200,10 +200,10 @@ body[data-screen=game]:is([data-playstate=over],[data-playstate=paused]) #game-s
 body[data-reduced-motion=true][data-screen=game] #game-screen .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){animation:none;transform:none}
 
 /* Comfort uses stable, subdued surfaces and no ambient motion. */
-body[data-appearance=soft]{--bg:#242d2b;--surface:#303b37!important}
+body[data-appearance=soft]{--bg:#1b2327;--surface:#273137!important}
 body[data-appearance=soft] *,body[data-appearance=soft] *::before,body[data-appearance=soft] *::after{animation:none!important;transition:none!important}
 body[data-appearance=soft] .arena-messages :is(#level-banner-wrap.show,#skill-effect.visible,#toast.show){opacity:1;transform:none}
-body[data-appearance=light]{--bg:#eee9de;--surface:#e5dfd2!important}
+body[data-appearance=light]{--bg:#cfc3ad;--surface:#ded2bd!important}
 
 body[data-screen=game] #game-screen #focus-goal{position:absolute;inset:0 0 auto;margin:0;font:700 12px/28px LoopArcade,Arial,sans-serif;color:var(--ink)}
 .arena-messages:has(#level-banner-wrap.show) #focus-goal{visibility:hidden}
