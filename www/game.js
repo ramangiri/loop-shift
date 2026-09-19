@@ -286,6 +286,21 @@ function beginTrainingStep(){
 }
 function exitTraining(){trainingWaiting=false;$('training-dialog').close();mode='over';window.LoopShiftMusic?.pause();goHome();}
 function completeTrainingLesson(step){showTrainingStep(step);$('training-step').textContent='✓ Lesson complete · '+(step+1)+' / '+TRAINING.length;$('announcement').textContent='Lesson complete. '+TRAINING[step][0];}
+function showTutorialDodgeRetry(row){
+ trainingWaiting=true;tutorialShift=false;
+ // Keep RED just outside the collision point so the player never sees it pass
+ // through the ball during the lesson.
+ row.angle=angle+.115;row.baseAngle=row.angle;
+ $('tutorial-instruction').textContent='RED = AVOID · TAP TO BLUE';
+ $('training-step').textContent='TRY AGAIN · 3 / '+TRAINING.length;
+ $('training-title').textContent='RED = AVOID';
+ $('training-copy').textContent='Tap before the coral barrier reaches your ball. Follow BLUE to the safe ring.';
+ $('training-go').textContent='TRY AGAIN · TAP TO BLUE';
+ $('training-picture').dataset.lesson='barrier';
+ if(!$('training-dialog').open)$('training-dialog').showModal();
+ $('training-go').focus();
+ tone(240,.10,'triangle',.04);vibrate(18);updateHUD();
+}
 function updateTutorial(dt){
  if(trainingWaiting)return;
  gameTime+=dt;trainingElapsed+=dt;angle+=dt*.6;radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateLanding(dt);
@@ -294,17 +309,16 @@ function updateTutorial(dt){
  const delta=row.angle-angle;
  if(tutorialStage===1&&!row.collected&&Math.abs(delta)<.1&&Math.abs(radius-laneRadius(row.sparkLane))<.032){row.collected=true;sparks++;tone(720,.15);completeTrainingLesson(2);return;}
  if(delta<=.08&&tutorialStage===3){shield=0;shieldSound('break');shatterShield();completeTrainingLesson(4);return;}
- if(delta<-.12&&tutorialStage===2){
- const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
- if(safe){completeTrainingLesson(tutorialStage+1);return;}
- $('tutorial-instruction').textContent='Try again: tap before the coral barrier reaches you.';
- row.hazardLanes=[lane];row.sparkLane=(lane+1)%ringCount;row.angle=angle+1.4;
+ if(tutorialStage===2){
+   const safe=!row.hazardLanes.includes(lane)&&Math.abs(radius-laneRadius(lane))<.032;
+   if(!safe&&delta<=.115){showTutorialDodgeRetry(row);return;}
+   if(safe&&delta<-.12){completeTrainingLesson(tutorialStage+1);return;}
  }
  if(delta<-.2&&tutorialStage===1){row.angle=angle+1.4;}
  }
  updateHUD();
 }
-const TRAINING_HINTS=['Tap once to follow the blue arc.','Tap to collect the gold spark.','Tap away from the coral barrier.','Let the barrier touch your shield.','Pause anytime. Save at five-level checkpoints.'];
+const TRAINING_HINTS=['Tap once to follow the blue arc.','Tap to collect the gold spark.','TAP TO BLUE · RED = AVOID.','Let the barrier touch your shield.','Pause anytime. Save at five-level checkpoints.'];
 function dailyShareText(){
   const current=new Date().toISOString().slice(0,10)===dailyRun.day;
   return `Can you beat my score? I scored ${score} in Loop Shift’s daily challenge (${dailyRun.day}). ${current?'Play the same course before 00:00 UTC':'That course has ended; today has a new challenge'}: ${location.origin||''}${location.pathname||'/'}#daily`;

@@ -301,8 +301,13 @@ const trainingFrozen=training.run('angle');training.run('update(10);shift();');a
 training.click('training-go');training.run('update(20)');assert.equal(training.run('tutorialStage'),0,'No automatic lesson timeout');
 training.run('shift();update(.01)');assert.equal(training.run('tutorialStage'),1);
 training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2);assert.equal(training.run('sparks'),1);
-training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt retries');
-training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
+training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt stays on the dodge lesson');
+assert.equal(training.run('trainingWaiting'),true,'RED contact freezes the hands-on lesson before crossing the ball');
+assert.equal(training.nodes.get('training-dialog').open,true,'Unsafe RED contact opens the dodge coach');
+assert.match(training.nodes.get('training-title').textContent,/RED = AVOID/);
+assert.match(training.nodes.get('training-go').textContent,/TAP TO BLUE/);
+assert.ok(training.run('rows[0].angle-angle')>=.10,'RED remains in front of the player instead of passing through');
+training.click('training-go');training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
 training.click('training-go');training.run('for(let i=0;i<150;i++)update(1/60)');assert.equal(training.run('shield'),0);assert.equal(training.run('tutorialStage'),4);
 assert.equal(training.run('TRAINING.length'),5);assert.match(training.nodes.get('training-copy').textContent,/Save & Exit/);
 training.click('training-go');assert.equal(training.run('screen'),'home');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);

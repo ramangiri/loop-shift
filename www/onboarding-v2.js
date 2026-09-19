@@ -42,7 +42,7 @@
   {
    title:`${kw('BLUE','blue')} = GO HERE`,plain:'BLUE = GO HERE',kind:'blue',
    copy:`The ${kw('BLUE','blue')} arc shows the safe ring. The ${kw('RED','red')} barrier is coming on your current ring, so tap early and finish the move before red reaches you.`,
-   hint:'BLUE = GO · Move before RED reaches you.'
+   hint:'TAP TO BLUE · RED = AVOID · Move before RED reaches you.'
   },
   {
    title:`HOLD = DON'T TAP`,plain:"HOLD = DON'T TAP",kind:'hold',
