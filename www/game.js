@@ -1094,6 +1094,7 @@ function drawGuide(){
   ctx.save();ctx.lineCap='round';ctx.shadowColor=C.blue;ctx.shadowBlur=(reducedMotion||softTheme)?0:14;
   // A bold short track segment stays unmistakably BLUE without becoming another orb.
   arc(targetRadius,angle-.15,angle+.15,C.blue,Math.max(4.5,size*.012));
+  ctx.globalAlpha=.72;arc(targetRadius,angle-.115,angle+.115,'#e8fbff',Math.max(1.2,size*.0028));
   ctx.restore();
 }
 function drawLanding(){
