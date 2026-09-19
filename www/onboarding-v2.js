@@ -32,17 +32,17 @@
   {
    title:`${kw('GREEN','green')} = YOU`,plain:'GREEN = YOU',kind:'green',
    copy:`The ${kw('GREEN','green')} ball is you and it moves around the loop by itself. Tap once now so you can see how your ball changes rings.`,
-   hint:'GREEN = YOU · Tap once to see your ball move one ring.'
+   hint:'GREEN = YOU · TAP ANYWHERE TO SWITCH RINGS.'
   },
   {
    title:'TAP = MOVE ONE RING',plain:'TAP = MOVE ONE RING',kind:'tap',
    copy:`One tap moves ${kw('GREEN','green')} exactly one ring. Use one controlled tap to reach the ${kw('GOLD','gold')} spark. Later, a double shift simply means two quick taps.`,
-   hint:'ONE TAP = ONE RING · Tap once to reach the GOLD spark.'
+   hint:'TAP ANYWHERE · ONE TAP = ONE RING · Reach the GOLD spark.'
   },
   {
    title:`${kw('BLUE','blue')} = GO HERE`,plain:'BLUE = GO HERE',kind:'blue',
    copy:`The ${kw('BLUE','blue')} arc shows the safe ring. The ${kw('RED','red')} barrier is coming on your current ring, so tap early and finish the move before red reaches you.`,
-   hint:'TAP TO BLUE · RED = AVOID · Move before RED reaches you.'
+   hint:'TAP ANYWHERE TO BLUE · RED = AVOID · Move before RED reaches you.'
   },
   {
    title:`HOLD = DON'T TAP`,plain:"HOLD = DON'T TAP",kind:'hold',
@@ -52,7 +52,7 @@
   {
    title:`${kw('RED','red')} = AVOID · ${kw('GOLD','gold')} = COLLECT`,plain:'RED = AVOID · GOLD = COLLECT',kind:'redgold',
    copy:`Remember the full language: ${kw('GREEN','green')} = you · ${kw('BLUE','blue')} = go · <strong>HOLD</strong> = stay · ${kw('RED','red')} = avoid · ${kw('GOLD','gold')} = collect. Later levels build on these same rules.`,
-   hint:'GREEN = YOU · BLUE = GO · HOLD = STAY · RED = AVOID · GOLD = COLLECT.'
+   hint:'TAP ANYWHERE TO COLLECT · GOLD = COLLECT · RED = AVOID.'
   }
  ];
 

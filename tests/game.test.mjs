@@ -308,6 +308,7 @@ training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update
 training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt stays on the dodge lesson');
 assert.equal(training.run('trainingWaiting'),true,'RED contact freezes the hands-on lesson before crossing the ball');
 assert.equal(training.nodes.get('training-dialog').open,true,'Unsafe RED contact opens the dodge coach');
+assert.equal(training.nodes.get('training-controls').hidden,true,'Bottom lesson buttons stay hidden during retry coaching');
 assert.match(training.nodes.get('training-title').textContent,/RED = AVOID/);
 assert.match(training.nodes.get('training-go').textContent,/TAP TO BLUE/);
 assert.ok(training.run('rows[0].angle-angle')>=.10,'RED remains in front of the player instead of passing through');

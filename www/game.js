@@ -790,7 +790,7 @@ function updateHUD(){
  if(!$('save-checkpoint').hidden)$('comfort-finish').hidden=true;
  if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
-  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing'||!trainingWaiting;$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=true;
+  $('training-controls').hidden=true;$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=true;
   updateFocusGoal();updateRushHUD();
   $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';

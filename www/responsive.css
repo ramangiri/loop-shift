@@ -993,3 +993,56 @@ body[data-screen=game][data-playstate=playing][data-training=true] #game-screen 
   background:var(--bg);
   border-radius:12px;
 }
+
+
+/* Final hands-on portrait geometry: keep the full orbit below the HUD. */
+@media(orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-safe-top:calc(130px + env(safe-area-inset-top,0px));
+    --training-safe-bottom:calc(112px + env(safe-area-inset-bottom,0px));
+    --orbit-diameter:max(190px,min(calc(100vw - 28px),calc(var(--play-height,100dvh) - var(--training-safe-top) - var(--training-safe-bottom)),540px));
+  }
+  body[data-screen=game][data-playstate=playing][data-training=true] #arena{
+    top:calc(var(--training-safe-top) + var(--orbit-diameter)/2);
+    left:50%;
+  }
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-messages{
+    top:calc(var(--training-safe-top) + var(--orbit-diameter) + 8px);
+    left:max(14px,var(--screen-gutter));
+    right:max(14px,var(--screen-gutter));
+    height:auto;
+    min-height:54px;
+  }
+}
+body[data-screen=game][data-training=true] #training-controls{
+  display:none!important;
+  pointer-events:none!important;
+}
+body[data-screen=game][data-training=true] #game-screen .arena-messages #tutorial-instruction{
+  min-height:46px;
+  max-width:min(92vw,680px);
+  margin:0 auto;
+  padding:7px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  background:var(--bg);
+  border-radius:12px;
+  font:800 clamp(14px,4vw,18px)/1.35 Arial,sans-serif;
+  text-align:center;
+}
+@media(max-width:360px) and (orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-safe-top:calc(124px + env(safe-area-inset-top,0px));
+    --training-safe-bottom:calc(104px + env(safe-area-inset-bottom,0px));
+    --orbit-diameter:max(180px,min(calc(100vw - 24px),calc(var(--play-height,100dvh) - var(--training-safe-top) - var(--training-safe-bottom)),480px));
+  }
+}
+@media(max-height:700px) and (orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-safe-top:calc(116px + env(safe-area-inset-top,0px));
+    --training-safe-bottom:calc(94px + env(safe-area-inset-bottom,0px));
+    --orbit-diameter:max(170px,min(calc(100vw - 34px),calc(var(--play-height,100dvh) - var(--training-safe-top) - var(--training-safe-bottom)),440px));
+  }
+}
