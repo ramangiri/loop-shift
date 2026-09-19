@@ -78,18 +78,15 @@
     const originalMarkHit=markHit;
     markHit=function(row){breakStreak();return originalMarkHit(row);};
   }
-  if(typeof update==='function'){
-    const originalUpdate=update;
-    update=function(dt){
-      const beforePass=typeof passes==='number'?passes:0,beforePerfect=typeof perfects==='number'?perfects:0,beforeMode=typeof mode!=='undefined'?mode:'';
-      const result=originalUpdate(dt);
-      if(runActive&&beforeMode==='playing'&&typeof passes==='number'&&passes>beforePass){
-        const cleared=passes-beforePass,gained=(typeof perfects==='number'?perfects:0)-beforePerfect;
-        if(gained<cleared)breakStreak();
-      }
-      updateStreakHUD();
-      return result;
-    };
+  // Keep competition UI out of the 120 Hz physics loop. Streak state changes
+  // only on real gameplay events, so update the HUD at those event boundaries.
+  if(typeof resetCombo==='function'){
+    const originalResetCombo=resetCombo;
+    resetCombo=function(){breakStreak();return originalResetCombo();};
+  }
+  if(typeof setPaused==='function'){
+    const originalSetPaused=setPaused;
+    setPaused=function(...args){const result=originalSetPaused(...args);updateStreakHUD();return result;};
   }
   if(typeof startRush==='function'){
     const originalStartRush=startRush;
