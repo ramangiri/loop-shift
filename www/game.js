@@ -50,7 +50,7 @@ function showRest(completed=0){
   $('play').textContent=completed?`CONTINUE TO LEVEL ${level}`:'CONTINUE WHEN READY';
   $('save-checkpoint').hidden=!checkpointEligible;$('checkpoint-status').textContent='';
   $('restart').hidden=true;
-  $('section-choices').hidden=!completed||roundKind!=='endless';if(completed)$('section-choices').querySelector('legend').textContent='Choose next section';
+  $('section-choices').hidden=!completed||roundKind!=='endless';
   $('section-choice-status').textContent='';
   $('break-reward').textContent=completed?`🏆 Milestone ${completed/5} earned · ${$('next-reward').textContent}`:'';
   if(checkpointEligible)saveCheckpoint(false);
