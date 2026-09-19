@@ -1340,7 +1340,7 @@ function handleBack(){
  if($('feedback-dialog').open){$('feedback-close').click();return;}
  if($('name-dialog').open){$('cancel-name').click();return;}
  if($('settings-dialog').open){$('settings-close').click();return;}
- if($('exit-dialog').open){$('exit-resume').click();return;}
+ if($('exit-dialog').open){$('exit-dialog').close();$('overlay').hidden=false;$('play').focus();return;}
  if($('preplay-dialog').open){$('preplay-dialog').close();preplayOptions=null;return;}
  if($('training-dialog').open){exitTraining();return;}
  if($('power-dialog').open||$('ring-lesson').open)return;
