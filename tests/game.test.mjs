@@ -299,7 +299,11 @@ assert.equal(sprint.nodes.get('overlay-title').textContent,'Sprint complete!');s
 const training=game();training.run('globalThis.sends=0;window.LoopShiftBoard={refresh(){},beginRound(){},submit(){sends++},saveProgress(){sends++}};startTutorial();');
 const trainingFrozen=training.run('angle');training.run('update(10);shift();');assert.equal(training.run('angle'),trainingFrozen);assert.equal(training.run('tutorialShift'),false);
 training.click('training-go');training.run('update(20)');assert.equal(training.run('tutorialStage'),0,'No automatic lesson timeout');
-training.run('shift();update(.01)');assert.equal(training.run('tutorialStage'),1);
+assert.equal(training.nodes.get('training-controls').hidden,true,'Lesson navigation cannot steal taps during an active exercise');
+const tutorialLane=training.run('lane');
+training.run("globalThis.tutorialTap={pointerId:7,button:0,isPrimary:true,target:{id:'game-screen',closest:()=>null},clientX:180,clientY:520,preventDefault(){}};beginGesture(tutorialTap)");
+assert.notEqual(training.run('lane'),tutorialLane,'Tap anywhere in the active tutorial shifts immediately');
+training.run('update(.01)');assert.equal(training.run('tutorialStage'),1);
 training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2);assert.equal(training.run('sparks'),1);
 training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt stays on the dodge lesson');
 assert.equal(training.run('trainingWaiting'),true,'RED contact freezes the hands-on lesson before crossing the ball');

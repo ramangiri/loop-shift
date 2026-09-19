@@ -963,3 +963,33 @@ body[data-appearance=light] #feedback-result{
   color:#477f00!important;
   border-color:#68b900!important;
 }
+
+
+/* Hands-on practice overlap/tap fix. */
+@media(orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-center-shift:-40px;
+  }
+}
+@media(max-width:360px) and (orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-center-shift:-20px;
+  }
+}
+@media(max-height:700px) and (orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-center-shift:-8px;
+  }
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #training-controls[hidden]{
+  display:none!important;
+  pointer-events:none!important;
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-messages{
+  z-index:5;
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-messages #tutorial-instruction{
+  max-width:min(92vw,680px);
+  background:var(--bg);
+  border-radius:12px;
+}

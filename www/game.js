@@ -275,7 +275,7 @@ function showTrainingStep(step){
  $('training-dialog').showModal();$('training-go').focus();
 }
 function beginTrainingStep(){
- $('training-dialog').close();trainingWaiting=false;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;ringCount=2;lane=1;radius=laneRadius(lane);shield=0;charge=0;rushChain=0;
+ $('training-dialog').close();trainingWaiting=false;$('training-controls').hidden=true;if(mode==='paused'){setPaused(false);startDelay=0;}trainingElapsed=0;tutorialShift=false;lastShift=-1;ringCount=2;lane=1;radius=laneRadius(lane);shield=0;charge=0;rushChain=0;
  $('tutorial-instruction').textContent=TRAINING_HINTS[tutorialStage];
  if(tutorialStage===TRAINING.length-1){exitTraining();return;}
  if(tutorialStage===3){shield=1;shieldSound('gain1');}
@@ -319,7 +319,7 @@ function updateTutorial(dt){
  }
  updateHUD();
 }
-const TRAINING_HINTS=['Tap once to follow the blue arc.','Tap to collect the gold spark.','TAP TO BLUE · RED = AVOID.','Let the barrier touch your shield.','Pause anytime. Save at five-level checkpoints.'];
+const TRAINING_HINTS=['TAP ANYWHERE TO SHIFT · Follow BLUE.','TAP ANYWHERE · Collect the gold spark.','TAP ANYWHERE TO BLUE · RED = AVOID.','WAIT · Let RED touch your shield.','Pause anytime. Save at five-level checkpoints.'];
 function dailyShareText(){
   const current=new Date().toISOString().slice(0,10)===dailyRun.day;
   return `Can you beat my score? I scored ${score} in Loop Shift’s daily challenge (${dailyRun.day}). ${current?'Play the same course before 00:00 UTC':'That course has ended; today has a new challenge'}: ${location.origin||''}${location.pathname||'/'}#daily`;
@@ -790,7 +790,7 @@ function updateHUD(){
  if(!$('save-checkpoint').hidden)$('comfort-finish').hidden=true;
  if(screen==='home')syncCheckpoint();
   document.body.dataset.playstate=mode;document.body.dataset.training=String(roundKind==='tutorial');
-  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing';$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=true;
+  $('training-controls').hidden=roundKind!=='tutorial'||mode!=='playing'||!trainingWaiting;$('pause-settings').hidden=mode!=='paused';$('finish-save').hidden=true;
   updateFocusGoal();updateRushHUD();
   $('game-score-label').textContent=roundKind==='tutorial'?'Practice':roundKind==='practice'?'Practice':'Score';$('score').textContent=pad(score);$('best').textContent=pad(timedRun()?dailyBest:personalBest());$('level').textContent=roundKind==='tutorial'?'LEARN':`${String(level).padStart(2,'0')} / ${roundKind==='journey'?3:roundKind==='sprint'?5:100}`;
   $('best-label').textContent=timedRun()?(roundKind==='weekly'?'WEEKLY BEST':'DAILY BEST'):Number.isSafeInteger(window.LoopShiftBoard?.best?.())?'ONLINE BEST':'DEVICE BEST';
