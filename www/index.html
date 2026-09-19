@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="./events.css">
   <link rel="stylesheet" href="./responsive.css">
   <link rel="stylesheet" href="./browser-compat.css">
+  <link rel="stylesheet" href="./competitive-polish.css">
   <script defer src="./browser-compat.js"></script>
   <script defer src="./native-bridge.js"></script>
   <script defer src="./avatars.js"></script>
@@ -49,6 +50,14 @@
             <div class="home-launch-card"><div class="player-summary"><div class="player-line"><span id="profile-avatar" aria-hidden="true"></span><span id="player-label">Ready to play?</span><button class="text-button" id="edit-name">Add name</button></div>
 
             <div class="home-best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v6m-4 2h8"/></svg><span id="home-best-label">ONLINE BEST</span><strong id="home-best">—</strong></div>
+            <button id="home-competition" class="home-competition" type="button">
+              <span class="competition-head"><span>RANKINGS</span><span id="competition-status">LIVE</span></span>
+              <span class="competition-body">
+                <span class="competition-stat"><span>YOUR RANK</span><strong id="competition-rank">—</strong></span>
+                <span class="competition-stat"><span>🏆 TOP SCORE</span><span class="competition-top-line"><strong id="competition-top-name">Loading…</strong><strong id="competition-top-score">—</strong></span></span>
+              </span>
+              <span id="competition-goal">Loading leaderboard…</span>
+            </button>
             <p id="home-player-level" class="home-player-level"></p><progress id="home-level-meter" max="100" value="0" aria-label="Highest level reached"></progress><div class="home-record-status"><p id="home-best-note" role="status">Connecting to your saved score…</p><button class="text-button" id="retry-home-score" hidden>Retry save</button></div>
             <details class="device-record" id="device-record" hidden><summary>On this device: <strong id="device-best">0</strong></summary><p>This record can include offline rounds or another player. Only scores saved to your profile appear on the shared board.</p></details></div>
 <p id="mode-caption" role="status">Selected: Classic</p><button class="primary-button home-play" id="home-play"><span id="home-play-label">Play now</span><span aria-hidden="true">↗</span></button>
@@ -177,6 +186,16 @@
               <h2 id="overlay-title">Get in the loop.</h2>
               <p id="overlay-copy">You move automatically.<br>Tap to switch rings and stay alive.</p>
               <span id="result-avatar" aria-hidden="true"></span><div id="result" class="result" hidden><div><span>YOUR SCORE</span><strong id="result-score">0</strong></div><div><span>PERSONAL BEST</span><strong id="result-best">0</strong></div><div hidden><span>SPARKS</span><strong id="result-sparks">0</strong></div></div>
+              <section id="run-summary" class="run-summary" aria-label="Run performance" hidden>
+                <h3>Run performance</h3>
+                <div class="run-summary-grid">
+                  <div class="run-summary-stat"><span>PERFECT SHIFTS</span><strong id="summary-perfects">0</strong></div>
+                  <div class="run-summary-stat"><span>BEST STREAK</span><strong id="summary-streak">×0</strong></div>
+                  <div class="run-summary-stat"><span>SPECIALS</span><strong id="summary-specials">0</strong></div>
+                  <div class="run-summary-stat"><span>FIRE BALLS</span><strong id="summary-rushes">0</strong></div>
+                </div>
+                <p id="summary-note"></p>
+              </section>
               <p id="result-coaching" class="result-coaching" hidden></p><p id="result-progress" class="result-progress" hidden></p><p id="result-gap" class="result-gap" hidden></p>
               <p id="result-storage" class="result-storage" hidden></p><p class="score-save-status" id="score-save-status" role="status" hidden></p>
               <button class="text-button" id="retry-score" hidden>Retry saving score</button>
@@ -195,7 +214,7 @@
             </div>
           </div>
         </div>
-        </div><div id="compact-hud" class="compact-hud" aria-label="Run status"><span id="compact-shield"></span><span id="compact-power"></span><span id="compact-combo"></span></div><div class="arena-messages" aria-label="Game messages"><p id="guide-status"></p><p id="focus-goal" hidden></p><p id="section-goal" hidden></p><p id="practice-pace" hidden></p><div id="tap-anywhere-hint" aria-hidden="true"><strong class="tap-copy">TAP ANYWHERE TO SHIFT</strong><strong class="click-copy">SPACE OR CLICK TO SHIFT</strong><span>Blue arc = next ring · HOLD = stay</span></div><div id="level-banner-wrap" class="level-banner-wrap" role="status"><strong id="level-banner"></strong><span id="level-reward"></span><span id="level-detail"></span></div><div class="game-feedback">
+        </div><div id="compact-hud" class="compact-hud" aria-label="Run status"><span id="compact-shield"></span><span id="compact-power"></span><span id="compact-combo"></span><span id="perfect-streak-hud" class="perfect-streak-hud" hidden></span></div><div class="arena-messages" aria-label="Game messages"><p id="guide-status"></p><p id="focus-goal" hidden></p><p id="section-goal" hidden></p><p id="practice-pace" hidden></p><div id="tap-anywhere-hint" aria-hidden="true"><strong class="tap-copy">TAP ANYWHERE TO SHIFT</strong><strong class="click-copy">SPACE OR CLICK TO SHIFT</strong><span>Blue arc = next ring · HOLD = stay</span></div><div id="level-banner-wrap" class="level-banner-wrap" role="status"><strong id="level-banner"></strong><span id="level-reward"></span><span id="level-detail"></span></div><div class="game-feedback">
           <div class="skill-effect" id="skill-effect" role="status"></div>
           <div class="toast" id="toast" aria-live="polite"></div>
         </div><p id="tutorial-instruction" class="tutorial-instruction" hidden></p></div><p id="hit-feedback" class="hit-feedback" role="status"></p><div class="play-strip"><div class="charge-row"><span class="shield-icons" id="shield-icons" aria-hidden="true"></span><span id="charge-label">SHIELD CHARGE</span><div class="charge" id="charge" role="meter" aria-label="Shield charge" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><i></i><i></i><i></i><i></i><i></i><i></i></div><span id="charge-count">0 / 6</span></div>        <p id="rush-status" class="rush-status" role="status">Special coins · 0/3</p><div class="rhythm-row"><div class="combo-stat"><strong id="combo">×1</strong><span id="combo-caption">SCORE MULTIPLIER</span></div><div class="fever-status"><div><span id="fever-label">FEVER</span><span id="fever-count">0 / 6</span></div><div class="fever-meter" id="fever-meter" role="meter" aria-label="Fever" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fever-fill"></i></div></div></div></div>
