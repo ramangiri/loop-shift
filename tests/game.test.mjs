@@ -206,10 +206,21 @@ keys.run('gameTime+=1');const unchanged=keys.run('lane');
 key('Space','shift',true);assert.equal(keys.run('lane'),unchanged,'Holding Space never repeats');
 tap('shift',{isPrimary:false});tap('shift',{button:2});assert.equal(keys.run('lane'),unchanged,'Secondary touches and right click do not shift');
 tap('game-screen',{target:{closest:()=>({})}});assert.equal(keys.run('lane'),unchanged,'Menus do not trigger shifts');
-keys.run('startDelay=1');key('Space');tap();assert.equal(keys.run('lane'),unchanged,'Countdown blocks both controls');
-keys.run('startDelay=0;setPaused(true)');tap();assert.equal(keys.run('lane'),unchanged,'Paused game does not move');
-keys.run('setPaused(false);startDelay=0;gameTime+=1;');key('Space');const moved=keys.run('lane');key('Space');tap();assert.equal(keys.run('lane'),moved,'Duplicate input stays debounced');
-console.log('PASS: identical Space/touch targets at all 100 levels, countdown, pause, held keys and multitouch.');
+keys.run("startDelay=1;inputTime=0;lastShiftInput=-1;ringCount=2;lane=1;radius=laneRadius(1);rows=[{entryLane:1,sparkLane:0,angle:angle+1,passed:false,open:false,locked:true,hazardLanes:[1]}];updateGuide()");
+const countdownLane=keys.run('lane'),countdownRadius=keys.run('radius');
+key('Space');assert.notEqual(keys.run('lane'),countdownLane,'Level 1 accepts the first control during the safe countdown');
+keys.run('update(.05)');assert.notEqual(keys.run('radius'),countdownRadius,'The ball visibly starts moving during the safe countdown');
+const countdownMoved=keys.run('lane');tap();assert.equal(keys.run('lane'),countdownMoved,'Countdown input remains debounced');
+
+keys.run("startDelay=1;inputTime=0;lastShiftInput=-1;level=50;ringCount=4;lane=0;radius=laneRadius(0);rows=[{entryLane:0,sparkLane:3,angle:angle+1,passed:false,open:false,locked:true,hazardLanes:[0,1,2]}];updateGuide()");
+key('Space');assert.equal(keys.run('lane'),1,'Higher-ring countdown moves one ring toward BLUE');
+keys.run('update(.1)');key('Space');assert.equal(keys.run('lane'),2,'Higher-ring countdown accepts another deliberate tap after debounce');
+keys.run('update(.1)');key('Space');assert.equal(keys.run('lane'),3,'Higher-ring countdown can reach the BLUE lane before hazards start');
+
+keys.run('startDelay=0;setPaused(true)');const pausedLane=keys.run('lane');tap();assert.equal(keys.run('lane'),pausedLane,'Paused game does not move');
+keys.run("setPaused(false);ringCount=2;lane=1;radius=laneRadius(1);rows=[{entryLane:1,sparkLane:0,angle:angle+1,passed:false,open:false,locked:true,hazardLanes:[1]}];lastShiftInput=-1;updateGuide()");key('Space');assert.equal(keys.run('lane'),0,'Resume countdown accepts the first tap immediately');
+keys.run('startDelay=0;gameTime+=1;');key('Space');const moved=keys.run('lane');key('Space');tap();assert.equal(keys.run('lane'),moved,'Duplicate input stays debounced');
+console.log('PASS: identical Space/touch targets at all 100 levels, live countdown input, pause/resume, held keys and multitouch.');
 
 const guide=game();guide.click('home-play');
 guide.run('ringCount=6;level=13;lane=1;radius=laneRadius(1);startDelay=0;gameTime=2;rows=[{entryLane:1,sparkLane:2,angle:angle+1,passed:false},{entryLane:2,sparkLane:3,angle:angle+2,passed:false}];updateGuide();');

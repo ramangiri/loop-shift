@@ -78,7 +78,7 @@ function comfortAnswer(answer){
 let size = 440, mode = 'ready', screen = 'home', lastTime = 0, totalTime = 0;
 let angle = -Math.PI / 2, lane = 1, radius = .385, rows = [], particles = [], trail = [];
 let score = 0, passes = 0, level = 1, sparks = 0, charge = 0, shield = 0, invulnerable = 0;
-let best = 0, soundOn = false, audioContext, toastTimer, startDelay = 0, lastShift = -1;
+let best = 0, soundOn = false, audioContext, toastTimer, startDelay = 0, lastShift = -1, inputTime = 0, lastShiftInput = -1;
 let installPrompt;
 let roundKind='endless',dailyRun=null,dailyBest=0,pathLane=1,gameSeed=1,frameCarry=0,impactTime=0,dailyRequestId=0,dailyStartPending=false;
 const seededRandom=()=>{gameSeed=(Math.imul(gameSeed,1664525)+1013904223)>>>0;return gameSeed/4294967296;};
@@ -840,7 +840,7 @@ function start(options){
   $('level-banner-wrap').classList.remove('show');$('arena').classList.remove('celebrating');
   if(roundKind==='practice'){level=practiceLevel;passes=(level-1)*12;ringCount=ringLimit(level);}
   levelTransition=null;departingRows=[];motionSpeed=targetSpeed();applyTheme();
-  angle=-Math.PI/2;lane=1;radius=laneRadius(lane);rows=[];trail=[];particles=[];startDelay=roundKind==='tutorial'?0:quickRetry ? .45 : 1.5;lastShift=-1;
+  angle=-Math.PI/2;lane=1;radius=laneRadius(lane);rows=[];trail=[];particles=[];startDelay=roundKind==='tutorial'?0:quickRetry ? .45 : 1.5;lastShift=-1;inputTime=0;lastShiftInput=-1;
   gameTime=0;combo=0;feverCharge=0;feverTime=0;perfects=0;roundFevers=0;bestCombo=0;nextRowIndex=0;shatters=[];
   effectTime=0;patternNoticeTime=0;$('skill-effect').classList.remove('visible');
   $('pattern-notice').textContent=PATTERN_COPY.classic;$('pattern-notice').classList.remove('warning');
@@ -854,14 +854,15 @@ function start(options){
   tone(440,.12);
 }
 function shift(direction=0){
-  if(trainingWaiting || screen!=='game' || mode!=='playing' || startDelay>0 || gameTime-lastShift<.095)return;
+  const countdownInput=startDelay>0;
+  if(trainingWaiting || screen!=='game' || mode!=='playing' || (countdownInput?inputTime-lastShiftInput:gameTime-lastShift)<.095)return;
   const target=direction?Math.max(0,Math.min(ringCount-1,lane+Math.sign(direction))):guidedTarget(),movement=target-lane;
   if(target===lane)return;
   shiftHintCount++;if(shiftHintCount>=3)$('tap-anywhere-hint').classList.add('faded');
-  unlockAudio();lastShift=gameTime;
+  unlockAudio();if(countdownInput)lastShiftInput=inputTime;else lastShift=gameTime;
   for(const row of rows)if(!row.passed){row.perfectCandidate=false;row.closeCandidate=false;}
   const next=rows.find(row=>!row.passed&&row.angle-angle>0);
-  if(next && !next.attempted && !next.open && blocks(next,lane) && Math.abs(radius-laneRadius(lane))<.015){
+  if(!countdownInput && next && !next.attempted && !next.open && blocks(next,lane) && Math.abs(radius-laneRadius(lane))<.015){
     const seconds=(next.angle-angle)/(roundKind==='tutorial'?.6:speedNow());
     if(seconds<.65){next.attempted=true;next.perfectCandidate=seconds>=.20&&seconds<=.38;next.closeCandidate=seconds>=.14&&seconds<.20;}
   }
@@ -892,7 +893,7 @@ function setPaused(paused, moveFocus=true){
     }
     if(screen!=='game')enterGame();
     unlockAudio();
-    mode='playing';$('comfort-check').hidden=true;$('overlay').hidden=true;$('shift').disabled=false;startDelay=1.5;frameCarry=0;lastTime=performance.now();syncMusic();window.LoopShiftMusic?.play();
+    mode='playing';$('comfort-check').hidden=true;$('overlay').hidden=true;$('shift').disabled=false;startDelay=1.5;lastShiftInput=-1;frameCarry=0;lastTime=performance.now();syncMusic();window.LoopShiftMusic?.play();
     $('pause').setAttribute('aria-label','Pause game');$('announcement').textContent='Game resumed.';
     $('pause-icon').setAttribute('d','M8 5v14M16 5v14');
     if(moveFocus)$('shift').focus({preventScroll:true});
@@ -1004,8 +1005,9 @@ function crash(hitRow=null,completed=false){
 }
 function update(dt){
   if(screen!=='game' || mode!=='playing')return;
+  inputTime+=dt;
   levelBannerTime=Math.max(0,levelBannerTime-dt);if(!levelBannerTime)$('level-banner-wrap').classList.remove('show');
-  if(startDelay>0){startDelay=Math.max(0,startDelay-dt);updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
+  if(startDelay>0){startDelay=Math.max(0,startDelay-dt);radius+=(laneRadius(lane)-radius)*(1-Math.exp(-dt*24));updateCountdown();if(startDelay===0){updateHUD();tone(660,.1);}return;}
   activeSinceBreak+=dt;
   if(activeSinceBreak>=breakSeconds&&roundKind!=='tutorial'&&roundKind!=='minute'){showRest();return;}
   if(timedRun()||roundKind==='minute')dt=Math.min(dt,Math.max(0,(roundKind==='minute'?60:120)-gameTime));
