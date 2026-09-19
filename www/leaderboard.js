@@ -48,7 +48,11 @@
   }
   function playerLabel() {
     el('player-label').textContent = nickname || 'Ready to play?';
-    if(window.LoopShiftAvatar)el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
+    if(window.LoopShiftAvatar){
+      el('profile-avatar').replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
+      const settingsAvatar=el('settings-profile-avatar');
+      if(settingsAvatar)settingsAvatar.replaceChildren(...(nickname?[window.LoopShiftAvatar.make(nickname,avatar)]:[]));
+    }
     el('edit-name').textContent = nickname ? 'Edit name' : 'Add name';
   }
   function render(data) {
@@ -86,7 +90,7 @@
     if(data.me){el('standing-name').textContent=data.me.name;el('standing-rank').textContent=data.me.rank?'#'+data.me.rank:'—';el('standing-score').textContent=data.me.best.toLocaleString();el('standing-medal').textContent=data.me.rank===1?'🏆':data.me.rank===2?'🥈':data.me.rank===3?'🥉':'';if(window.LoopShiftAvatar)el('standing-avatar').replaceChildren(window.LoopShiftAvatar.make(data.me.name,data.me.avatar));}
     }
     if (data.me) {
-      avatar=data.me.avatar||'';nickname = data.me.name;ranked = true;offlineReady=false;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
+      avatar=data.me.avatar||selectedAvatar||'';selectedAvatar=avatar||selectedAvatar;nickname = data.me.name;ranked = true;offlineReady=false;playerLabel();window.LoopShiftSocial?.identity({key:playerKey,name:nickname});
       if(data.me.progress){el('home-player-level').textContent=`Level ${data.me.progress.highest} / 100`;el('home-level-meter').value=data.me.progress.highest;serverProgress=data.me.progress;progressListener?.(serverProgress);if(!progressPending&&!progressBusy)el('progress-sync').textContent='Trophies and unlocked levels saved.';}
     } else { el('home-player-level').textContent='';el('home-level-meter').value=0;clearPlayer(); }
     notifyBest();
@@ -120,7 +124,7 @@
   function finishName(name, online) {
     offlineReady=!online;if(!online)clearPlayer();
     nickname = name;ranked = online;playerLabel();notifyBest();
-    try { localStorage.setItem('loop-shift-nickname-v2', name);localStorage.setItem('loop-shift-avatar',avatar||selectedAvatar); } catch {}
+    avatar=avatar||selectedAvatar;selectedAvatar=avatar||selectedAvatar;playerLabel();try { localStorage.setItem('loop-shift-nickname-v2', name);localStorage.setItem('loop-shift-avatar',avatar||selectedAvatar); } catch {}
     const action = nextAction;nextAction = null;
     el('name-dialog').close();
     if(progressPending)saveProgress();
@@ -137,7 +141,7 @@
     const name = validName(el('player-name').value);
     if (!name) { el('name-error').textContent = 'Enter 1–16 letters or numbers. Spaces, dots, apostrophes, hyphens and underscores are OK.';el('player-name').focus();return; }
     busy = true;el('save-name').disabled = true;el('player-name').disabled = true;el('cancel-name').disabled = true;el('play-offline').hidden = true;el('name-error').textContent = 'Saving your nickname…';
-    try { if (refreshJob) await refreshJob;if(scoreJob)await scoreJob;const data = await request('player', {name,avatar:selectedAvatar});render(data);finishName(data.me.name, true); }
+    try { if (refreshJob) await refreshJob;if(scoreJob)await scoreJob;const requestedAvatar=selectedAvatar;const data = await request('player', {name,avatar:requestedAvatar});avatar=data.me?.avatar||requestedAvatar;selectedAvatar=avatar;render(data);playerLabel();try{localStorage.setItem('loop-shift-avatar',avatar);}catch{}window.dispatchEvent?.(new CustomEvent('loopshift:profile-updated',{detail:{name:data.me.name,avatar}}));finishName(data.me.name, true); }
     catch (error) { el('name-error').textContent = error.message;el('play-offline').hidden = !nextAction || !canPlayOffline; }
     finally { busy = false;el('save-name').disabled = false;el('player-name').disabled = false;el('cancel-name').disabled = false; }
   });

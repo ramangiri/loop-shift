@@ -5,7 +5,7 @@ const TAU = Math.PI * 2;
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 try{reducedMotion=localStorage.getItem('loop-shift-reduced-motion')==null?reducedMotion:localStorage.getItem('loop-shift-reduced-motion')==='true';}catch{}
 let focusEnabled=false,focusRun=false,smallArena=false,breakSeconds=180,comfortStop=false,focusGoal=0,focusCount=0,focusSparkBase=0;
-try{localStorage.removeItem('loop-shift-focus');localStorage.removeItem('loop-shift-small-arena');const savedBreak=Number(localStorage.getItem('loop-shift-break-seconds'));if([60,120,180].includes(savedBreak))breakSeconds=savedBreak;}catch{}
+try{localStorage.removeItem('loop-shift-focus');localStorage.removeItem('loop-shift-small-arena');localStorage.removeItem('loop-shift-break-seconds');}catch{}
 function syncFocus(){
  document.body.dataset.smallArena=String(smallArena);
  $('focus-toggle').textContent='Focus Play: '+(focusEnabled?'ON':'OFF')+' · unranked';$('focus-toggle').setAttribute('aria-pressed',String(focusEnabled));
@@ -24,10 +24,10 @@ let comfortRun=false,breakPending=false,activeSinceBreak=0;
 let runPreviousBest=0,minuteBest=0,deviceScoreSaved=false;
 try{minuteBest=Number(localStorage.getItem('loop-shift-minute-best'))||0;}catch{}
 let swipeControls=false;
-try{swipeControls=localStorage.getItem('loop-shift-swipe-controls')==='true';}catch{}
+try{localStorage.removeItem('loop-shift-swipe-controls');}catch{}
 function syncControls(){const b=$('control-mode');b.setAttribute('aria-pressed',String(swipeControls));const value=b.querySelector?.('span');if(value)value.textContent=swipeControls?'Tap + swipe':'Instant tap';else b.textContent=swipeControls?'Controls: Tap + swipe':'Controls: Instant tap';}
 let slowPracticeTime=0,sectionStartSparks=0,sectionStartPerfects=0,sectionStartPasses=0,pauseLeft=false;
-try{pauseLeft=localStorage.getItem('loop-shift-pause-left')==='true';}catch{}
+try{localStorage.removeItem('loop-shift-pause-left');}catch{}
 function syncPauseSide(){document.body.dataset.pauseSide=pauseLeft?'left':'right';const b=$('pause-side');b.setAttribute('aria-pressed',String(pauseLeft));const value=b.querySelector?.('span');if(value)value.textContent=pauseLeft?'Left side':'Right side';else b.textContent='Pause button: '+(pauseLeft?'Left':'Right');}
 function sectionGoal(){
  const n=Math.floor((level-1)/5)%3;
@@ -668,7 +668,7 @@ function updateCountdown(){
 
 function updateSound(){
   $('sound').setAttribute('aria-label',soundOn?'Turn sound off':'Turn sound on');
-  $('sound').setAttribute('aria-pressed',String(soundOn));$('sound-label').textContent=soundOn?'Sound effects on':'Sound effects off';
+  $('sound').setAttribute('aria-pressed',String(soundOn));$('sound-label').textContent=soundOn?'On':'Off';
   $('sound-lines').setAttribute('d',soundOn?'M15 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14':'m16 9 6 6m0-6-6 6');
 }
 function unlockAudio(){

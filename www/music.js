@@ -9,7 +9,9 @@
 
   function label(){
     if(!button)return;
-    button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';
+    const strong=button.querySelector?.('strong'),state=button.querySelector?.('span');
+    if(strong&&state){strong.textContent='Music';state.textContent=enabled?(blocked?'Tap to enable':'On'):'Off';}
+    else button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';
     button.setAttribute('aria-pressed',String(enabled));
     button.setAttribute('aria-label',enabled?(blocked?'Enable background music':'Mute background music'):'Enable background music');
     button.setAttribute('title',enabled?(blocked?'Tap to enable music':'Music on'):'Music off');

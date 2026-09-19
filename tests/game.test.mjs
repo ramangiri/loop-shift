@@ -659,7 +659,7 @@ assert.equal(calm.run('focusEnabled'),false,'Retired Focus Play preference canno
 assert.equal(calm.run('smallArena'),false,'Retired compact arena preference cannot silently shrink the game');
 assert.equal(calm.run('fireSpeedEnabled'),false,'Retired Fire Ball speed preference cannot silently change gameplay');
 calm.click('home-play');calm.run('startDelay=0;startRush();globalThis.calmAngle=angle;globalThis.calmSpeed=speedNow();updateRush(5)');assert.ok(Math.abs(calm.run('(angle-calmAngle)/calmSpeed')-5)<1e-8);calm.run('activeSinceBreak=180;update(.01)');assert.equal(calm.run('mode'),'paused');
-const settingsKeep=game(false,null,false,false,false);settingsKeep.click('break-60');assert.equal(settingsKeep.run('breakSeconds'),60);settingsKeep.click('appearance-soft');assert.equal(settingsKeep.run('softTheme'),true);
+const settingsKeep=game(false,new Map([['loop-shift-break-seconds','60']]));assert.equal(settingsKeep.run('breakSeconds'),180,'Break reminder stays fixed at three minutes');settingsKeep.click('appearance-soft');assert.equal(settingsKeep.run('softTheme'),true);
 
 const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');for(let i=0;i<5;i++)preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v2'),'true');
 const bonusCatch=game();bonusCatch.click('home-play');bonusCatch.run('startDelay=0;level=4;ringCount=4;rows=[];lane=1;radius=laneRadius(lane);globalThis.beforeBonus=score;rows=[{angle:angle-.35,baseAngle:angle-.35,bonusLane:1,bonusCollected:false,sparkLane:0,collected:true,hit:true,passed:true,locked:true,hazardLanes:[],pattern:"classic"}];update(.01)');assert.equal(bonusCatch.run('rows[0].bonusCollected'),true);assert.ok(bonusCatch.run('score-beforeBonus')>=40);bonusCatch.run('update(.01)');assert.equal(bonusCatch.run('score-beforeBonus'),40);
@@ -697,7 +697,7 @@ assert.ok(Math.abs(rushWithRest.run('(rows[0].baseAngle-angle)/speedNow()')-rush
 const slower=game();slower.click('home-play');slower.run('crash(rows[0])');slower.click('practice-failure');
 assert.equal(slower.run('slowPracticeTime'),8);assert.ok(slower.run('targetSpeed()')<.6);
 slower.run('startDelay=0;rows=[];nextRowIndex=12;for(let i=0;i<960;i++)update(1/120)');assert.ok(slower.run('slowPracticeTime')<.001);
-slower.click('pause-side');assert.equal(slower.run('pauseLeft'),true);assert.equal(game(false,slower.store).run('pauseLeft'),true);
+slower.store.set('loop-shift-pause-left','true');const fixedPause=game(false,slower.store);assert.equal(fixedPause.run('pauseLeft'),false,'Pause stays on the right');
 
 const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,false);
 const localSave=game();localSave.click('home-play');localSave.run('score=987;gameTime=15;updateHUD()');assert.equal(localSave.store.get('loop-shift-best-v2'),'987');assert.equal(localSave.run('deviceScoreSaved'),true);
@@ -714,10 +714,8 @@ mobileInput.run('update(1/120)');
 const afterRadius=mobileInput.run('radius');
 assert.ok(Math.abs(afterRadius-targetRadius)<Math.abs(beforeRadius-targetRadius)*.72,'Ball visibly reacts within one 120Hz frame');
 mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
-mobileInput.click('control-mode');assert.equal(mobileInput.store.get('loop-shift-swipe-controls'),'true');
-mobileInput.run('gameTime+=.2;rows[0].sparkLane=1-lane;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
-mobileInput.run('endGesture(mobileTouch)');assert.notEqual(mobileInput.run('lane'),movedLane);
-assert.equal(game(false,mobileInput.store).run('swipeControls'),true,'Control preference persists');
+mobileInput.store.set('loop-shift-swipe-controls','true');
+const fixedTap=game(false,mobileInput.store);assert.equal(fixedTap.run('swipeControls'),false,'Instant tap is the permanent control mode');
 mobileInput.run('shield=1;charge=2;rushTime=1.2;updateHUD()');assert.match(mobileInput.nodes.get('compact-power').textContent,/ending/);assert.match(mobileInput.nodes.get('compact-shield').textContent,/Shields 1/);
 
 // Back closes dialogs before leaving; it never resumes a run underneath a dialog.
