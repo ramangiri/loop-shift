@@ -547,3 +547,164 @@ body[data-screen=game][data-training=true] #tap-anywhere-hint{
   #exit-dialog .action-dialog-copy{margin-inline:18px}
   #exit-dialog .action-dialog-actions{padding-inline:14px}
 }
+
+
+/* Guided-practice layout: use the empty portrait space and keep controls together. */
+#training-dialog{
+  box-sizing:border-box;
+  width:min(92vw,430px);
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  height:auto;
+  padding:20px;
+  border-radius:22px;
+  overflow-y:auto;
+}
+#training-dialog #training-step{
+  margin:0 0 6px;
+  font:800 12px/18px Arial,sans-serif;
+  letter-spacing:.04em;
+}
+#training-dialog #training-title{
+  margin:0 0 10px;
+  font-size:clamp(24px,6.5vw,30px);
+  line-height:1.15;
+}
+#training-dialog #training-picture{
+  width:min(100%,280px);
+  height:150px;
+  margin:4px auto 12px;
+}
+#training-dialog #training-copy{
+  margin:0 0 14px;
+  font:16px/1.45 Arial,sans-serif;
+}
+#training-dialog #training-go,
+#training-dialog #training-skip{
+  box-sizing:border-box;
+  width:100%;
+  max-width:none;
+  min-height:54px;
+  margin:0;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+#training-dialog #lesson-menu{
+  margin:10px 0;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface);
+  overflow:hidden;
+}
+#training-dialog #lesson-menu>summary{
+  box-sizing:border-box;
+  min-height:50px;
+  padding:13px 16px;
+  display:flex;
+  align-items:center;
+  font:700 15px/22px Arial,sans-serif;
+}
+#training-dialog #lesson-choices{
+  padding:0 10px 10px;
+}
+#training-dialog #training-skip{
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:transparent;
+  color:var(--muted);
+  text-decoration:none;
+  font:700 14px/20px Arial,sans-serif;
+}
+
+/* Hands-on practice gets its own geometry instead of the normal gameplay spacing. */
+body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+  --training-center-shift:-68px;
+  --orbit-diameter:max(220px,min(calc(100vw - 24px),calc(var(--play-height,100dvh) - 300px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),620px));
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-status{
+  display:none;
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #arena{
+  top:calc(50% + var(--training-center-shift));
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-messages{
+  top:calc(50% + var(--training-center-shift) + var(--orbit-diameter)/2 + 10px);
+  left:max(16px,var(--screen-gutter));
+  right:max(16px,var(--screen-gutter));
+  height:58px;
+  min-height:58px;
+}
+body[data-screen=game][data-training=true] #game-screen .arena-messages #tutorial-instruction{
+  box-sizing:border-box;
+  max-width:680px;
+  margin:0 auto;
+  padding:8px 12px;
+  color:var(--ink);
+  font:700 clamp(15px,4vw,18px)/1.35 Arial,sans-serif;
+  text-align:center;
+}
+body[data-screen=game][data-playstate=playing][data-training=true] #training-controls{
+  position:absolute;
+  top:calc(50% + var(--training-center-shift) + var(--orbit-diameter)/2 + 76px);
+  bottom:auto;
+  left:50%;
+  right:auto;
+  width:min(calc(100% - 32px),520px);
+  transform:translateX(-50%);
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  z-index:4;
+}
+body[data-screen=game][data-training=true] #training-controls button{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:50px;
+  margin:0;
+  padding:10px 8px;
+  border-radius:12px;
+  font:700 clamp(13px,3.6vw,16px)/1.2 Arial,sans-serif;
+  text-align:center;
+}
+@media(max-width:360px){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-center-shift:-52px;
+    --orbit-diameter:max(200px,min(calc(100vw - 20px),calc(var(--play-height,100dvh) - 285px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),520px));
+  }
+  body[data-screen=game][data-training=true] #training-controls{gap:7px;width:calc(100% - 24px)}
+  body[data-screen=game][data-training=true] #training-controls button{font-size:12px;padding-inline:5px}
+}
+@media(max-height:700px) and (orientation:portrait){
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen{
+    --training-center-shift:-36px;
+    --orbit-diameter:max(180px,min(calc(100vw - 36px),calc(var(--play-height,100dvh) - 250px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),500px));
+  }
+  body[data-screen=game][data-training=true] #game-screen .arena-messages{
+    top:calc(50% + var(--training-center-shift) + var(--orbit-diameter)/2 + 6px);
+  }
+  body[data-screen=game][data-training=true] #training-controls{
+    top:calc(50% + var(--training-center-shift) + var(--orbit-diameter)/2 + 64px);
+  }
+}
+@media(max-height:540px) and (orientation:landscape){
+  body[data-screen=game][data-playstate=playing][data-training=true] #arena{
+    left:35%;
+    top:50%;
+  }
+  body[data-screen=game][data-playstate=playing][data-training=true] #game-screen .arena-messages{
+    top:35%;
+    left:70%;
+    right:12px;
+  }
+  body[data-screen=game][data-playstate=playing][data-training=true] #training-controls{
+    top:58%;
+    left:70%;
+    width:28%;
+    transform:none;
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+}
