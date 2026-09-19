@@ -59,17 +59,11 @@ function showRest(completed=0){
 
 const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'};
 let lightTheme=false,softTheme=false;
-try{
- const savedTheme=localStorage.getItem('loop-shift-theme');
- lightTheme=savedTheme==='light';
- if(savedTheme==='soft')localStorage.setItem('loop-shift-theme','dark');
-}catch{}
+try{localStorage.setItem('loop-shift-theme','dark');}catch{}
 function syncAppearance(){
- document.body.dataset.appearance=lightTheme?'light':'dark';
- softTheme=false;
- Object.assign(C,lightTheme?{lime:'#68b900',coral:'#ef5b62',gold:'#d59400',line:'#9bb0d1',blue:'#157ee8'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
- $('theme-toggle').textContent=lightTheme?'Theme: Light':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));
- for(const name of ['dark','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':'dark')));
+ lightTheme=false;softTheme=false;document.body.dataset.appearance='dark';
+ Object.assign(C,{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
+ $('theme-toggle').textContent='Theme: Dark';$('theme-toggle').setAttribute('aria-pressed','false');
 }
 function comfortAnswer(answer){
  if(mode!=='paused'&&mode!=='over')return;
@@ -1295,9 +1289,8 @@ $('comfort-finish').addEventListener('click',()=>{if(focusRun){try{localStorage.
 syncFireSpeed();
 $('fire-speed-toggle').addEventListener('click',()=>{fireSpeedEnabled=!fireSpeedEnabled;try{localStorage.setItem('loop-shift-fire-speed',String(fireSpeedEnabled));}catch{}syncFireSpeed();});
 syncAppearance();
-function chooseAppearance(value){lightTheme=value==='light';softTheme=false;trail=[];particles=[];shatters=[];const saved=lightTheme?'light':'dark';try{localStorage.setItem('loop-shift-theme',saved);}catch{}syncAppearance();}
-$('theme-toggle').addEventListener('click',()=>chooseAppearance(lightTheme?'dark':'light'));
-for(const name of ['dark','light'])$('appearance-'+name).addEventListener('click',()=>chooseAppearance(name));
+function chooseAppearance(){lightTheme=false;softTheme=false;trail=[];particles=[];shatters=[];try{localStorage.setItem('loop-shift-theme','dark');}catch{}syncAppearance();}
+$('theme-toggle').addEventListener('click',()=>chooseAppearance());
 for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));
 syncComfort();
 $('motion-toggle').addEventListener('click',()=>{reducedMotion=!reducedMotion;try{localStorage.setItem('loop-shift-reduced-motion',String(reducedMotion));}catch{}trail=[];particles=[];shatters=[];syncComfort();});
