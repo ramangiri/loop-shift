@@ -13,7 +13,7 @@ const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 assert.equal(new Set(ids).size, ids.length, 'HTML IDs must be unique');
 for (const match of code.matchAll(/\$\('([^']+)'\)/g)) assert.ok(ids.includes(match[1]), `Missing control: ${match[1]}`);
 for (const match of html.matchAll(/(?:src|href)="(\.\/[^"#]+)"/g)) assert.ok(existsSync(resolve(web, match[1])), `Missing asset: ${match[1]}`);
-for (const file of ['game.js', 'leaderboard.js', 'music.js', 'sw.js']) execFileSync(process.execPath, ['--check', join(web, file)]);
+for (const file of readdirSync(web).filter(name=>name.endsWith('.js'))) execFileSync(process.execPath, ['--check', join(web, file)]);
 const manifest = JSON.parse(readFileSync(join(web, 'manifest.webmanifest'), 'utf8'));
 for (const icon of manifest.icons) assert.ok(existsSync(resolve(web, icon.src)));
 

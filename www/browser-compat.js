@@ -93,12 +93,24 @@
     syncHasFallbacks();
   }
 
-  const observer=new MutationObserver(syncHasFallbacks);
-  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true,attributeFilter:['class','hidden','style','data-screen','data-playstate']});
-  window.addEventListener('resize',syncViewport,{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(syncViewport,80),{passive:true});
-  window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
-  window.visualViewport?.addEventListener('scroll',syncViewport,{passive:true});
+  // Older Android engines need these fallbacks, but gameplay changes inline styles
+  // every frame. Batch compatibility work and ignore style-only mutations so the
+  // fallback itself never becomes a source of dropped frames.
+  let fallbackFrame=0,viewportFrame=0;
+  function scheduleHasFallbacks(){
+    if(hasSupport||fallbackFrame)return;
+    fallbackFrame=requestAnimationFrame(()=>{fallbackFrame=0;syncHasFallbacks();});
+  }
+  function scheduleViewport(){
+    if(viewportFrame)return;
+    viewportFrame=requestAnimationFrame(()=>{viewportFrame=0;syncViewport();});
+  }
+  const observer=new MutationObserver(scheduleHasFallbacks);
+  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true,attributeFilter:['class','hidden','data-screen','data-playstate']});
+  window.addEventListener('resize',scheduleViewport,{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(scheduleViewport,80),{passive:true});
+  window.visualViewport?.addEventListener('resize',scheduleViewport,{passive:true});
+  window.visualViewport?.addEventListener('scroll',scheduleViewport,{passive:true});
   document.addEventListener('DOMContentLoaded',sync,{once:true});
   requestAnimationFrame(sync);
 })();

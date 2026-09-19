@@ -4,7 +4,6 @@
   const RUN_KEY='loop-shift-run-summary-live-v1';
   const HOME_CACHE_KEY='loop-shift-home-competition-v1';
   let runActive=false,streak=0,bestStreak=0,runRushes=0,specialStart={gem:0,star:0,crown:0};
-  let competitionBusy=false,lastCompetition=0;
 
   function specialTotals(){
     try{
@@ -160,20 +159,20 @@
       if(cached)renderCompetition(cached,true);
     }catch{}
   }
-  async function refreshCompetition(force=false){
-    if(competitionBusy||(!force&&Date.now()-lastCompetition<15000))return;
-    competitionBusy=true;lastCompetition=Date.now();
-    try{
-      const data=await window.LoopShiftBoard?.request?.('leaderboard');
-      if(data)renderCompetition(data,false);
-    }catch{renderCachedCompetition();}
-    finally{competitionBusy=false;}
-  }
+  // The leaderboard module owns network refreshes. Reuse its latest main-board
+  // snapshot instead of starting a second polling/request loop from the Home card.
+  function acceptCompetition(data){if(data)renderCompetition(data,false);}
+  window.LoopShiftCompetition=acceptCompetition;
+  const initialSnapshot=window.LoopShiftBoard?.mainSnapshot?.();
+  if(initialSnapshot)acceptCompetition(initialSnapshot);else renderCachedCompetition();
+
   $id('home-competition')?.addEventListener('click',()=>window.LoopShiftHome?.show?.('progress',true));
-  $id('nav-play')?.addEventListener('click',()=>setTimeout(()=>refreshCompetition(true),0));
-  window.addEventListener('pageshow',()=>refreshCompetition(true));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body?.dataset?.screen==='home')refreshCompetition(true);});
-  const bodyObserver=new MutationObserver(()=>{if(document.body?.dataset?.screen==='home')refreshCompetition(false);});
-  if(document.body)bodyObserver.observe(document.body,{attributes:true,attributeFilter:['data-screen']});
-  renderCachedCompetition();setTimeout(()=>refreshCompetition(true),250);
+  $id('nav-play')?.addEventListener('click',()=>{
+    const data=window.LoopShiftBoard?.mainSnapshot?.();
+    if(data)acceptCompetition(data);else renderCachedCompetition();
+  });
+  window.addEventListener('pageshow',()=>{
+    const data=window.LoopShiftBoard?.mainSnapshot?.();
+    if(data)acceptCompetition(data);else renderCachedCompetition();
+  });
 })();

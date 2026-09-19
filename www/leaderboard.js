@@ -1,6 +1,6 @@
 (() => {
   const el = id => document.getElementById(id);
-  let latestEntries=[], activeBoard='endless', activeChallenge=null, canPlayOffline=true, startingDaily=false;
+  let latestEntries=[], mainSnapshot=null, activeBoard='endless', activeChallenge=null, canPlayOffline=true, startingDaily=false;
   let avatar='', selectedAvatar='avatar-1';
   let nickname = '', ranked = false, nextAction, busy = false, offlineReady=false, connection='connecting';
   let playerKey='',scoreQueue=[],scoreJob=null,retryTimer=null,bestListener=null,savedBest=null;
@@ -54,6 +54,7 @@
   function render(data) {
     connection='online';
     const weekly=data.challenge?.kind==='weekly',daily=!!data.challenge&&!weekly,kind=weekly?'weekly':daily?'daily':'endless';
+    if(kind==='endless'){mainSnapshot=data;try{window.LoopShiftCompetition?.(data);}catch{}}
     if(daily)activeChallenge=data.challenge;
     const visible=kind===activeBoard;
     if(data.me){restoreQueue(data.me.key);if(Number.isSafeInteger(data.me.mainBest))savedBest=data.me.mainBest;else if(!daily&&!weekly)savedBest=data.me.best;}
@@ -207,6 +208,7 @@
   window.LoopShiftBoard = {
     request,player:()=>ranked?{key:playerKey,name:nickname,avatar}:null,
     best:()=>ranked?savedBest:null,
+    mainSnapshot:()=>mainSnapshot,
     record:()=>({connection,ranked,pending:ranked?scoreQueue.filter(item=>!item.challenge&&item.owner===playerKey).reduce((top,item)=>Math.max(top,item.score),0):0}),
     onBest(listener){bestListener=listener;notifyBest();},
     onProgress(listener){progressListener=listener;if(serverProgress)listener(serverProgress);},
