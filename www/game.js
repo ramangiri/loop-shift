@@ -46,11 +46,11 @@ function showRest(completed=0){
   setPaused(true);breakPending=true;document.body.dataset.rest='true';
   $('overlay-kicker').textContent=completed?'CONGRATULATIONS!':'TIME FOR A BREAK';
   $('overlay-title').textContent=completed?`You’ve completed ${completed} levels!`:'Take a breather.';
-  $('overlay-copy').textContent='Look away from the screen and rest. Your round is paused here. If you feel dizzy or sick, stop playing.';
+  $('overlay-copy').textContent=completed?'Take a short break. Your run is paused safely.':'Look away from the screen for a moment. Resume when ready.';
   $('play').textContent=completed?`CONTINUE TO LEVEL ${level}`:'CONTINUE WHEN READY';
   $('save-checkpoint').hidden=!checkpointEligible;$('checkpoint-status').textContent='';
   $('restart').hidden=true;
-  $('section-choices').hidden=!completed||roundKind!=='endless';
+  $('section-choices').hidden=!completed||roundKind!=='endless';if(completed)$('section-choices').querySelector('legend').textContent='Choose next section';
   $('section-choice-status').textContent='';
   $('break-reward').textContent=completed?`🏆 Milestone ${completed/5} earned · ${$('next-reward').textContent}`:'';
   if(checkpointEligible)saveCheckpoint(false);
@@ -571,7 +571,7 @@ function readCheckpoint(){try{const c=JSON.parse(localStorage.getItem(checkpoint
 function syncCheckpoint(){const c=readCheckpoint();$('resume-checkpoint').hidden=!c;$('checkpoint-home-note').hidden=!c;if(c)$('resume-checkpoint').textContent=`Resume · Level ${c.state.level} · Score ${c.state.score}`;}
 function saveCheckpoint(exit=true){
  if(mode!=='paused'||!checkpointEligible||roundKind!=='endless')return;
- try{const c={v:1,state:{score,passes,level,sparks,charge,shield,gameTime,combo,feverCharge,feverTime,perfects,roundFevers,bestCombo,roundHits,ringCount,lane,radius,angle,motionSpeed,shiftDirection,gameSeed,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,pathLane,sectionChoice,focusRun,focusGoal,focusCount,focusSparkBase,runFocus,levelSparks,levelPerfects,levelHits,levelShieldLost,objectiveAwarded,rushTime,rushChain,rushQueued,rushStartAngle,rushGlow,rushBaseSpeed,rushBoost,patternHits,runBosses,runCleanBest,cleanStreak,activeSinceBreak,sectionStartSparks,sectionStartPerfects,sectionStartPasses},rows,rushCoins,phrasePatterns:[...phrasePatterns],retryCourse,levelTransition,departingRows};localStorage.setItem(checkpointKey(),JSON.stringify(c));$('checkpoint-status').textContent='Checkpoint and score saved on this device.';if(!exit){syncCheckpoint();return;}checkpointEligible=false;mode='ready';breakPending=false;document.body.dataset.rest='false';window.LoopShiftMusic?.pause();goHome();syncCheckpoint();}catch{$('checkpoint-status').textContent='Could not save on this device. Your run is still paused.';}
+ try{const c={v:1,state:{score,passes,level,sparks,charge,shield,gameTime,combo,feverCharge,feverTime,perfects,roundFevers,bestCombo,roundHits,ringCount,lane,radius,angle,motionSpeed,shiftDirection,gameSeed,nextRowIndex,rhythmOrigin,rhythmUnit,rhythmEpoch,rhythmPhaseOffset,pathLane,sectionChoice,focusRun,focusGoal,focusCount,focusSparkBase,runFocus,levelSparks,levelPerfects,levelHits,levelShieldLost,objectiveAwarded,rushTime,rushChain,rushQueued,rushStartAngle,rushGlow,rushBaseSpeed,rushBoost,patternHits,runBosses,runCleanBest,cleanStreak,activeSinceBreak,sectionStartSparks,sectionStartPerfects,sectionStartPasses},rows,rushCoins,phrasePatterns:[...phrasePatterns],retryCourse,levelTransition,departingRows};localStorage.setItem(checkpointKey(),JSON.stringify(c));$('checkpoint-status').textContent='Checkpoint saved on this device.';if(!exit){syncCheckpoint();return;}checkpointEligible=false;mode='ready';breakPending=false;document.body.dataset.rest='false';window.LoopShiftMusic?.pause();goHome();syncCheckpoint();}catch{$('checkpoint-status').textContent='Could not save on this device. Your run is still paused.';}
 }
 function resumeCheckpoint(saved=null,savedKey=null){
  const c=saved?.state?saved:readCheckpoint(),key=savedKey||checkpointKey();if(!c)return;
