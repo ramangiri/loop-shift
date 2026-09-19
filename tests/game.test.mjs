@@ -680,7 +680,7 @@ assert.equal(slower.run('slowPracticeTime'),8);assert.ok(slower.run('targetSpeed
 slower.run('startDelay=0;rows=[];nextRowIndex=12;for(let i=0;i<960;i++)update(1/120)');assert.ok(slower.run('slowPracticeTime')<.001);
 slower.click('pause-side');assert.equal(slower.run('pauseLeft'),true);assert.equal(game(false,slower.store).run('pauseLeft'),true);
 
-const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,false);
+const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,true,'Secondary result copy stays out of the main result view');
 const localSave=game();localSave.click('home-play');localSave.run('score=987;gameTime=15;updateHUD()');assert.equal(localSave.store.get('loop-shift-best-v2'),'987');assert.equal(localSave.run('deviceScoreSaved'),true);
 console.log('PASS: minute mode, checkpoint preservation/setup, Rush/rest recovery, slower practice, pause placement, local saves and visible personal progress.');
 

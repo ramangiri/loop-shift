@@ -15,7 +15,8 @@
   }
   function persistQueue(){if(playerKey)try{localStorage.setItem(queueStorage(),JSON.stringify(scoreQueue));}catch{}}
   function scoreStatus(message,waiting=false){
-    el('score-save-status').hidden=false;el('score-save-status').textContent=message;
+    const urgent=waiting||/not saved|waiting|offline|retry|could not/i.test(message);
+    el('score-save-status').hidden=!urgent;el('score-save-status').textContent=message;
     el('board-save-status').textContent=message;el('board-save-status').hidden=false;
     el('retry-score').hidden=!waiting;el('retry-board-score').hidden=!waiting;
     el('retry-home-score').hidden=!waiting||!ranked;

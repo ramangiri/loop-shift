@@ -35,10 +35,10 @@ function sectionGoal(){
 }
 function startMinute(){dailyRequestId++;roundKind='minute';dailyRun=null;start({fresh:true});}
 function lossExplanation(row){
- if(!row)return 'Follow the blue arc to the next safe ring.';
- if(lane===row.sparkLane)return 'Shifted too late: you were still between rings. Move earlier and let the ball land.';
- if(lastShift>=0&&gameTime-lastShift<.3)return `Wrong ring: that shift entered a blocked ring. The safe gap was ring ${row.sparkLane+1}.`;
- return `${row.pattern==='moving'?'Sweeping barrier':row.pattern==='pulse'?'Closed pulse gate':'Missed the safe gap'}: move to ring ${row.sparkLane+1} earlier. Count rings from the centre.`;
+ if(!row)return 'Follow BLUE to the next safe ring.';
+ if(lane===row.sparkLane)return 'Too late — shift earlier and let the ball land.';
+ if(lastShift>=0&&gameTime-lastShift<.3)return `Blocked ring — BLUE was ring ${row.sparkLane+1}.`;
+ return `${row.pattern==='moving'?'Sweeping barrier':row.pattern==='pulse'?'Pulse gate':'Missed safe gap'} — move to ring ${row.sparkLane+1} earlier.`;
 }
 function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);$('motion-toggle').setAttribute('aria-pressed',String(reducedMotion));$('motion-toggle').textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
 function showRest(completed=0){
@@ -733,7 +733,7 @@ function updateHUD(){
  $('compact-combo').textContent=`×${scoreFactor()}`;
  const section=sectionGoal();$('section-goal').hidden=roundKind!=='endless'||focusRun||mode!=='playing';$('section-goal').textContent=`${section.name} · ${section.label} · ${Math.min(section.target,Math.max(0,section.count))}/${section.target}`;
  const syncState=window.LoopShiftBoard?.record?.();
- $('result-storage').hidden=mode!=='over'||(roundKind!=='endless'&&roundKind!=='minute')||focusRun;$('result-storage').textContent=(deviceScoreSaved?'Score saved on this device. ':'Device score could not be saved. ')+(roundKind==='minute'?'Unranked · Your one-minute best stays here.':syncState?.pending>0?'Online sync pending.':syncState?.ranked&&syncState?.connection==='online'&&Number.isSafeInteger(window.LoopShiftBoard?.best?.())&&window.LoopShiftBoard.best()>=score?'Best synced online.':syncState?.ranked?'Online save status is shown below.':'Connect and save a nickname to join the online board.');
+ $('result-storage').hidden=true;$('result-storage').textContent=(deviceScoreSaved?'Score saved on this device. ':'Device score could not be saved. ')+(roundKind==='minute'?'Unranked · Your one-minute best stays here.':syncState?.pending>0?'Online sync pending.':syncState?.ranked&&syncState?.connection==='online'&&Number.isSafeInteger(window.LoopShiftBoard?.best?.())&&window.LoopShiftBoard.best()>=score?'Best synced online.':syncState?.ranked?'Online save status is shown below.':'Connect and save a nickname to join the online board.');
  $('pause-stats').textContent=`Level ${level} · ${sparks} sparks · ${perfects} perfect shifts · Best chain ${bestCombo}. Level goal: ${objective().label}. ${roundKind==='endless'?sectionGoal().label+'.':''}`;
  $('practice-pace').hidden=roundKind!=='practice'||mode!=='playing';$('practice-pace').textContent=slowPracticeTime>0?'Slower introduction · follow the blue arc':'Practice · unranked';
  $('save-checkpoint').hidden=mode!=='paused'||!checkpointEligible;
@@ -877,7 +877,7 @@ function setPaused(paused, moveFocus=true){
     $('result-extras').hidden=true;$('result-coaching').hidden=true;$('result-gap').hidden=true;$('result-progress').hidden=true;
     $('score-save-status').hidden=true;$('retry-score').hidden=true;$('comfort-check').hidden=false;$('comfort-response').textContent='';
     window.LoopShiftMusic?.pause();mode='paused';$('overlay').hidden=false;$('overlay-kicker').textContent='TAKE A BREATHER';$('overlay-title').textContent='Round paused.';
-    $('overlay-copy').textContent=`${score} points. Pick up where you left off.`;
+    $('overlay-copy').hidden=false;$('overlay-copy').textContent=`${score} points. Pick up where you left off.`;
     const checkpoint=readCheckpoint();$('checkpoint-status').textContent=roundKind==='endless'?(checkpoint?`Saved checkpoint: level ${checkpoint.state.level}. This paused position lasts while the app stays open.`:'No checkpoint yet. Your first checkpoint is after level 5.'):'';$('result').hidden=true;
     $('play').innerHTML='Tap to resume';$('restart').hidden=false;$('shift').disabled=true;
     $('pause').setAttribute('aria-label','Resume game');$('announcement').textContent='Game paused.';
@@ -979,7 +979,7 @@ function crash(hitRow=null,completed=false){
     lossExplanation(hitRow);
   $('result-coaching').textContent=message;$('result-coaching').hidden=false;
   $('result-gap').textContent=score>previousBest?'New personal best!':previousBest>0?`Only ${previousBest-score+1} more points to beat your ${roundKind==='daily'?'daily ':''}best.`:'Your first score is the one to beat.';
-  $('result-progress').textContent=resultFact();$('result-progress').hidden=false;$('result-gap').hidden=true;
+  $('result-progress').textContent=resultFact();$('result-progress').hidden=true;$('result-gap').hidden=true;$('overlay-copy').hidden=true;
   if(hitRow){impactTime=1.4;const p=point(hitRow.angle,radius);$('collision-pin').style.left=`${p.x}px`;$('collision-pin').style.top=`${p.y}px`;$('collision-pin').classList.add('show');}
 
   window.LoopShiftMusic?.pause();window.LoopShiftMusic?.setRush?.(false);rushTime=0;rushQueued=false;feverTime=0;resetCombo();
