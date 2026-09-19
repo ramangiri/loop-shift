@@ -483,3 +483,67 @@ body[data-screen=game][data-training=true] #tap-anywhere-hint{
     min-height:36px;
   }
 }
+
+
+/* Unified pause/exit dialog actions: full-width, evenly spaced mobile controls. */
+#exit-dialog.action-dialog{
+  box-sizing:border-box;
+  width:min(92vw,430px);
+  max-height:calc(100dvh - 28px);
+  padding:0;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:var(--bg);
+  color:var(--ink);
+}
+#exit-dialog.action-dialog::backdrop{background:#020705d9;backdrop-filter:blur(5px)}
+#exit-dialog .action-dialog-head{
+  padding:24px 22px 16px;
+  text-align:center;
+  border-bottom:1px solid var(--line);
+}
+#exit-dialog .action-dialog-head span{
+  display:block;
+  margin:0 0 7px;
+  color:var(--muted);
+  font:900 11px/1.3 Arial,sans-serif;
+  letter-spacing:.16em;
+}
+#exit-dialog .action-dialog-head h2{
+  margin:0;
+  font-size:clamp(26px,7vw,34px);
+  line-height:1.15;
+}
+#exit-dialog .action-dialog-copy{
+  margin:18px 22px 4px;
+  color:var(--muted);
+  text-align:center;
+  font:15px/1.5 Arial,sans-serif;
+}
+#exit-dialog .action-dialog-actions{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  padding:16px 18px 20px;
+}
+#exit-dialog .action-dialog-actions button{
+  box-sizing:border-box;
+  width:100%;
+  max-width:none;
+  min-width:0;
+  min-height:54px;
+  margin:0;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.25;
+}
+#exit-dialog .action-dialog-actions .primary-button{justify-content:center}
+@media(max-width:360px){
+  #exit-dialog .action-dialog-head{padding:20px 18px 14px}
+  #exit-dialog .action-dialog-copy{margin-inline:18px}
+  #exit-dialog .action-dialog-actions{padding-inline:14px}
+}

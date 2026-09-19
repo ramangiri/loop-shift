@@ -630,7 +630,11 @@ function finishAndSave(home=false){
 }
 function requestExit(){
  if($('ring-lesson').open)$('ring-lesson').close();
- if(screen==='game'&&(mode==='playing'||mode==='paused')){if(mode==='playing')setPaused(true,false);$('exit-dialog').showModal();$('exit-resume').focus();}else goHome();
+ if(screen==='game'&&(mode==='playing'||mode==='paused')){
+   if(mode==='playing')setPaused(true,false);
+   $('overlay').hidden=true;
+   $('exit-dialog').showModal();$('exit-resume').focus();
+ }else goHome();
 }
 function homePlay(){
   if(mode==='paused'){enterGame();setPaused(false);}else if($('challenge-choice').value==='daily')startDaily();else if($('challenge-choice').value==='weekly')startWeekly();else startEndless();
@@ -1336,7 +1340,7 @@ function handleBack(){
  if($('feedback-dialog').open){$('feedback-close').click();return;}
  if($('name-dialog').open){$('cancel-name').click();return;}
  if($('settings-dialog').open){$('settings-close').click();return;}
- if($('exit-dialog').open){$('exit-dialog').close();$('play').focus();return;}
+ if($('exit-dialog').open){$('exit-resume').click();return;}
  if($('preplay-dialog').open){$('preplay-dialog').close();preplayOptions=null;return;}
  if($('training-dialog').open){exitTraining();return;}
  if($('power-dialog').open||$('ring-lesson').open)return;
