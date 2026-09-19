@@ -5,7 +5,7 @@ const TAU = Math.PI * 2;
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 try{reducedMotion=localStorage.getItem('loop-shift-reduced-motion')==null?reducedMotion:localStorage.getItem('loop-shift-reduced-motion')==='true';}catch{}
 let focusEnabled=false,focusRun=false,smallArena=false,breakSeconds=180,comfortStop=false,focusGoal=0,focusCount=0,focusSparkBase=0;
-try{focusEnabled=localStorage.getItem('loop-shift-focus')==='true';smallArena=localStorage.getItem('loop-shift-small-arena')==='true';const savedBreak=Number(localStorage.getItem('loop-shift-break-seconds'));if([60,120,180].includes(savedBreak))breakSeconds=savedBreak;}catch{}
+try{localStorage.removeItem('loop-shift-focus');localStorage.removeItem('loop-shift-small-arena');const savedBreak=Number(localStorage.getItem('loop-shift-break-seconds'));if([60,120,180].includes(savedBreak))breakSeconds=savedBreak;}catch{}
 function syncFocus(){
  document.body.dataset.smallArena=String(smallArena);
  $('focus-toggle').textContent='Focus Play: '+(focusEnabled?'ON':'OFF')+' · unranked';$('focus-toggle').setAttribute('aria-pressed',String(focusEnabled));
@@ -25,10 +25,10 @@ let runPreviousBest=0,minuteBest=0,deviceScoreSaved=false;
 try{minuteBest=Number(localStorage.getItem('loop-shift-minute-best'))||0;}catch{}
 let swipeControls=false;
 try{swipeControls=localStorage.getItem('loop-shift-swipe-controls')==='true';}catch{}
-function syncControls(){$('control-mode').textContent=swipeControls?'Controls: Tap + swipe':'Controls: Instant tap';$('control-mode').setAttribute('aria-pressed',String(swipeControls));}
+function syncControls(){const b=$('control-mode');b.setAttribute('aria-pressed',String(swipeControls));const value=b.querySelector?.('span');if(value)value.textContent=swipeControls?'Tap + swipe':'Instant tap';else b.textContent=swipeControls?'Controls: Tap + swipe':'Controls: Instant tap';}
 let slowPracticeTime=0,sectionStartSparks=0,sectionStartPerfects=0,sectionStartPasses=0,pauseLeft=false;
 try{pauseLeft=localStorage.getItem('loop-shift-pause-left')==='true';}catch{}
-function syncPauseSide(){document.body.dataset.pauseSide=pauseLeft?'left':'right';$('pause-side').textContent='Pause button: '+(pauseLeft?'Left':'Right');$('pause-side').setAttribute('aria-pressed',String(pauseLeft));}
+function syncPauseSide(){document.body.dataset.pauseSide=pauseLeft?'left':'right';const b=$('pause-side');b.setAttribute('aria-pressed',String(pauseLeft));const value=b.querySelector?.('span');if(value)value.textContent=pauseLeft?'Left side':'Right side';else b.textContent='Pause button: '+(pauseLeft?'Left':'Right');}
 function sectionGoal(){
  const n=Math.floor((level-1)/5)%3;
  return n===0?{name:'Spark trail',label:'Collect 15 sparks',count:sparks-sectionStartSparks,target:15}:n===1?{name:'Find your rhythm',label:'Make 6 perfect shifts',count:perfects-sectionStartPerfects,target:6}:{name:'Steady orbit',label:'Clear 36 gates',count:passes-sectionStartPasses,target:36};
@@ -40,7 +40,7 @@ function lossExplanation(row){
  if(lastShift>=0&&gameTime-lastShift<.3)return `Wrong ring: that shift entered a blocked ring. The safe gap was ring ${row.sparkLane+1}.`;
  return `${row.pattern==='moving'?'Sweeping barrier':row.pattern==='pulse'?'Closed pulse gate':'Missed the safe gap'}: move to ring ${row.sparkLane+1} earlier. Count rings from the centre.`;
 }
-function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);$('motion-toggle').setAttribute('aria-pressed',String(reducedMotion));$('motion-toggle').textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
+function syncComfort(){document.body.dataset.reducedMotion=String(reducedMotion);const b=$('motion-toggle');b.setAttribute('aria-pressed',String(reducedMotion));const value=b.querySelector?.('span');if(value)value.textContent=reducedMotion?'On':'Off';else b.textContent='Reduced motion: '+(reducedMotion?'ON':'OFF');}
 function showRest(completed=0){
  checkpointEligible=completed>0&&completed%5===0&&roundKind==='endless';
   setPaused(true);breakPending=true;document.body.dataset.rest='true';
@@ -954,7 +954,7 @@ function burst(a,r,color,n=14){
 }
 let rushTime=0,rushChain=0,rushQueued=false,rushCoins=[],rushStartAngle=0,rushGlow=0,rushBaseSpeed=0,rushBoost=0;
 let fireSpeedEnabled=false;
-try{fireSpeedEnabled=localStorage.getItem('loop-shift-fire-speed')==='true';}catch{}
+try{localStorage.removeItem('loop-shift-fire-speed');}catch{}
 function syncFireSpeed(){$('fire-speed-toggle').setAttribute('aria-pressed',String(fireSpeedEnabled));$('fire-speed-toggle').textContent='Fire Ball speed boost: '+(fireSpeedEnabled?'3×':'OFF');}
 let pendingPower='';
 function showPowerLesson(kind){
@@ -962,7 +962,7 @@ function showPowerLesson(kind){
  try{if(localStorage.getItem('loop-shift-learned-'+kind)==='true')return;}catch{}
  pendingPower=kind;setPaused(true,false);
  $('power-title').textContent=kind==='rush'?'Fire ball · Spark Rush':'Fever unlocked';
- $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Speed stays normal by default. The optional 3× speed boost is in Settings.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
+ $('power-copy').textContent=kind==='rush'?'Five seconds of safe coin collecting. Each coin is worth 100 points (×10 base). The fire effect marks Rush; normal barriers return after a safe gap. Speed stays normal by default. Speed stays normal during Fire Ball.':'Five seconds of invincibility and double points. Watch the Fever meter count down; protection ends when it empties.';
  $('power-dialog').showModal();
 }
 // Integrated speed curve: smooth acceleration, 3x cruise, smooth return.
@@ -1337,8 +1337,8 @@ $('share-daily').addEventListener('click',shareDaily);
 syncControls();
 $('control-mode').addEventListener('click',()=>{swipeControls=!swipeControls;gesture=null;try{localStorage.setItem('loop-shift-swipe-controls',String(swipeControls));}catch{}syncControls();});
 $('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));
-$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';
-$('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));$('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';});
+{const value=$('vibration-toggle').querySelector?.('span');if(value)value.textContent=vibrationOn?'On':'Off';else $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';}
+$('vibration-toggle').addEventListener('click',()=>{vibrationOn=!vibrationOn;try{localStorage.setItem('loop-shift-vibration',String(vibrationOn));}catch{}$('vibration-toggle').setAttribute('aria-pressed',String(vibrationOn));{const value=$('vibration-toggle').querySelector?.('span');if(value)value.textContent=vibrationOn?'On':'Off';else $('vibration-toggle').textContent=vibrationOn?'Vibration on':'Vibration off';}});
 $('daily-play').addEventListener('click',startDaily);
 $('weekly-play').addEventListener('click',startWeekly);
 $('community-reward').addEventListener('click',()=>{if(!window.LoopShiftSocial?.unlockedTheme())return;selectedTheme='convergence';try{localStorage.setItem('loop-shift-theme-v2',selectedTheme);}catch{}updateAdventureUI();$('community-reward').textContent='Convergence theme · Selected';});

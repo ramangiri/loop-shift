@@ -262,11 +262,65 @@
       </form>
     </dialog>
   </div>
-<dialog id="settings-dialog" class="menu-dialog" aria-labelledby="settings-title"><div class="menu-heading"><h2 id="settings-title">Settings</h2><button id="settings-close" type="button">Done</button></div><button id="profile-settings" class="secondary-button">Player profile · Name &amp; avatar</button><button id="feedback-settings" class="secondary-button feedback-entry" type="button">Send feedback</button><h3>Focus Play</h3><button id="focus-toggle" type="button" aria-pressed="false">Focus Play: OFF · unranked</button><p>Applies to your next regular run. Steady speed, short goals and easier stretches. Scores stay off the shared board. Daily and Weekly keep their usual rules.</p><button id="arena-size-toggle" type="button" aria-pressed="false">Arena: Full</button><p>Break reminder</p><div class="appearance-choices"><button id="break-60" type="button" aria-pressed="false">1 minute</button><button id="break-120" type="button" aria-pressed="false">2 minutes</button><button id="break-180" type="button" aria-pressed="true">3 minutes</button></div><h3>01 · Appearance</h3><div class="appearance-choices" role="group" aria-label="Background theme"><button id="appearance-dark" aria-pressed="true">Dark</button><button id="appearance-soft" aria-pressed="false">Comfort</button><button id="appearance-light" aria-pressed="false">Warm light</button></div><div class="motion-options"><button id="theme-toggle" hidden type="button" class="back-button" aria-pressed="false">Theme: Dark</button><button id="motion-toggle" type="button" class="back-button" aria-pressed="false">Reduced motion: OFF</button><button id="fire-speed-toggle" type="button" aria-pressed="false">Fire Ball speed boost: OFF</button><button id="comfort-play" type="button" class="back-button">Slower practice · unranked</button></div>
-<h3>02 · Controls &amp; sound</h3><button id="control-mode" type="button" aria-pressed="false">Controls: Instant tap</button><p id="control-help">Tap responds on touch. Choose Tap + swipe for directional gestures.</p><button id="pause-side" type="button" aria-pressed="false">Pause button: Right</button><div class="settings-grid">        <button class="music-button" id="music-toggle" aria-pressed="true">♫ Music on</button>
-        <button class="icon-button" id="sound" aria-label="Turn sound on" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path id="sound-lines" d="m16 9 6 6m0-6-6 6"/></svg><span id="sound-label">Sound effects off</span></button>
-</div><p>Music and sound effects can be switched independently.</p><details class="comfort-options"><summary>Vibration &amp; installation</summary><div class="comfort-body"><button id="vibration-toggle" class="back-button" aria-pressed="true">Vibration on</button><button class="install-button" id="install" hidden>Install game</button><p>Tap or Space follows the blue arc. Enable Tap + swipe for gestures: swipe toward the centre to move inward; away to move outward. Arrow Up/Down works on a keyboard. Vibration requires a supported device.</p></div></details>
-<h3>03 · Game guide</h3><p>Use How to play for guided practice. The full rules remain available on Home.</p></dialog>
+<dialog id="settings-dialog" class="menu-dialog settings-sheet" aria-labelledby="settings-title">
+  <div class="settings-head">
+    <h2 id="settings-title">Settings</h2>
+    <button id="settings-close" class="settings-done" type="button">Done</button>
+  </div>
+
+  <section class="settings-section">
+    <h3>Player</h3>
+    <button id="profile-settings" class="settings-row" type="button"><strong>Player profile</strong><span>Name &amp; avatar</span></button>
+  </section>
+
+  <section class="settings-section">
+    <h3>Breaks &amp; appearance</h3>
+    <div class="settings-field">
+      <span class="settings-label">Break reminder</span>
+      <div class="settings-segment" role="group" aria-label="Break reminder">
+        <button id="break-60" type="button" aria-pressed="false">1 min</button>
+        <button id="break-120" type="button" aria-pressed="false">2 min</button>
+        <button id="break-180" type="button" aria-pressed="true">3 min</button>
+      </div>
+    </div>
+    <div class="settings-field">
+      <span class="settings-label">Appearance</span>
+      <div class="settings-segment appearance-settings" role="group" aria-label="Background theme">
+        <button id="appearance-dark" aria-pressed="true">Dark</button>
+        <button id="appearance-soft" aria-pressed="false">Comfort</button>
+        <button id="appearance-light" aria-pressed="false">Warm</button>
+      </div>
+    </div>
+    <button id="motion-toggle" type="button" class="settings-row" aria-pressed="false"><strong>Reduced motion</strong><span>OFF</span></button>
+  </section>
+
+  <section class="settings-section">
+    <h3>Controls</h3>
+    <div class="settings-stack">
+      <button id="control-mode" type="button" class="settings-row" aria-pressed="false"><strong>Tap controls</strong><span>Instant tap</span></button>
+      <button id="pause-side" type="button" class="settings-row" aria-pressed="false"><strong>Pause button</strong><span>Right side</span></button>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <h3>Sound &amp; vibration</h3>
+    <div class="settings-stack">
+      <button class="settings-row music-button" id="music-toggle" aria-pressed="true"><strong>Music</strong><span>On</span></button>
+      <button class="settings-row icon-button" id="sound" aria-label="Turn sound on" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path id="sound-lines" d="m16 9 6 6m0-6-6 6"/></svg><strong>Sound effects</strong><span id="sound-label">Off</span></button>
+      <button id="vibration-toggle" class="settings-row" type="button" aria-pressed="true"><strong>Vibration</strong><span>On</span></button>
+    </div>
+  </section>
+
+  <div class="settings-retired" hidden aria-hidden="true">
+    <button id="feedback-settings" class="feedback-entry" type="button">Send feedback</button>
+    <button id="focus-toggle" type="button" aria-pressed="false">Focus Play: OFF</button>
+    <button id="arena-size-toggle" type="button" aria-pressed="false">Arena: Full</button>
+    <button id="theme-toggle" type="button" aria-pressed="false">Theme: Dark</button>
+    <button id="fire-speed-toggle" type="button" aria-pressed="false">Fire Ball speed boost: OFF</button>
+    <button id="comfort-play" type="button">Slower practice</button>
+    <button class="install-button" id="install" hidden>Install game</button>
+  </div>
+</dialog>
 <dialog id="power-dialog" class="menu-dialog" aria-labelledby="power-title"><h2 id="power-title"></h2><p id="power-copy"></p><button id="power-go" class="primary-button">Got it — play</button></dialog>
 <dialog id="exit-dialog" class="menu-dialog action-dialog" aria-labelledby="exit-title"><div class="action-dialog-head"><span>GAME PAUSED</span><h2 id="exit-title">Leave this round?</h2></div><p class="action-dialog-copy">Your run is paused safely. Resume playing, or end this run and return Home.</p><div class="action-dialog-actions"><button id="exit-resume" class="primary-button">RESUME GAME</button><button id="exit-confirm" class="secondary-button">END GAME &amp; HOME</button></div></dialog>
 <dialog id="training-dialog" class="menu-dialog" aria-labelledby="training-title"><p id="training-step"></p><h2 id="training-title"></h2><svg id="training-picture" class="training-picture" viewBox="0 0 240 150" role="img" aria-label="One lime player ball and a blue arc marking the next ring"><circle cx="120" cy="80" r="62" fill="none" stroke="#73867a" stroke-width="2"/><circle cx="120" cy="80" r="40" fill="none" stroke="#73867a" stroke-width="2"/><circle cx="164" cy="36" r="8" fill="#d6ff62"/><path d="M145 49 A40 40 0 0 1 158 67" fill="none" stroke="#72e6ff" stroke-width="5" stroke-linecap="round"/></svg><p id="training-copy"></p><button id="training-go" class="primary-button">Try it</button><details id="lesson-menu"><summary>Choose a lesson</summary><div id="lesson-choices"><button type="button" id="lesson-0">1. Tap to shift</button><button type="button" id="lesson-1">2. Collect sparks</button><button type="button" id="lesson-2">3. Avoid barriers</button><button type="button" id="lesson-3">4. Use a shield</button><button type="button" id="lesson-4">5. Pause & save</button></div></details><button id="training-skip" class="text-button">Exit tutorial</button></dialog>
