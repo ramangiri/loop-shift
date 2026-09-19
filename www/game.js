@@ -348,12 +348,31 @@ function startPractice(){
 
 const blockedLanes=row=>row.hazardLanes || [row.hazardLane];
 const blocks=(row,n)=>blockedLanes(row).includes(n);
-// The nearest uncleared hazard always owns the guide. A reached safe ring is
-// a HOLD destination, never a request to move back into that wall.
+const clampGuideLane=n=>Math.max(0,Math.min(ringCount-1,n));
+// Switch gates know their final safe lane before the visible switch happens.
+// Guide to that final lane immediately so BLUE never points at a lane that will
+// become blocked a moment later.
+function safeGuideLane(row){
+  if(!row)return lane;
+  const planned=row.switching&&!row.switchDone&&Number.isInteger(row.switchToLane)?row.switchToLane:row.sparkLane;
+  return Number.isInteger(planned)?clampGuideLane(planned):lane;
+}
+function nearestGuideRow(){
+  let nearest=null,nearestDelta=Infinity;
+  for(const row of rows){
+    if(row.passed)continue;
+    const delta=row.angle-angle;
+    if(delta<=-.108||delta>=nearestDelta)continue;
+    nearest=row;nearestDelta=delta;
+  }
+  return nearest;
+}
+// The physically nearest uncleared hazard owns BLUE. A reached safe ring is a
+// HOLD destination, never a request to move away before that wall clears.
 function guidedTarget(){
   if(rushTime>0){const coin=rushCoins.find(c=>!c.collected&&c.angle>angle);return coin?lane+Math.sign(coin.lane-lane):lane;}
-  const next=rows.find(row=>!row.passed&&row.angle-angle>-.108);
-  if(next&&Number.isInteger(next.sparkLane))return lane+Math.sign(next.sparkLane-lane);
+  const next=nearestGuideRow();
+  if(next)return lane+Math.sign(safeGuideLane(next)-lane);
   // Bonuses can guide only after the last hazard has cleared, never before one.
   const bonus=rows.find(row=>row.bonusLane!=null&&!row.bonusCollected&&row.angle-angle<-.12&&row.angle+.4-angle>-.04);
   if(bonus)return lane+Math.sign(bonus.bonusLane-lane);
@@ -368,6 +387,17 @@ function updateGuide(){
   lastGuideTarget=guideKey;
   $('shift').setAttribute('aria-label',target===lane?'Stay on this ring until the barrier passes':`Shift to highlighted ring ${target+1}`);
  $('guide-status').textContent=target===lane?'HOLD · Stay on this ring':'TAP · Move to the blue arc';
+}
+function syncGameplayStatus(){
+  const status=$('gameplay-status');if(!status||screen!=='game'||mode!=='playing')return;
+  let message='';
+  if(levelBannerTime>0&&$('level-banner').textContent)message=$('level-banner').textContent;
+  else if(patternNoticeTime>0&&$('pattern-notice').textContent)message=$('pattern-notice').textContent;
+  else if($('skill-effect').classList.contains?.('visible')&&$('skill-effect').textContent)message=$('skill-effect').textContent;
+  else if($('toast').classList.contains?.('show')&&$('toast').textContent)message=$('toast').textContent;
+  else if(roundKind==='tutorial'||roundKind==='practice')message=$('guide-status').textContent;
+  else {const target=guidedTarget();message=target===lane?'BLUE · STAY':`BLUE → RING ${target+1}`;}
+  if(status.textContent!==message)status.textContent=message;
 }
 function applyTheme(){
   const [color,name]=THEMES[(level-1)%THEMES.length];
@@ -1222,7 +1252,7 @@ function drawOrb(a,r,safe){
   ctx.shadowColor=ballColor();ctx.shadowBlur=(reducedMotion||softTheme)?0:9;ctx.fillStyle=ballColor();ctx.beginPath();ctx.arc(p.x,p.y,size*ringSize(.018,.012),0,TAU);ctx.fill();
   ctx.shadowBlur=0;ctx.fillStyle='#f3ffd8';ctx.beginPath();ctx.arc(p.x-size*.004,p.y-size*.005,size*.006,0,TAU);ctx.fill();ctx.restore();
 }
-function frame(time){const elapsed=Math.max(0,(time-lastTime)/1000 || 0);if(screen==='game'&&mode==='playing'&&elapsed>.25){setPaused(true,false);$('overlay-copy').textContent='Paused after an interruption. Resume when ready.';}const dt=Math.min(elapsed,.25);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
+function frame(time){const elapsed=Math.max(0,(time-lastTime)/1000 || 0);if(screen==='game'&&mode==='playing'&&elapsed>.25){setPaused(true,false);$('overlay-copy').textContent='Paused after an interruption. Resume when ready.';}const dt=Math.min(elapsed,.25);lastTime=time;totalTime+=dt;if(screen==='game'){frameCarry+=dt;while(frameCarry>=1/120){update(1/120);frameCarry-=1/120;}syncGameplayStatus();syncMusic();draw(time,dt);}else frameCarry=0;requestAnimationFrame(frame);}
 showExtrasHome();
 $('practice-failure').addEventListener('click',practiseFailure);
 $('section-sparks').addEventListener('click',()=>chooseSection('sparks'));

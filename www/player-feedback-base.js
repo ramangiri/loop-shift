@@ -27,7 +27,7 @@
  // The normal spark lane is guaranteed open at this barrier. Never place a special
  // on bonusLane here because that optional lane can still be the blocker lane while
  // the row is being prepared.
- function chooseLane(row){return Number.isInteger(row.sparkLane)?row.sparkLane:(Number.isInteger(row.bonusLane)?row.bonusLane:0);}
+ function chooseLane(row){const planned=row?.switching&&!row.switchDone&&Number.isInteger(row.switchToLane)?row.switchToLane:row?.sparkLane;return Number.isInteger(planned)?planned:(Number.isInteger(row?.bonusLane)?row.bonusLane:0);}
  function assignSpecials(){if(typeof rows==='undefined'||typeof level==='undefined'||roundKind!=='endless'||rushActive())return;for(const row of rows){if(seen.has(row))continue;seen.add(row);serial++;if(serial%7!==0)continue;const type=specialForLevel(level),def=SPECIALS[type];if(level<def.unlock)continue;row.specialType=type;row.specialLane=chooseLane(row);row.specialCollected=false;row.specialResolved=false;}}
  function burst(row,def){const p=point(specialAngle(row),laneRadius(row.specialLane));bursts.push({x:p.x,y:p.y,color:def.color,born:performance.now(),type:row.specialType});}
  function collectSpecial(row){const def=SPECIALS[row.specialType];if(!def)return;row.specialCollected=true;row.specialResolved=true;score+=def.points;stats[row.specialType]=(stats[row.specialType]||0)+1;try{localStorage.setItem('loop-shift-specials-v1',JSON.stringify(stats));}catch{}burst(row,def);showEffect(`+${def.points} · ${def.name}`,row.specialType==='crown'?'fever':'perfect');tone(row.specialType==='crown'?1180:row.specialType==='star'?980:820,.13,'sine',.09);vibrate(row.specialType==='crown'?[15,20,15]:14);updateHUD();}

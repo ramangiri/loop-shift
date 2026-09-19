@@ -218,6 +218,18 @@ guide.run('shift()');assert.equal(guide.run('lane'),2);assert.equal(guide.run('g
 guide.run('gameTime+=.1;shift()');assert.equal(guide.run('lane'),2);
 guide.run('gameTime+=.1;shift();rows[0].passed=true');assert.equal(guide.run('guidedTarget()'),3,'Passing the wall advances the route');
 
+// Moving rows can change angular order; BLUE must follow the physically nearest
+// uncleared wall, not whichever row happens to appear first in the array.
+guide.run('lane=1;radius=laneRadius(1);rows=[{sparkLane:2,angle:angle+1.4,passed:false},{sparkLane:0,angle:angle+.55,passed:false}];');
+assert.equal(guide.run('guidedTarget()'),0,'Nearest actual wall owns BLUE even when row order differs');
+
+// Switch gates know their final safe lane before the visual switch. BLUE must guide
+// to that final lane from the start and remain stable when the gate locks.
+guide.run('lane=1;radius=laneRadius(1);rows=[{entryLane:1,sparkLane:2,switching:true,switchDone:false,switchToLane:0,angle:angle+.7,passed:false}];');
+assert.equal(guide.run('guidedTarget()'),0,'BLUE uses the final switch-gate safe lane immediately');
+guide.run('rows[0].switchDone=true;rows[0].sparkLane=0;');
+assert.equal(guide.run('guidedTarget()'),0,'BLUE stays on the same safe lane after the switch locks');
+
 // Identical daily seeds produce identical courses even when visual RNG and player position differ.
 const dailyA=game(),dailyB=game(false,null,true);
 for(const d of [dailyA,dailyB])d.run('start({token:"test",day:"2026-09-14",seed:1234,best:0});startDelay=0;');
