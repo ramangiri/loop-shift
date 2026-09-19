@@ -123,7 +123,7 @@ const corrupt=game(false,new Map([['loop-shift-progress-v2','{"sparks":-1,"ball"
 assert.equal(corrupt.run('progress.sparks'),0);assert.equal(corrupt.run('progress.trail'),'glow');
 
 // Pattern warnings, settled geometry and open/closed collision states.
-const patterns=game();patterns.click('appearance-dark');patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
+const patterns=game();assert.equal(patterns.run('lightTheme'),false);patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
 assert.equal(patterns.run('moving.announced'),true);assert.ok(patterns.nodes.get('pattern-notice').textContent.includes('MOVING'));
 const movingAngle=patterns.run('moving.angle');patterns.run('update(.035)');assert.notEqual(patterns.run('moving.angle'),movingAngle);
 patterns.run('moving.baseAngle=angle+.45;moving.angle=angle+.45;update(.01)');assert.equal(patterns.run('moving.locked'),true);
