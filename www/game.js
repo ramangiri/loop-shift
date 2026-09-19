@@ -58,12 +58,18 @@ function showRest(completed=0){
 }
 
 const C = {lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'};
-let lightTheme=false,softTheme=true;
-try{lightTheme=localStorage.getItem('loop-shift-theme')==='light';softTheme=!localStorage.getItem('loop-shift-theme')||localStorage.getItem('loop-shift-theme')==='soft';}catch{}
+let lightTheme=false,softTheme=false;
+try{
+ const savedTheme=localStorage.getItem('loop-shift-theme');
+ lightTheme=savedTheme==='light';
+ if(savedTheme==='soft')localStorage.setItem('loop-shift-theme','dark');
+}catch{}
 function syncAppearance(){
- document.body.dataset.appearance=lightTheme?'light':softTheme?'soft':'dark';
- Object.assign(C,lightTheme?{lime:'#4f6f2f',coral:'#a95140',gold:'#886426',line:'#918674',blue:'#256987'}:softTheme?{lime:'#b7d989',coral:'#d78d7f',gold:'#d8bd7b',line:'#4c5b5e',blue:'#78b9cb'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
- $('theme-toggle').textContent=lightTheme?'Theme: Light':softTheme?'Theme: Comfort':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));for(const name of ['dark','soft','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':softTheme?'soft':'dark')));
+ document.body.dataset.appearance=lightTheme?'light':'dark';
+ softTheme=false;
+ Object.assign(C,lightTheme?{lime:'#68b900',coral:'#ef5b62',gold:'#d59400',line:'#9bb0d1',blue:'#157ee8'}:{lime:'#d6ff62',coral:'#ff8a75',gold:'#f5dc88',line:'#354637',blue:'#72e6ff'});
+ $('theme-toggle').textContent=lightTheme?'Theme: Light':'Theme: Dark';$('theme-toggle').setAttribute('aria-pressed',String(lightTheme));
+ for(const name of ['dark','light'])$('appearance-'+name).setAttribute('aria-pressed',String(name===(lightTheme?'light':'dark')));
 }
 function comfortAnswer(answer){
  if(mode!=='paused'&&mode!=='over')return;
@@ -628,7 +634,7 @@ function resumeCheckpoint(saved=null,savedKey=null){
  sectionStartSparks=c.state.sectionStartSparks??c.state.sparks;sectionStartPerfects=c.state.sectionStartPerfects??c.state.perfects;sectionStartPasses=c.state.sectionStartPasses??c.state.passes;
  score=c.state.score;passes=c.state.passes;level=c.state.level;sparks=c.state.sparks;charge=c.state.charge;shield=c.state.shield;gameTime=c.state.gameTime;combo=c.state.combo;feverCharge=c.state.feverCharge;feverTime=c.state.feverTime;perfects=c.state.perfects;roundFevers=c.state.roundFevers;bestCombo=c.state.bestCombo;roundHits=c.state.roundHits;ringCount=c.state.ringCount;lane=c.state.lane;radius=c.state.radius;angle=c.state.angle;motionSpeed=c.state.motionSpeed;shiftDirection=c.state.shiftDirection;gameSeed=c.state.gameSeed;nextRowIndex=c.state.nextRowIndex;rhythmOrigin=c.state.rhythmOrigin;rhythmUnit=c.state.rhythmUnit;rhythmEpoch=c.state.rhythmEpoch;rhythmPhaseOffset=c.state.rhythmPhaseOffset;pathLane=c.state.pathLane;sectionChoice=c.state.sectionChoice;focusRun=c.state.focusRun;focusGoal=c.state.focusGoal;focusCount=c.state.focusCount;focusSparkBase=c.state.focusSparkBase;runFocus=c.state.runFocus;levelSparks=c.state.levelSparks;levelPerfects=c.state.levelPerfects;levelHits=c.state.levelHits;levelShieldLost=c.state.levelShieldLost;objectiveAwarded=c.state.objectiveAwarded;rushTime=c.state.rushTime;rushChain=c.state.rushChain;rushQueued=c.state.rushQueued;rushStartAngle=c.state.rushStartAngle;rushGlow=c.state.rushGlow;rushBaseSpeed=c.state.rushBaseSpeed;rushBoost=c.state.rushBoost;patternHits=c.state.patternHits;runBosses=c.state.runBosses;runCleanBest=c.state.runCleanBest;cleanStreak=c.state.cleanStreak;activeSinceBreak=c.state.activeSinceBreak;
  rows=c.rows;rushCoins=c.rushCoins||[];phrasePatterns=new Map(c.phrasePatterns||[]);retryCourse=c.retryCourse;levelTransition=c.levelTransition;departingRows=c.departingRows||[];
- if(focusRun)chooseAppearance('soft');socialAttempt=null;checkpointEligible=false;breakPending=false;activeSinceBreak=0;startDelay=1.5;invulnerable=Math.max(invulnerable,2.3);trail=[];particles=[];shatters=[];lastShift=-1;
+ if(focusRun)chooseAppearance('dark');socialAttempt=null;checkpointEligible=false;breakPending=false;activeSinceBreak=0;startDelay=1.5;invulnerable=Math.max(invulnerable,2.3);trail=[];particles=[];shatters=[];lastShift=-1;
  applyTheme();updateHUD();updateGuide();syncCheckpoint();
 }
 function goHome(){
@@ -872,7 +878,7 @@ function start(options){
   else if(roundKind==='weekly'){startWeekly();return;}
 
   focusRun=focusEnabled&&roundKind==='endless';focusGoal=0;focusCount=0;focusSparkBase=0;
-  if(focusRun){chooseAppearance('soft');}
+  if(focusRun){chooseAppearance('dark');}
   if(isRankedMode()&&window.LoopShiftBoard && !window.LoopShiftBoard.ready()){window.LoopShiftBoard.askName(()=>start(options));return;}
   if(roundKind==='endless'&&!options?.resumeCheckpoint){try{localStorage.removeItem(checkpointKey());}catch{}}
   if($('ring-lesson').open)$('ring-lesson').close();ringLessonPending=false;
@@ -1284,14 +1290,14 @@ $('pause-side').addEventListener('click',()=>{pauseLeft=!pauseLeft;try{localStor
 $('focus-toggle').addEventListener('click',()=>{focusEnabled=!focusEnabled;try{localStorage.setItem('loop-shift-focus',String(focusEnabled));}catch{}syncFocus();});
 $('arena-size-toggle').addEventListener('click',()=>{smallArena=!smallArena;try{localStorage.setItem('loop-shift-small-arena',String(smallArena));}catch{}syncFocus();resize();});
 for(const seconds of [60,120,180])$('break-'+seconds).addEventListener('click',()=>{breakSeconds=seconds;try{localStorage.setItem('loop-shift-break-seconds',String(seconds));}catch{}syncFocus();});
-$('comfort-enable').addEventListener('click',()=>{chooseAppearance('soft');$('comfort-response').textContent='Comfort visuals enabled. Rest before playing again.';});
+$('comfort-enable').addEventListener('click',()=>{reducedMotion=true;chooseAppearance('dark');syncComfort();$('comfort-response').textContent='Reduced motion enabled. Rest before playing again.';});
 $('comfort-finish').addEventListener('click',()=>{if(focusRun){try{localStorage.setItem('loop-shift-focus-result',JSON.stringify({score,level}));}catch{}}finishAndSave();});
 syncFireSpeed();
 $('fire-speed-toggle').addEventListener('click',()=>{fireSpeedEnabled=!fireSpeedEnabled;try{localStorage.setItem('loop-shift-fire-speed',String(fireSpeedEnabled));}catch{}syncFireSpeed();});
 syncAppearance();
-function chooseAppearance(value){lightTheme=value==='light';softTheme=value==='soft';trail=[];particles=[];shatters=[];try{localStorage.setItem('loop-shift-theme',value);}catch{}syncAppearance();}
-$('theme-toggle').addEventListener('click',()=>chooseAppearance(lightTheme?'soft':softTheme?'dark':'light'));
-for(const name of ['dark','soft','light'])$('appearance-'+name).addEventListener('click',()=>chooseAppearance(name));
+function chooseAppearance(value){lightTheme=value==='light';softTheme=false;trail=[];particles=[];shatters=[];const saved=lightTheme?'light':'dark';try{localStorage.setItem('loop-shift-theme',saved);}catch{}syncAppearance();}
+$('theme-toggle').addEventListener('click',()=>chooseAppearance(lightTheme?'dark':'light'));
+for(const name of ['dark','light'])$('appearance-'+name).addEventListener('click',()=>chooseAppearance(name));
 for(const [id,answer] of [['comfort-ok','comfortable'],['comfort-eyes','eyes'],['comfort-sick','sick']])$(id).addEventListener('click',()=>comfortAnswer(answer));
 syncComfort();
 $('motion-toggle').addEventListener('click',()=>{reducedMotion=!reducedMotion;try{localStorage.setItem('loop-shift-reduced-motion',String(reducedMotion));}catch{}trail=[];particles=[];shatters=[];syncComfort();});

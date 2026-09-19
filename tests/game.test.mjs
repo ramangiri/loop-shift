@@ -582,7 +582,7 @@ const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('re
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
 const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.ok(pacing.run('targetSpeed()')>1.3);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
-const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#256987');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
+const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('softTheme'),false);assert.equal(appearance.run('C.blue'),'#157ee8');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
 // Short journeys finish cleanly and keep their medal separate from ranked progress.
@@ -632,8 +632,8 @@ rushTest.run('rushChain=2;rows=[{angle:angle-.2,baseAngle:angle-.2,special:true,
 rushTest.run('startRush();start();');assert.equal(rushTest.run('rushTime'),0);assert.equal(rushTest.run('rushChain'),0);
 const variety=game();variety.click('home-play');variety.run('level=8;phrasePatterns=new Map();gameSeed=123;globalThis.sequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.ok(variety.run('sequence.every((v,i)=>i<2||v!==sequence[i-1]||v!==sequence[i-2])'));
 variety.run('phrasePatterns=new Map();gameSeed=123;globalThis.sameSequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.equal(variety.run('JSON.stringify(sequence)'),variety.run('JSON.stringify(sameSequence)'),'Seeded course pattern order is repeatable');
-const soft=game();soft.click('appearance-soft');assert.equal(soft.store.get('loop-shift-theme'),'soft');assert.equal(game(false,soft.store).run('softTheme'),true);
-console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and Soft theme persistence.');
+const oldSoft=game(false,new Map([['loop-shift-theme','soft']]));assert.equal(oldSoft.run('softTheme'),false);assert.equal(oldSoft.run('lightTheme'),false);assert.equal(oldSoft.store.get('loop-shift-theme'),'dark','Old Comfort preference migrates to Dark');
+console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and two-theme migration.');
 
 // New lessons are playable directly; mistakes stay unranked and retryable.
 const stop=game();stop.run('globalThis.submits=0;window.LoopShiftBoard={ready:()=>true,refresh(){},submit(){submits++},beginRound(){},saveProgress(){}};start();score=120;showRest(5);');
@@ -654,12 +654,12 @@ fastFire.run('updateRush(3)');assert.equal(fastFire.run('rushTime'),0,'Fire Ball
 assert.ok(Math.abs(fastFire.run('(angle-initialAngle)/base')-14)<1e-8,'Speed ramps preserve frame-independent travel');
 assert.equal(fastFire.run('speedNow()'),fastFire.run('base'),'Normal speed is restored');
 
-const calm=game(false,new Map([['loop-shift-theme','soft'],['loop-shift-focus','true'],['loop-shift-small-arena','true'],['loop-shift-fire-speed','true']]),false,false,false);assert.equal(calm.run('softTheme'),true);
+const calm=game(false,new Map([['loop-shift-theme','soft'],['loop-shift-focus','true'],['loop-shift-small-arena','true'],['loop-shift-fire-speed','true']]),false,false,false);assert.equal(calm.run('softTheme'),false);assert.equal(calm.run('lightTheme'),false);
 assert.equal(calm.run('focusEnabled'),false,'Retired Focus Play preference cannot silently affect new runs');
 assert.equal(calm.run('smallArena'),false,'Retired compact arena preference cannot silently shrink the game');
 assert.equal(calm.run('fireSpeedEnabled'),false,'Retired Fire Ball speed preference cannot silently change gameplay');
 calm.click('home-play');calm.run('startDelay=0;startRush();globalThis.calmAngle=angle;globalThis.calmSpeed=speedNow();updateRush(5)');assert.ok(Math.abs(calm.run('(angle-calmAngle)/calmSpeed')-5)<1e-8);calm.run('activeSinceBreak=180;update(.01)');assert.equal(calm.run('mode'),'paused');
-const settingsKeep=game(false,new Map([['loop-shift-break-seconds','60']]));assert.equal(settingsKeep.run('breakSeconds'),180,'Break reminder stays fixed at three minutes');settingsKeep.click('appearance-soft');assert.equal(settingsKeep.run('softTheme'),true);
+const settingsKeep=game(false,new Map([['loop-shift-break-seconds','60']]));assert.equal(settingsKeep.run('breakSeconds'),180,'Break reminder stays fixed at three minutes');settingsKeep.click('appearance-light');assert.equal(settingsKeep.run('lightTheme'),true);settingsKeep.click('appearance-dark');assert.equal(settingsKeep.run('lightTheme'),false);
 
 const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');for(let i=0;i<5;i++)preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v2'),'true');
 const bonusCatch=game();bonusCatch.click('home-play');bonusCatch.run('startDelay=0;level=4;ringCount=4;rows=[];lane=1;radius=laneRadius(lane);globalThis.beforeBonus=score;rows=[{angle:angle-.35,baseAngle:angle-.35,bonusLane:1,bonusCollected:false,sparkLane:0,collected:true,hit:true,passed:true,locked:true,hazardLanes:[],pattern:"classic"}];update(.01)');assert.equal(bonusCatch.run('rows[0].bonusCollected'),true);assert.ok(bonusCatch.run('score-beforeBonus')>=40);bonusCatch.run('update(.01)');assert.equal(bonusCatch.run('score-beforeBonus'),40);
