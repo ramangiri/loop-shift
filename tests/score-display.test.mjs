@@ -82,11 +82,11 @@ test('a completed 612-point round stays pending until saved, then Home and the o
   }finally{DB.close();}
 });
 
-test('lost identity clears stale nickname; queued results cannot transfer to another same-name profile',async()=>{
+test('lost identity clears stale nickname; queued results cannot transfer to another profile',async()=>{
   const {DB,call,save}=fixture();
   try{
     const original=(await call('player',{name:'Giri'},'giri')).data.me;
-    await save('giri',32);await call('player',{name:'Giri'},'other');
+    await save('giri',32);await call('player',{name:'Other'},'other');
     const state={user:'giri'},h=client(call,state);await h.ready();
     state.offline=true;await h.board.submit(612,10);
     state.offline=false;state.user=null;await h.board.refresh(true);

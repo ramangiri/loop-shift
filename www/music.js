@@ -179,12 +179,14 @@
     if(enabled&&userUnlocked&&document.body?.dataset?.screen==='home'&&!active){setScene('home');active=true;begin();}
   });
 
-  const observer=new MutationObserver(()=>{
-    const onHome=document.body?.dataset?.screen==='home';
-    if(onHome&&enabled&&userUnlocked){setScene('home');active=true;begin();}
-    else if(!onHome&&scene==='home'){active=false;stop();setScene('game');}
-  });
-  if(document.body)observer.observe(document.body,{attributes:true,attributeFilter:['data-screen']});
+  if(typeof MutationObserver!=='undefined'&&document.body){
+    const observer=new MutationObserver(()=>{
+      const onHome=document.body?.dataset?.screen==='home';
+      if(onHome&&enabled&&userUnlocked){setScene('home');active=true;begin();}
+      else if(!onHome&&scene==='home'){active=false;stop();setScene('game');}
+    });
+    observer.observe(document.body,{attributes:true,attributeFilter:['data-screen']});
+  }
 
   window.LoopShiftMusic={
     sync,
