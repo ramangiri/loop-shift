@@ -93,7 +93,7 @@
   <button id="feedback-help" class="secondary-button feedback-entry" type="button">Feedback · Ask or suggest</button><button id="tutorial-start" class="secondary-button">Start guided practice</button>
 </div></details>
 </div>
-<div id="home-panel-progress" data-home-panel="progress" hidden><h2>Progress</h2><button id="feedback-progress" class="secondary-button feedback-entry" type="button">Feedback</button>        <section class="leaderboard" aria-labelledby="board-title">
+<div id="home-panel-progress" data-home-panel="progress" hidden><h2>Stats &amp; Rankings</h2><button id="feedback-progress" class="secondary-button feedback-entry" type="button">Feedback</button>        <section class="leaderboard" aria-labelledby="board-title">
           <div class="board-heading"><h2 id="board-title">🏆 Top 10</h2><button class="back-button" id="refresh-board">Refresh</button></div><div class="board-body">
           <div class="board-tabs" aria-label="Leaderboard type"><button id="board-endless" aria-pressed="true">100 levels</button><button id="board-daily" aria-pressed="false">Daily</button><button id="board-weekly" aria-pressed="false">Weekly</button></div>
 
@@ -128,7 +128,7 @@
           </div>
         </section></details></div></details>
 </div>
-<div id="home-panel-friends" data-home-panel="friends" hidden><h2>Friends</h2><button id="feedback-friends" class="secondary-button feedback-entry" type="button">Feedback</button><details id="friends-panel" class="mobile-fold friends-panel"><summary>Friends &amp; private boards</summary><div class="fold-body">
+<div id="home-panel-friends" data-home-panel="friends" hidden><h2>Community</h2><button id="feedback-friends" class="secondary-button feedback-entry" type="button">Feedback</button><details id="friends-panel" class="mobile-fold friends-panel"><summary>Friends &amp; private boards</summary><div class="fold-body">
   <p id="groups-status" role="status">Create a group or join with an invite code.</p>
   <form id="group-create-form" class="group-form"><label for="new-group-name">New group name</label><input id="new-group-name" maxlength="24" required placeholder="e.g. Orbit crew"><button class="secondary-button" type="submit">Create group</button></form>
   <form id="group-join-form" class="group-form"><label for="join-group-code">Friend’s invite code</label><input id="join-group-code" maxlength="12" minlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" required placeholder="12-character code"><button class="secondary-button" type="submit">Join group</button></form>
@@ -144,7 +144,7 @@
   <button id="community-reward" class="text-button" disabled>Convergence theme · Locked</button>
 </section>
 </div>
-<nav class="home-navigation" aria-label="Main navigation"><button id="nav-play" type="button" aria-controls="home-panel-play" aria-current="page">Play</button><button id="nav-progress" type="button" aria-controls="home-panel-progress">Progress</button><button id="nav-friends" type="button" aria-controls="home-panel-friends">Friends</button></nav>
+<nav class="home-navigation" aria-label="Main navigation"><button id="nav-play" type="button" aria-controls="home-panel-play" aria-current="page">Play</button><button id="nav-progress" type="button" aria-controls="home-panel-progress">Stats</button><button id="nav-friends" type="button" aria-controls="home-panel-friends">Community</button></nav>
       </section>
 
       <section class="game-screen" id="game-screen" aria-label="Play Loop Shift" hidden>
@@ -205,7 +205,7 @@
       <div class="desktop-hint"><kbd>P</kbd><span>pause</span></div>
       </section>
     </main>
-    <footer><span>FIND YOUR FLOW.</span><span>ONE TAP / 100 LEVELS</span></footer>
+    <footer class="site-credit"><span>Designed by Giri</span></footer>
     <p id="announcement" class="sr-only" aria-live="polite"></p>
     <dialog id="preplay-dialog" class="menu-dialog" aria-labelledby="preplay-title"><p id="preplay-step"></p><h2 id="preplay-title">You are the lime ball</h2><svg id="preplay-picture" viewBox="0 0 300 210" role="img" aria-label="Illustration of the lesson shown below" data-lesson="player"><g fill="none" stroke="#61747a" stroke-width="2"><circle cx="150" cy="105" r="85"/><circle cx="150" cy="105" r="55"/></g><circle cx="235" cy="105" r="10" fill="#b8d68f"/><path d="M200 82 Q211 105 200 128" fill="none" stroke="#8ac5d1" stroke-width="6"/><g class="slide-barrier"><path d="M69 80 Q61 105 69 130" fill="none" stroke="#e39a83" stroke-width="10"/></g><g class="slide-coins"><path d="M150 12 l9 9 -9 9 -9 -9Z" fill="#e4bf83"/><path d="M150 151 l10 10 -10 10 -10 -10Z" fill="#c9a4e8"/></g><g class="slide-power"><circle cx="235" cy="105" r="17" fill="none" stroke="#b8d68f" stroke-width="2"/><path d="M142 92 Q135 110 150 120 Q166 109 155 92 L153 105Z" fill="#dc7b25"/></g><g class="slide-save"><rect x="112" y="72" width="76" height="66" rx="8" fill="#303b37" stroke="#b8d68f" stroke-width="2"/><path d="M133 105 l12 12 24 -27" fill="none" stroke="#b8d68f" stroke-width="5"/></g></svg><p id="preplay-copy"></p><div class="preplay-actions"><button id="preplay-go" class="primary-button" type="button">NEXT</button></div><button id="preplay-skip" class="text-button" type="button">SKIP — PLAY NOW</button></dialog>
 <dialog id="ring-lesson" aria-labelledby="ring-lesson-title" aria-describedby="ring-lesson-copy">
