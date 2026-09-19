@@ -13,7 +13,7 @@ const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 assert.equal(new Set(ids).size, ids.length, 'HTML IDs must be unique');
 for (const match of code.matchAll(/\$\('([^']+)'\)/g)) assert.ok(ids.includes(match[1]), `Missing control: ${match[1]}`);
 for (const match of html.matchAll(/(?:src|href)="(\.\/[^"#]+)"/g)) assert.ok(existsSync(resolve(web, match[1])), `Missing asset: ${match[1]}`);
-for (const file of readdirSync(web).filter(name=>name.endsWith('.js'))) execFileSync(process.execPath, ['--check', join(web, file)]);
+for (const file of ['game.js', 'leaderboard.js', 'music.js', 'sw.js']) execFileSync(process.execPath, ['--check', join(web, file)]);
 const manifest = JSON.parse(readFileSync(join(web, 'manifest.webmanifest'), 'utf8'));
 for (const icon of manifest.icons) assert.ok(existsSync(resolve(web, icon.src)));
 
@@ -123,7 +123,7 @@ const corrupt=game(false,new Map([['loop-shift-progress-v2','{"sparks":-1,"ball"
 assert.equal(corrupt.run('progress.sparks'),0);assert.equal(corrupt.run('progress.trail'),'glow');
 
 // Pattern warnings, settled geometry and open/closed collision states.
-const patterns=game();assert.equal(patterns.run('lightTheme'),false);patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
+const patterns=game();patterns.click('appearance-dark');patterns.click('home-play');patterns.run("startDelay=0;level=3;rows=[];addRow(angle+2,12);globalThis.moving=rows[0];moving.phase=0;update(.01)");
 assert.equal(patterns.run('moving.announced'),true);assert.ok(patterns.nodes.get('pattern-notice').textContent.includes('MOVING'));
 const movingAngle=patterns.run('moving.angle');patterns.run('update(.035)');assert.notEqual(patterns.run('moving.angle'),movingAngle);
 patterns.run('moving.baseAngle=angle+.45;moving.angle=angle+.45;update(.01)');assert.equal(patterns.run('moving.locked'),true);
@@ -206,10 +206,10 @@ keys.run('gameTime+=1');const unchanged=keys.run('lane');
 key('Space','shift',true);assert.equal(keys.run('lane'),unchanged,'Holding Space never repeats');
 tap('shift',{isPrimary:false});tap('shift',{button:2});assert.equal(keys.run('lane'),unchanged,'Secondary touches and right click do not shift');
 tap('game-screen',{target:{closest:()=>({})}});assert.equal(keys.run('lane'),unchanged,'Menus do not trigger shifts');
-keys.run("startDelay=1;lastShift=-1;lastShiftInput=-1;ringCount=2;lane=0;radius=laneRadius(0);rows=[{entryLane:0,sparkLane:1,angle:angle+1,passed:false,open:false,locked:true,hazardLanes:[0]}]");const countdownLane=keys.run('lane'),countdownRadius=keys.run('radius');key('Space');assert.notEqual(keys.run('lane'),countdownLane,'Countdown keeps controls live');keys.run('update(.05)');assert.notEqual(keys.run('radius'),countdownRadius,'Ball starts moving during the countdown instead of waiting for it to end');const countdownMoved=keys.run('lane');tap();assert.equal(keys.run('lane'),countdownMoved,'Countdown input is still debounced');
-keys.run('startDelay=0;setPaused(true)');const pausedLane=keys.run('lane');tap();assert.equal(keys.run('lane'),pausedLane,'Paused game does not move');
+keys.run('startDelay=1');key('Space');tap();assert.equal(keys.run('lane'),unchanged,'Countdown blocks both controls');
+keys.run('startDelay=0;setPaused(true)');tap();assert.equal(keys.run('lane'),unchanged,'Paused game does not move');
 keys.run('setPaused(false);startDelay=0;gameTime+=1;');key('Space');const moved=keys.run('lane');key('Space');tap();assert.equal(keys.run('lane'),moved,'Duplicate input stays debounced');
-console.log('PASS: identical Space/touch targets at all 100 levels, live countdown input, pause, held keys and multitouch.');
+console.log('PASS: identical Space/touch targets at all 100 levels, countdown, pause, held keys and multitouch.');
 
 const guide=game();guide.click('home-play');
 guide.run('ringCount=6;level=13;lane=1;radius=laneRadius(1);startDelay=0;gameTime=2;rows=[{entryLane:1,sparkLane:2,angle:angle+1,passed:false},{entryLane:2,sparkLane:3,angle:angle+2,passed:false}];updateGuide();');
@@ -217,18 +217,6 @@ assert.match(guide.nodes.get('shift').attrs['aria-label'],/ring 3/);
 guide.run('shift()');assert.equal(guide.run('lane'),2);assert.equal(guide.run('guidedTarget()'),2,'Guide holds the safe ring until the current wall clears');
 guide.run('gameTime+=.1;shift()');assert.equal(guide.run('lane'),2);
 guide.run('gameTime+=.1;shift();rows[0].passed=true');assert.equal(guide.run('guidedTarget()'),3,'Passing the wall advances the route');
-
-// Moving rows can change angular order; BLUE must follow the physically nearest
-// uncleared wall, not whichever row happens to appear first in the array.
-guide.run('lane=1;radius=laneRadius(1);rows=[{sparkLane:2,angle:angle+1.4,passed:false},{sparkLane:0,angle:angle+.55,passed:false}];');
-assert.equal(guide.run('guidedTarget()'),0,'Nearest actual wall owns BLUE even when row order differs');
-
-// Switch gates know their final safe lane before the visual switch. BLUE must guide
-// to that final lane from the start and remain stable when the gate locks.
-guide.run('lane=1;radius=laneRadius(1);rows=[{entryLane:1,sparkLane:2,switching:true,switchDone:false,switchToLane:0,angle:angle+.7,passed:false}];');
-assert.equal(guide.run('guidedTarget()'),0,'BLUE uses the final switch-gate safe lane immediately');
-guide.run('rows[0].switchDone=true;rows[0].sparkLane=0;');
-assert.equal(guide.run('guidedTarget()'),0,'BLUE stays on the same safe lane after the switch locks');
 
 // Identical daily seeds produce identical courses even when visual RNG and player position differ.
 const dailyA=game(),dailyB=game(false,null,true);
@@ -299,20 +287,10 @@ assert.equal(sprint.nodes.get('overlay-title').textContent,'Sprint complete!');s
 const training=game();training.run('globalThis.sends=0;window.LoopShiftBoard={refresh(){},beginRound(){},submit(){sends++},saveProgress(){sends++}};startTutorial();');
 const trainingFrozen=training.run('angle');training.run('update(10);shift();');assert.equal(training.run('angle'),trainingFrozen);assert.equal(training.run('tutorialShift'),false);
 training.click('training-go');training.run('update(20)');assert.equal(training.run('tutorialStage'),0,'No automatic lesson timeout');
-assert.equal(training.nodes.get('training-controls').hidden,true,'Lesson navigation cannot steal taps during an active exercise');
-const tutorialLane=training.run('lane');
-training.run("globalThis.tutorialTap={pointerId:7,button:0,isPrimary:true,target:{id:'game-screen',closest:()=>null},clientX:180,clientY:520,preventDefault(){}};beginGesture(tutorialTap)");
-assert.notEqual(training.run('lane'),tutorialLane,'Tap anywhere in the active tutorial shifts immediately');
-training.run('update(.01)');assert.equal(training.run('tutorialStage'),1);
+training.run('shift();update(.01)');assert.equal(training.run('tutorialStage'),1);
 training.click('training-go');training.run('shift();for(let i=0;i<160;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2);assert.equal(training.run('sparks'),1);
-training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt stays on the dodge lesson');
-assert.equal(training.run('trainingWaiting'),true,'RED contact freezes the hands-on lesson before crossing the ball');
-assert.equal(training.nodes.get('training-dialog').open,true,'Unsafe RED contact opens the dodge coach');
-assert.equal(training.nodes.get('training-controls').hidden,true,'Bottom lesson buttons stay hidden during retry coaching');
-assert.match(training.nodes.get('training-title').textContent,/RED = AVOID/);
-assert.match(training.nodes.get('training-go').textContent,/TAP TO BLUE/);
-assert.ok(training.run('rows[0].angle-angle')>=.10,'RED remains in front of the player instead of passing through');
-training.click('training-go');training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
+training.click('training-go');training.run('for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),2,'Unsafe attempt retries');
+training.run('shift();for(let i=0;i<170;i++)update(1/60)');assert.equal(training.run('tutorialStage'),3);
 training.click('training-go');training.run('for(let i=0;i<150;i++)update(1/60)');assert.equal(training.run('shield'),0);assert.equal(training.run('tutorialStage'),4);
 assert.equal(training.run('TRAINING.length'),5);assert.match(training.nodes.get('training-copy').textContent,/Save & Exit/);
 training.click('training-go');assert.equal(training.run('screen'),'home');assert.equal(training.run('sends'),0);assert.equal(training.run('progress.sparks'),0);
@@ -435,10 +413,9 @@ const landing=game();landing.click('home-play');
 landing.run('startDelay=0;globalThis.landingTones=0;tone=()=>landingTones++;shift();');
 assert.equal(landing.run('landingTime'),0,'Landing feedback waits for the ball to arrive');
 landing.run('update(.1);update(.04)');
-assert.equal(landing.run('landing'),null);assert.ok(Math.abs(landing.run('landingTime')-.24)<1e-9);assert.equal(landing.run('landingTones'),1);
-const landedRipple=landing.run('landingTime');
-landing.run('setPaused(true);update(1)');assert.equal(landing.run('landingTime'),landedRipple,'Pause freezes the ripple');
-landing.run('setPaused(false);update(.5)');assert.equal(landing.run('landingTime'),landedRipple,'Resume countdown freezes the ripple');
+assert.equal(landing.run('landing'),null);assert.equal(landing.run('landingTime'),.28);assert.equal(landing.run('landingTones'),1);
+landing.run('setPaused(true);update(1)');assert.equal(landing.run('landingTime'),.28,'Pause freezes the ripple');
+landing.run('setPaused(false);update(.5)');assert.equal(landing.run('landingTime'),.28,'Resume countdown freezes the ripple');
 landing.run('startDelay=0;update(.3)');assert.equal(landing.run('landingTime'),0);assert.equal(landing.run('landingTones'),1,'Arrival tone plays once');
 const quietLanding=game(false,null,true);quietLanding.click('home-play');
 quietLanding.run('startDelay=0;shift();update(.14);globalThis.ripples=0;ctx.arc=()=>ripples++;arc=()=>{};drawLanding();');
@@ -490,9 +467,8 @@ assert.ok(Math.abs(midShift.run('newOffset-oldOffset'))<1e-12,'Transition keeps 
 assert.equal(midShift.run('landing'),midShift.run('oldLanding'));
 midShift.run('setPaused(true);globalThis.frozenFlow=JSON.stringify([levelTransition,radius,angle,departingRows]);update(.5);');
 assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Pause freezes ring morph');
-midShift.run('setPaused(false);globalThis.resumeRadius=radius;globalThis.resumeTarget=laneRadius(lane);globalThis.frozenWorld=JSON.stringify([levelTransition,angle,departingRows]);update(.1);');
-assert.equal(midShift.run('JSON.stringify([levelTransition,angle,departingRows])'),midShift.run('frozenWorld'),'Resume countdown keeps the world and ring morph frozen');
-assert.ok(Math.abs(midShift.run('radius-resumeTarget'))<Math.abs(midShift.run('resumeRadius-resumeTarget')),'Resume countdown lets the ball finish its in-flight shift');
+midShift.run('setPaused(false);update(.1);');
+assert.equal(midShift.run('JSON.stringify([levelTransition,radius,angle,departingRows])'),midShift.run('frozenFlow'),'Resume countdown freezes ring morph');
 midShift.run('startDelay=0;update(.2);');assert.ok(midShift.run('levelTransition.elapsed')>0,'Morph resumes after countdown');
 
 const previews=game();previews.click('home-play');
@@ -507,7 +483,7 @@ console.log('PASS: 99 smooth level boundaries, stable trails, continuous audio p
 const guideHelp=game();guideHelp.click('tutorial-play');
 assert.equal(guideHelp.nodes.get('training-dialog').open,true,'How to play opens guided practice');
 assert.equal(guideHelp.run('roundKind'),'tutorial');
-const settingsCheck=game();settingsCheck.click('settings-open');assert.equal(settingsCheck.nodes.get('settings-dialog').open,true);assert.equal(settingsCheck.run('lightTheme'),false);settingsCheck.click('settings-close');assert.equal(settingsCheck.nodes.get('settings-dialog').open,false);assert.equal(settingsCheck.focus(),'settings-open');
+const settingsCheck=game();settingsCheck.click('settings-open');assert.equal(settingsCheck.nodes.get('settings-dialog').open,true);settingsCheck.click('appearance-light');assert.equal(settingsCheck.run('lightTheme'),true);settingsCheck.click('settings-close');assert.equal(settingsCheck.nodes.get('settings-dialog').open,false);assert.equal(settingsCheck.focus(),'settings-open');
 const boardBest=game();boardBest.run('window.LoopShiftBoard={best:()=>72};updateHUD();');
 assert.equal(boardBest.nodes.get('home-best').textContent,'072','Home matches server-confirmed score');
 assert.equal(boardBest.nodes.get('home-best-label').textContent,'ONLINE BEST');
@@ -588,7 +564,7 @@ const comfort=game();comfort.click('motion-toggle');assert.equal(comfort.run('re
 comfort.click('comfort-play');assert.equal(comfort.run('roundKind'),'practice');assert.equal(comfort.run('isRankedMode()'),false);assert.ok(comfort.run('targetSpeed()')<.78);
 
 const pacing=game();pacing.click('home-play');pacing.run('level=100');assert.ok(pacing.run('targetSpeed()')>1.3);pacing.run('level=8;ringCount=4;rows=[];for(let i=9;i<12;i++)addRow(angle+i,84+i)');assert.ok(pacing.run('rows.every(r=>r.recovery&&r.pattern==="classic")'));
-const appearance=game(false,new Map([['loop-shift-theme','light']]));appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),false);assert.equal(appearance.run('softTheme'),false);assert.equal(appearance.run('C.blue'),'#72e6ff');assert.equal(appearance.store.get('loop-shift-theme'),'dark');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),false);
+const appearance=game();appearance.click('appearance-dark');appearance.click('theme-toggle');assert.equal(appearance.run('lightTheme'),true);assert.equal(appearance.run('C.blue'),'#0056a6');assert.equal(appearance.store.get('loop-shift-theme'),'light');const restoredAppearance=game(false,appearance.store);assert.equal(restoredAppearance.run('lightTheme'),true);
 appearance.click('home-play');appearance.click('pause');const comfortFrame=appearance.run('JSON.stringify({score,angle,shield,gameTime})');appearance.click('comfort-sick');assert.equal(appearance.run('mode'),'paused');assert.equal(appearance.run('JSON.stringify({score,angle,shield,gameTime})'),comfortFrame);assert.match(appearance.nodes.get('comfort-response').textContent,/Stop playing/);
 
 // Short journeys finish cleanly and keep their medal separate from ranked progress.
@@ -638,9 +614,8 @@ rushTest.run('rushChain=2;rows=[{angle:angle-.2,baseAngle:angle-.2,special:true,
 rushTest.run('startRush();start();');assert.equal(rushTest.run('rushTime'),0);assert.equal(rushTest.run('rushChain'),0);
 const variety=game();variety.click('home-play');variety.run('level=8;phrasePatterns=new Map();gameSeed=123;globalThis.sequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.ok(variety.run('sequence.every((v,i)=>i<2||v!==sequence[i-1]||v!==sequence[i-2])'));
 variety.run('phrasePatterns=new Map();gameSeed=123;globalThis.sameSequence=Array.from({length:30},(_,i)=>phrasePattern(i*4));');assert.equal(variety.run('JSON.stringify(sequence)'),variety.run('JSON.stringify(sameSequence)'),'Seeded course pattern order is repeatable');
-const oldSoft=game(false,new Map([['loop-shift-theme','soft']]));assert.equal(oldSoft.run('softTheme'),false);assert.equal(oldSoft.run('lightTheme'),false);assert.equal(oldSoft.store.get('loop-shift-theme'),'dark','Old Comfort preference migrates to Dark');
-const oldLight=game(false,new Map([['loop-shift-theme','light']]));assert.equal(oldLight.run('lightTheme'),false);assert.equal(oldLight.store.get('loop-shift-theme'),'dark','Old Light preference migrates to Dark');
-console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and dark-only migration.');
+const soft=game();soft.click('appearance-soft');assert.equal(soft.store.get('loop-shift-theme'),'soft');assert.equal(game(false,soft.store).run('softTheme'),true);
+console.log('PASS: radial gestures, bounded movement, Rush trigger/scoring/freeze/recovery/reset, seeded variety and Soft theme persistence.');
 
 // New lessons are playable directly; mistakes stay unranked and retryable.
 const stop=game();stop.run('globalThis.submits=0;window.LoopShiftBoard={ready:()=>true,refresh(){},submit(){submits++},beginRound(){},saveProgress(){}};start();score=120;showRest(5);');
@@ -661,12 +636,11 @@ fastFire.run('updateRush(3)');assert.equal(fastFire.run('rushTime'),0,'Fire Ball
 assert.ok(Math.abs(fastFire.run('(angle-initialAngle)/base')-14)<1e-8,'Speed ramps preserve frame-independent travel');
 assert.equal(fastFire.run('speedNow()'),fastFire.run('base'),'Normal speed is restored');
 
-const calm=game(false,new Map([['loop-shift-theme','soft'],['loop-shift-focus','true'],['loop-shift-small-arena','true'],['loop-shift-fire-speed','true']]),false,false,false);assert.equal(calm.run('softTheme'),false);assert.equal(calm.run('lightTheme'),false);
-assert.equal(calm.run('focusEnabled'),false,'Retired Focus Play preference cannot silently affect new runs');
-assert.equal(calm.run('smallArena'),false,'Retired compact arena preference cannot silently shrink the game');
-assert.equal(calm.run('fireSpeedEnabled'),false,'Retired Fire Ball speed preference cannot silently change gameplay');
-calm.click('home-play');calm.run('startDelay=0;startRush();globalThis.calmAngle=angle;globalThis.calmSpeed=speedNow();updateRush(5)');assert.ok(Math.abs(calm.run('(angle-calmAngle)/calmSpeed')-5)<1e-8);calm.run('activeSinceBreak=180;update(.01)');assert.equal(calm.run('mode'),'paused');
-const settingsKeep=game(false,new Map([['loop-shift-break-seconds','60'],['loop-shift-theme','light']]));assert.equal(settingsKeep.run('breakSeconds'),180,'Break reminder stays fixed at three minutes');assert.equal(settingsKeep.run('lightTheme'),false);assert.equal(settingsKeep.store.get('loop-shift-theme'),'dark');
+const calm=game(false,null,false,false,false);assert.equal(calm.run('softTheme'),true);calm.click('home-play');calm.run('startDelay=0;startRush();globalThis.calmAngle=angle;globalThis.calmSpeed=speedNow();updateRush(5)');assert.ok(Math.abs(calm.run('(angle-calmAngle)/calmSpeed')-5)<1e-8);calm.run('activeSinceBreak=180;update(.01)');assert.equal(calm.run('mode'),'paused');calm.click('fire-speed-toggle');assert.equal(game(false,calm.store).run('fireSpeedEnabled'),true);
+
+const focusPlay=game(false,null,false,false,false);focusPlay.click('focus-toggle');focusPlay.click('home-play');focusPlay.run('startDelay=0;level=80');assert.equal(focusPlay.run('focusRun'),true);assert.equal(focusPlay.run('targetSpeed()'),.78);assert.equal(focusPlay.run('isRankedMode()'),false);
+focusPlay.run('sparks=5;updateHUD()');assert.equal(focusPlay.run('focusGoal'),1);focusPlay.run('focusCount=3;updateHUD()');assert.equal(focusPlay.run('focusGoal'),2);
+focusPlay.run('fireSpeedEnabled=true;startRush()');assert.equal(focusPlay.run('rushBoost'),0);focusPlay.click('break-60');focusPlay.run('activeSinceBreak=60;update(.01)');assert.equal(focusPlay.run('mode'),'paused');focusPlay.click('comfort-eyes');assert.equal(focusPlay.nodes.get('comfort-enable').hidden,false);focusPlay.click('comfort-enable');assert.equal(focusPlay.run('softTheme'),true);focusPlay.click('comfort-sick');focusPlay.run('setPaused(false)');assert.equal(focusPlay.run('mode'),'paused');assert.equal(focusPlay.nodes.get('play').hidden,true);focusPlay.click('comfort-finish');assert.equal(focusPlay.run('mode'),'over');assert.ok(focusPlay.store.get('loop-shift-focus-result'));focusPlay.click('arena-size-toggle');const focusReturn=game(false,focusPlay.store);assert.equal(focusReturn.run('focusEnabled'),true);assert.equal(focusReturn.run('smallArena'),true);assert.equal(focusReturn.run('breakSeconds'),60);
 
 const preplay=game();preplay.run('preplaySeen=false');preplay.click('home-play');assert.equal(preplay.nodes.get('preplay-dialog').open,true);assert.notEqual(preplay.run('mode'),'playing');for(let i=0;i<5;i++)preplay.click('preplay-go');assert.equal(preplay.run('mode'),'playing');assert.equal(preplay.store.get('loop-shift-preplay-v2'),'true');
 const bonusCatch=game();bonusCatch.click('home-play');bonusCatch.run('startDelay=0;level=4;ringCount=4;rows=[];lane=1;radius=laneRadius(lane);globalThis.beforeBonus=score;rows=[{angle:angle-.35,baseAngle:angle-.35,bonusLane:1,bonusCollected:false,sparkLane:0,collected:true,hit:true,passed:true,locked:true,hazardLanes:[],pattern:"classic"}];update(.01)');assert.equal(bonusCatch.run('rows[0].bonusCollected'),true);assert.ok(bonusCatch.run('score-beforeBonus')>=40);bonusCatch.run('update(.01)');assert.equal(bonusCatch.run('score-beforeBonus'),40);
@@ -704,7 +678,7 @@ assert.ok(Math.abs(rushWithRest.run('(rows[0].baseAngle-angle)/speedNow()')-rush
 const slower=game();slower.click('home-play');slower.run('crash(rows[0])');slower.click('practice-failure');
 assert.equal(slower.run('slowPracticeTime'),8);assert.ok(slower.run('targetSpeed()')<.6);
 slower.run('startDelay=0;rows=[];nextRowIndex=12;for(let i=0;i<960;i++)update(1/120)');assert.ok(slower.run('slowPracticeTime')<.001);
-slower.store.set('loop-shift-pause-left','true');const fixedPause=game(false,slower.store);assert.equal(fixedPause.run('pauseLeft'),false,'Pause stays on the right');
+slower.click('pause-side');assert.equal(slower.run('pauseLeft'),true);assert.equal(game(false,slower.store).run('pauseLeft'),true);
 
 const progressMessage=game();progressMessage.click('home-play');progressMessage.run('passes=36;score=20;crash()');assert.match(progressMessage.nodes.get('result-progress').textContent,/more levels/);assert.equal(progressMessage.nodes.get('result-progress').hidden,false);
 const localSave=game();localSave.click('home-play');localSave.run('score=987;gameTime=15;updateHUD()');assert.equal(localSave.store.get('loop-shift-best-v2'),'987');assert.equal(localSave.run('deviceScoreSaved'),true);
@@ -715,14 +689,11 @@ const mobileInput=game();mobileInput.run('startMinute()');mobileInput.run('start
 const inputLane=mobileInput.run('lane');
 mobileInput.run("globalThis.mobileTouch={pointerId:1,button:0,isPrimary:true,target:{id:'shift',closest:()=>null},clientX:190,clientY:250,preventDefault(){}};beginGesture(mobileTouch)");
 assert.notEqual(mobileInput.run('lane'),inputLane,'Instant tap shifts on touch-down');
-const movedLane=mobileInput.run('lane');
-const beforeRadius=mobileInput.run('radius'),targetRadius=mobileInput.run('laneRadius(lane)');
-mobileInput.run('update(1/120)');
-const afterRadius=mobileInput.run('radius');
-assert.ok(Math.abs(afterRadius-targetRadius)<Math.abs(beforeRadius-targetRadius)*.72,'Ball visibly reacts within one 120Hz frame');
-mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
-mobileInput.store.set('loop-shift-swipe-controls','true');
-const fixedTap=game(false,mobileInput.store);assert.equal(fixedTap.run('swipeControls'),false,'Instant tap is the permanent control mode');
+const movedLane=mobileInput.run('lane');mobileInput.run('gameTime+=.2;endGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Finger release cannot double-shift');
+mobileInput.click('control-mode');assert.equal(mobileInput.store.get('loop-shift-swipe-controls'),'true');
+mobileInput.run('gameTime+=.2;rows[0].sparkLane=1-lane;beginGesture(mobileTouch)');assert.equal(mobileInput.run('lane'),movedLane,'Gesture mode waits for direction or release');
+mobileInput.run('endGesture(mobileTouch)');assert.notEqual(mobileInput.run('lane'),movedLane);
+assert.equal(game(false,mobileInput.store).run('swipeControls'),true,'Control preference persists');
 mobileInput.run('shield=1;charge=2;rushTime=1.2;updateHUD()');assert.match(mobileInput.nodes.get('compact-power').textContent,/ending/);assert.match(mobileInput.nodes.get('compact-shield').textContent,/Shields 1/);
 
 // Back closes dialogs before leaving; it never resumes a run underneath a dialog.

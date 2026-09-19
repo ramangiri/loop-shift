@@ -49,7 +49,7 @@ test('device 612 never becomes an anonymous online record or another player’s 
     assert.equal((await call('leaderboard',null,'giri')).data.me.best,32,'Legacy local score is never fabricated into a submission');
     state.user='giri';await h.board.refresh(true);
     assert.equal(h.value('home-best'),'032');assert.equal(h.value('home-best-label'),'ONLINE BEST');
-    assert.equal(h.value('player-label'),'Giri');assert.equal(h.value('settings-profile-name'),'Giri');assert.equal(h.value('settings-profile-action'),'Edit name & avatar');assert.match(h.value('board-you'),/rank: #2 · Best: 32/);
+    assert.equal(h.value('player-label'),'Giri');assert.match(h.value('board-you'),/rank: #2 · Best: 32/);
     assert.equal(h.nodes.get('board-rows').children[1].children[1].textContent,'Giri · You');
     assert.equal(h.nodes.get('board-rows').children[1].children[2].textContent,'32');
     assert.equal(h.value('device-best'),'612');assert.equal(h.nodes.get('device-record').hidden,false);
@@ -82,15 +82,15 @@ test('a completed 612-point round stays pending until saved, then Home and the o
   }finally{DB.close();}
 });
 
-test('lost identity clears stale nickname; queued results cannot transfer to another profile',async()=>{
+test('lost identity clears stale nickname; queued results cannot transfer to another same-name profile',async()=>{
   const {DB,call,save}=fixture();
   try{
     const original=(await call('player',{name:'Giri'},'giri')).data.me;
-    await save('giri',32);await call('player',{name:'Other'},'other');
+    await save('giri',32);await call('player',{name:'Giri'},'other');
     const state={user:'giri'},h=client(call,state);await h.ready();
     state.offline=true;await h.board.submit(612,10);
     state.offline=false;state.user=null;await h.board.refresh(true);
-    assert.equal(h.value('home-best'),'—');assert.equal(h.value('player-label'),'Ready to play?');assert.equal(h.value('settings-profile-name'),'Player profile');assert.equal(h.board.ready(),false);
+    assert.equal(h.value('home-best'),'—');assert.equal(h.value('player-label'),'Ready to play?');assert.equal(h.board.ready(),false);
     assert.equal(h.board.player(),null);assert.equal(h.nodes.get('retry-home-score').hidden,true);
     state.user='other';await h.board.refresh(true);await settle();
     assert.equal(h.value('home-best'),'000');assert.equal(h.board.record().pending,0);

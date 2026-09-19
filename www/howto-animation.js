@@ -11,7 +11,7 @@
 
   const style=document.createElement('style');
   style.textContent=`
-    #howto-animation-dialog{box-sizing:border-box;width:min(94vw,520px);max-height:calc(100dvh - 24px);padding:0;border:1px solid #53655d;border-radius:22px;background:#101916;color:#f3f7f4;overflow:auto}
+    #howto-animation-dialog{width:min(94vw,520px);max-height:min(92dvh,760px);padding:0;border:1px solid #53655d;border-radius:22px;background:#101916;color:#f3f7f4;overflow:hidden}
     #howto-animation-dialog::backdrop{background:#030806d9;backdrop-filter:blur(5px)}
     .howto-film-head{padding:18px 18px 10px;text-align:center}.howto-film-head p{margin:0 0 5px;font-size:.72rem;letter-spacing:.15em;color:#9fb0a7;font-weight:800}.howto-film-head h2{margin:0;font-size:clamp(1.35rem,5vw,2rem)}
     .howto-film-stage{position:relative;margin:0 auto;width:min(92vw,430px);aspect-ratio:1/1;background:radial-gradient(circle at 50% 50%,#182921 0,#0c1713 62%,#08110e 100%);overflow:hidden;border-block:1px solid #273a31}
@@ -20,8 +20,8 @@
     .howto-film-caption strong{display:block;font-size:1.02rem;letter-spacing:.04em}.howto-film-caption span{display:block;margin-top:3px;font-size:.82rem;color:#c2cec8;line-height:1.35}
     .film-green{color:${GREEN}}.film-blue{color:${BLUE}}.film-red{color:${RED}}.film-gold{color:${GOLD}}
     .howto-film-progress{display:flex;gap:7px;justify-content:center;padding:12px 12px 0}.howto-film-progress i{width:8px;height:8px;border-radius:50%;background:#33483e;transition:.2s}.howto-film-progress i.active{background:#e8f5ee;transform:scale(1.25)}
-    .howto-film-actions{display:grid;grid-template-columns:1fr;gap:10px;padding:14px 16px 18px}.howto-film-actions button{box-sizing:border-box;width:100%;max-width:none;min-width:0;min-height:54px;margin:0;padding:12px 16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.25}.howto-film-actions .primary-button{grid-column:auto;justify-content:center}
-    @media(max-width:420px){.howto-film-head{padding-top:14px}}
+    .howto-film-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:14px 16px 18px}.howto-film-actions .primary-button{grid-column:1/-1}.howto-film-actions button{min-height:46px}
+    @media(max-width:420px){.howto-film-actions{grid-template-columns:1fr}.howto-film-actions .primary-button{grid-column:auto}.howto-film-head{padding-top:14px}}
   `;
   document.head.appendChild(style);
 
@@ -37,7 +37,7 @@
     <div class="howto-film-actions">
       <button id="howto-film-practice" class="primary-button" type="button">START HANDS-ON PRACTICE</button>
       <button id="howto-film-replay" class="secondary-button" type="button">Replay animation</button>
-      <button id="howto-film-close" class="secondary-button" type="button">BACK TO HOME</button>
+      <button id="howto-film-close" class="text-button" type="button">Back to Home</button>
     </div>`;
   document.body.appendChild(dialog);
 

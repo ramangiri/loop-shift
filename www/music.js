@@ -9,9 +9,7 @@
 
   function label(){
     if(!button)return;
-    const strong=button.querySelector?.('strong'),state=button.querySelector?.('span');
-    if(strong&&state){strong.textContent='Music';state.textContent=enabled?(blocked?'Tap to enable':'On'):'Off';}
-    else button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';
+    button.textContent=enabled?(blocked?'♫ Tap to enable':'♫ Music on'):'♫ Music off';
     button.setAttribute('aria-pressed',String(enabled));
     button.setAttribute('aria-label',enabled?(blocked?'Enable background music':'Mute background music'):'Enable background music');
     button.setAttribute('title',enabled?(blocked?'Tap to enable music':'Music on'):'Music off');
@@ -162,7 +160,7 @@
   });
 
   function userGesture(event){
-    if(button&&(event?.target===button||button.contains?.(event?.target)))return;
+    if(button&&(event?.target===button||button.contains(event?.target)))return;
     userUnlocked=true;
     if(!enabled)return;
     const onHome=document.body?.dataset?.screen==='home';
@@ -181,14 +179,12 @@
     if(enabled&&userUnlocked&&document.body?.dataset?.screen==='home'&&!active){setScene('home');active=true;begin();}
   });
 
-  if(typeof MutationObserver!=='undefined'&&document.body){
-    const observer=new MutationObserver(()=>{
-      const onHome=document.body?.dataset?.screen==='home';
-      if(onHome&&enabled&&userUnlocked){setScene('home');active=true;begin();}
-      else if(!onHome&&scene==='home'){active=false;stop();setScene('game');}
-    });
-    observer.observe(document.body,{attributes:true,attributeFilter:['data-screen']});
-  }
+  const observer=new MutationObserver(()=>{
+    const onHome=document.body?.dataset?.screen==='home';
+    if(onHome&&enabled&&userUnlocked){setScene('home');active=true;begin();}
+    else if(!onHome&&scene==='home'){active=false;stop();setScene('game');}
+  });
+  if(document.body)observer.observe(document.body,{attributes:true,attributeFilter:['data-screen']});
 
   window.LoopShiftMusic={
     sync,

@@ -6,7 +6,7 @@
 
   const style=document.createElement('style');
   style.textContent=`
-    #pause-menu-dialog,#pause-confirm-dialog{box-sizing:border-box;width:min(92vw,430px);max-height:calc(100dvh - 28px);padding:0;border:1px solid #52655b;border-radius:24px;background:#101a16;color:#f4f7f5;box-shadow:0 24px 70px #000b;overflow:auto}
+    #pause-menu-dialog,#pause-confirm-dialog{width:min(92vw,430px);padding:0;border:1px solid #52655b;border-radius:24px;background:#101a16;color:#f4f7f5;box-shadow:0 24px 70px #000b;overflow:hidden}
     #pause-menu-dialog::backdrop,#pause-confirm-dialog::backdrop{background:#020705cc;backdrop-filter:blur(5px)}
     .pause-menu-head{padding:24px 22px 14px;text-align:center;border-bottom:1px solid #263a31}
     .pause-menu-head small{display:block;margin-bottom:7px;font-size:.72rem;font-weight:900;letter-spacing:.16em;color:#a3b2aa}
@@ -16,10 +16,9 @@
     .pause-menu-stat span{display:block;font-size:.7rem;letter-spacing:.12em;color:#98aaa1;font-weight:800}
     .pause-menu-stat strong{display:block;margin-top:4px;font-size:1.35rem}
     .pause-menu-copy,.pause-confirm-copy{margin:12px 22px 4px;text-align:center;color:#b6c3bc;font-size:.92rem;line-height:1.45}
-    .pause-menu-actions,.pause-confirm-actions{display:grid;grid-template-columns:1fr;gap:10px;padding:16px 18px 20px}
-    .pause-menu-actions button,.pause-confirm-actions button{box-sizing:border-box;width:100%;min-width:0;min-height:54px;margin:0;padding:12px 16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.25}
+    .pause-menu-actions,.pause-confirm-actions{display:grid;gap:10px;padding:16px 18px 20px}
+    .pause-menu-actions button,.pause-confirm-actions button{min-height:50px}
     #pause-menu-home,#pause-confirm-cancel{background:transparent;border:1px solid #40564b;color:#eef4f0;border-radius:14px;font:inherit;font-weight:800}
-    .pause-menu-actions .primary-button,.pause-menu-actions .secondary-button,.pause-confirm-actions .primary-button,.pause-confirm-actions .secondary-button{width:100%;max-width:none;justify-content:center}
     #pause-menu-save[hidden]{display:none}
     #pause-confirm-yes{background:#3a1714;border:1px solid #ff8a75;color:#ffd0c8;border-radius:14px;font:inherit;font-weight:900}
   `;
